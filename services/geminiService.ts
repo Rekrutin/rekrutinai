@@ -1,13 +1,14 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { JobAnalysis } from "../types";
+import { JobAnalysis, Job, UserProfile } from "../types";
 
-const apiKey = process.env.API_KEY || '';
+// Initialize the API client strictly according to guidelines.
+// If process.env.API_KEY is missing in a dev env, we handle the null client gracefully in the function.
+const apiKey = process.env.API_KEY;
 const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
 export const analyzeJobFit = async (resumeText: string, jobDescription: string): Promise<JobAnalysis> => {
   if (!ai) {
     console.warn("Gemini API Key missing. Returning mock analysis.");
-    // Return mock data if no key is present to prevent app crash during demo
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve({
@@ -61,5 +62,91 @@ export const analyzeJobFit = async (resumeText: string, jobDescription: string):
   } catch (error) {
     console.error("Gemini Analysis Error:", error);
     throw error;
+  }
+};
+
+export const analyzeResumeATS = async (resumeText: string): Promise<{ score: number; feedback: string[] }> => {
+  if (!ai) {
+    return { score: 65, feedback: ["Simulated: Use standard headings", "Simulated: Quantify achievements"] };
+  }
+
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: `
+        Analyze this resume text for ATS (Applicant Tracking System) friendliness and overall quality.
+        Resume Text: "${resumeText.substring(0, 5000)}"
+        
+        Return JSON with:
+        - score (0-100 integer)
+        - feedback (array of strings, specific advice to improve ATS parsing and impact)
+      `,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            score: { type: Type.INTEGER },
+            feedback: { type: Type.ARRAY, items: { type: Type.STRING } }
+          },
+          required: ["score", "feedback"]
+        }
+      }
+    });
+
+    const text = response.text;
+    if (!text) throw new Error("No response");
+    return JSON.parse(text);
+  } catch (error) {
+    console.error("ATS Analysis Error", error);
+    throw error;
+  }
+};
+
+export const chatWithCareerAgent = async (
+  message: string, 
+  context: { jobs: Job[]; profile: UserProfile }
+): Promise<string> => {
+  if (!ai) {
+    return "I am a simulated AI agent. Please configure your API Key to get real personalized advice based on your " + context.jobs.length + " applications.";
+  }
+
+  // Construct context string
+  const jobsContext = context.jobs.map(j => 
+    `- Role: ${j.title} at ${j.company} (Status: ${j.status}). Description snippet: ${j.description?.substring(0, 100)}...`
+  ).join("\n");
+
+  const profileContext = `
+    User Name: ${context.profile.name}
+    Title: ${context.profile.title}
+    Skills: ${context.profile.skills.join(", ")}
+    Summary: ${context.profile.summary}
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: `
+        You are a helpful, encouraging, and strategic AI Career Agent for RekrutIn.ai.
+        
+        USER PROFILE:
+        ${profileContext}
+        
+        USER'S JOB APPLICATIONS:
+        ${jobsContext}
+        
+        USER QUESTION:
+        "${message}"
+        
+        Answer the user's question based on their specific profile and job list. 
+        If they ask for matches, compare their skills to the job descriptions provided.
+        Keep the tone professional yet conversational.
+      `
+    });
+
+    return response.text || "I couldn't generate a response at this time.";
+  } catch (error) {
+    console.error("Chat Agent Error", error);
+    return "Sorry, I encountered an error processing your request.";
   }
 };

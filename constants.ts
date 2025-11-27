@@ -1,4 +1,4 @@
-import { JobStatus, Job, PricingPlan } from './types';
+import { JobStatus, Job, PricingPlan, EmployerJob } from './types';
 
 export const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 export const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -38,25 +38,84 @@ export const INITIAL_JOBS: Job[] = [
   }
 ];
 
+export const INITIAL_EMPLOYER_JOBS: EmployerJob[] = [
+  {
+    id: '101',
+    title: 'Growth Marketing Manager',
+    location: 'Jakarta, Indonesia',
+    type: 'Full-time',
+    salary_range: 'Rp 15.000.000 - Rp 25.000.000',
+    applicants_count: 12,
+    status: 'Active',
+    created_at: new Date().toISOString(),
+    description: 'We need a growth wizard to scale our user base.'
+  },
+  {
+    id: '102',
+    title: 'Junior UI Designer',
+    location: 'Remote',
+    type: 'Internship',
+    salary_range: 'Rp 3.000.000 - Rp 5.000.000',
+    applicants_count: 45,
+    status: 'Closed',
+    created_at: new Date(Date.now() - 604800000).toISOString(), // 1 week ago
+    description: 'Looking for a talented junior designer.'
+  }
+];
+
 export const PRICING_PLANS: PricingPlan[] = [
   {
     name: 'Free',
-    price: '$0',
-    features: ['Track job applications', 'View analytics', 'Basic dashboard'],
+    price: 'Rp0',
+    description: 'Perfect for getting started',
+    features: [
+      '10 job applications (limit)',
+      'Basic job tracking',
+      'Basic dashboard & reminders'
+    ],
     cta: 'Start Free'
   },
   {
     name: 'Pro',
-    price: '$9',
-    features: ['All Free features', 'AI Fit Scoring', 'CV improvement tips'],
+    price: 'Rp165.000',
+    description: 'Main MRR Driver',
+    features: [
+      'Unlimited job tracking',
+      'Chrome extension (auto-capture)',
+      'AI Resume Fit Score',
+      'AI Success Probability',
+      'Personalized recommendations',
+      'Progress analytics',
+      'Early access to new features'
+    ],
     cta: 'Go Pro',
     highlight: true
   },
   {
     name: 'Career+',
-    price: '$19',
-    features: ['All Pro features', 'Custom tracking', 'Success probability'],
+    price: 'Rp356.000',
+    description: 'For serious growth',
+    features: [
+      'All Pro features',
+      'Career learning modules',
+      'CV & LinkedIn optimization course',
+      'Pre-written templates',
+      'Advanced job search strategies'
+    ],
     cta: 'Join Career+'
+  },
+  {
+    name: 'Elite',
+    price: 'Rp455.000',
+    description: 'Maximum impact',
+    features: [
+      'All Career+ features',
+      '1x Interview Training (Live)',
+      'Priority chat support',
+      'Personalized CV & LinkedIn audit',
+      'Advanced job search roadmap'
+    ],
+    cta: 'Get Elite'
   }
 ];
 

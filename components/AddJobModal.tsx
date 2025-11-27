@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { JobStatus, Job } from '../types';
-import { X } from 'lucide-react';
+import { X, Link as LinkIcon } from 'lucide-react';
 
 interface AddJobModalProps {
   isOpen: boolean;
@@ -11,6 +11,7 @@ interface AddJobModalProps {
 export const AddJobModal: React.FC<AddJobModalProps> = ({ isOpen, onClose, onAdd }) => {
   const [title, setTitle] = useState('');
   const [company, setCompany] = useState('');
+  const [url, setUrl] = useState('');
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState<JobStatus>(JobStatus.SAVED);
 
@@ -22,12 +23,14 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({ isOpen, onClose, onAdd
       onAdd({
         title,
         company,
+        url,
         description,
         status,
         ai_analysis: null
       });
       setTitle('');
       setCompany('');
+      setUrl('');
       setDescription('');
       onClose();
     }
@@ -65,6 +68,21 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({ isOpen, onClose, onAdd
                 className="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
                 placeholder="e.g. Google"
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Job Link / URL</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <LinkIcon size={14} className="text-slate-400" />
+                </div>
+                <input
+                  type="url"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  className="w-full pl-9 p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                  placeholder="https://linkedin.com/jobs/..."
+                />
+              </div>
             </div>
              <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
