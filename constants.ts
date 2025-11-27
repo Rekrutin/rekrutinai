@@ -1,3 +1,4 @@
+
 import { JobStatus, Job, PricingPlan, EmployerJob } from './types';
 
 export const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -135,4 +136,12 @@ export const FEATURES = [
     description: 'Never lose track again — know where you applied, when, and what your next move should be.',
     icon: 'Calendar'
   }
+];
+
+export const TRENDING_SEARCHES = [
+  "Remote Frontend Developer",
+  "Product Manager Jakarta",
+  "Data Analyst Entry Level",
+  "UX Designer Singapore",
+  "Marketing Intern"
 ];

@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Menu, X, CheckCircle, BarChart3, Bot, Calendar, ArrowRight, 
   Linkedin, Github, Plus, LayoutDashboard, LogOut, ChevronDown, 
-  Briefcase, Users, Search, List as ListIcon, Kanban, FileText, UserCircle, Sparkles
+  Briefcase, Users, Search, List as ListIcon, Kanban, FileText, UserCircle, Sparkles, Bell, CreditCard,
+  MapPin, TrendingUp
 } from 'lucide-react';
-import { Job, JobStatus, JobAnalysis, UserRole, EmployerJob, DashboardTab, UserProfile, Resume } from './types';
-import { INITIAL_JOBS, FEATURES, PRICING_PLANS, INITIAL_EMPLOYER_JOBS } from './constants';
+import { Job, JobStatus, JobAnalysis, UserRole, EmployerJob, DashboardTab, UserProfile, Resume, JobAlert, Notification } from './types';
+import { INITIAL_JOBS, FEATURES, PRICING_PLANS, INITIAL_EMPLOYER_JOBS, TRENDING_SEARCHES } from './constants';
 import { supabase } from './services/supabaseClient';
 import { JobCard } from './components/JobCard';
 import { JobListView } from './components/JobListView';
@@ -16,6 +18,7 @@ import { SeekerAnalytics } from './components/SeekerAnalytics';
 import { ProfileSection } from './components/ProfileSection';
 import { ResumeSection } from './components/ResumeSection';
 import { AIAgentSection } from './components/AIAgentSection';
+import { JobAlertsSection } from './components/JobAlertsSection';
 
 // Mock simple HashRouter to avoid dependencies
 const HashRouter = ({ 
@@ -58,12 +61,31 @@ const App: React.FC = () => {
       atsAnalysis: ['Good use of keywords', 'Add more quantifiable metrics']
     }
   ]);
+  
+  // Alerts & Notifications
+  const [jobAlerts, setJobAlerts] = useState<JobAlert[]>([
+    { id: 'a1', keywords: 'Frontend', location: 'Remote', frequency: 'Instant', createdAt: new Date().toISOString() }
+  ]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const notificationRef = useRef<HTMLDivElement>(null);
 
   // Employer State
   const [employerJobs, setEmployerJobs] = useState<EmployerJob[]>(INITIAL_EMPLOYER_JOBS);
   const [isPostJobModalOpen, setIsPostJobModalOpen] = useState(false);
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Click outside to close notification dropdown
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+        setIsNotificationOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Supabase Fetch (Simulated)
   useEffect(() => {
@@ -80,6 +102,14 @@ const App: React.FC = () => {
     };
     fetchJobs();
   }, [userRole]);
+
+  // Derived State: Matched jobs based on alerts
+  const matchedEmployerJobs = employerJobs.filter(job => 
+    jobAlerts.some(alert => 
+      job.title.toLowerCase().includes(alert.keywords.toLowerCase()) &&
+      (!alert.location || job.location.toLowerCase().includes(alert.location.toLowerCase()))
+    )
+  );
 
   // Filter Jobs based on Search Query
   const filteredJobs = jobs.filter(job => 
@@ -141,6 +171,29 @@ const App: React.FC = () => {
     setResumes(prev => prev.map(r => r.id === id ? { ...r, ...updates } : r));
   };
 
+  // --- Alert Actions ---
+  const handleAddAlert = (alertData: Omit<JobAlert, 'id' | 'createdAt'>) => {
+    const newAlert: JobAlert = {
+      ...alertData,
+      id: Math.random().toString(36).substr(2, 9),
+      createdAt: new Date().toISOString()
+    };
+    setJobAlerts(prev => [newAlert, ...prev]);
+  };
+  
+  const handleDeleteAlert = (id: string) => {
+    setJobAlerts(prev => prev.filter(a => a.id !== id));
+  };
+
+  const handleMarkNotificationRead = (id: string) => {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+  };
+  
+  const handleClearNotifications = () => {
+    setNotifications([]);
+    setIsNotificationOpen(false);
+  };
+
   // --- Employer Actions ---
   const handlePostJob = async (newJobData: Omit<EmployerJob, 'id' | 'created_at' | 'applicants_count' | 'status'>) => {
     const newJob: EmployerJob = {
@@ -152,45 +205,65 @@ const App: React.FC = () => {
     };
     setEmployerJobs(prev => [newJob, ...prev]);
     if (supabase) await supabase.from('employer_jobs').insert([newJob]);
+
+    // CHECK FOR MATCHES (Simulate Notification System)
+    // In a real app, this happens on the backend
+    const matchedAlerts = jobAlerts.filter(alert => 
+      newJob.title.toLowerCase().includes(alert.keywords.toLowerCase()) && 
+      (!alert.location || newJob.location.toLowerCase().includes(alert.location.toLowerCase()))
+    );
+
+    if (matchedAlerts.length > 0) {
+      const newNotification: Notification = {
+        id: Date.now().toString(),
+        title: 'New Job Match!',
+        message: `A new "${newJob.title}" job matching your alert was just posted.`,
+        timestamp: new Date().toISOString(),
+        read: false,
+        jobId: newJob.id,
+        type: 'alert'
+      };
+      setNotifications(prev => [newNotification, ...prev]);
+    }
   }
 
   // --- Render Helpers ---
 
   const renderLanding = () => (
-    <div className="min-h-screen bg-slate-50 font-sans">
+    <div className="min-h-screen bg-slate-50 font-sans overflow-x-hidden">
       {/* Navbar */}
       <nav className="fixed w-full z-40 bg-white/80 backdrop-blur-md border-b border-slate-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <span className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">
+              <span className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600 cursor-pointer">
                 RekrutIn.ai
               </span>
             </div>
             
             <div className="hidden md:flex items-center space-x-8">
-              <a href="#how-it-works" className="text-slate-600 hover:text-indigo-600 font-medium transition-colors">How It Works</a>
               <a href="#features" className="text-slate-600 hover:text-indigo-600 font-medium transition-colors">Features</a>
+              <a href="#how-it-works" className="text-slate-600 hover:text-indigo-600 font-medium transition-colors">How It Works</a>
               <a href="#pricing" className="text-slate-600 hover:text-indigo-600 font-medium transition-colors">Pricing</a>
               
-              <div className="flex items-center space-x-2 border-l pl-6 border-slate-200">
-                 <button 
-                  onClick={() => {
-                    setUserRole('seeker');
-                    setCurrentView('dashboard');
-                  }}
-                  className="bg-indigo-600 text-white px-5 py-2 rounded-full font-semibold hover:bg-indigo-700 transition-all shadow-lg hover:shadow-indigo-500/20 text-sm"
-                >
-                  Job Seeker Login
-                </button>
+              <div className="flex items-center space-x-3 border-l pl-6 border-slate-200">
                  <button 
                   onClick={() => {
                     setUserRole('employer');
                     setCurrentView('dashboard');
                   }}
-                  className="text-slate-600 hover:text-slate-900 font-semibold px-4 py-2 text-sm"
+                  className="text-slate-600 hover:text-slate-900 font-semibold px-3 py-2 text-sm"
                 >
-                  Employer Login
+                  For Employers
+                </button>
+                 <button 
+                  onClick={() => {
+                    setUserRole('seeker');
+                    setCurrentView('dashboard');
+                  }}
+                  className="bg-indigo-600 text-white px-5 py-2.5 rounded-full font-bold hover:bg-indigo-700 transition-all shadow-lg hover:shadow-indigo-500/20 text-sm"
+                >
+                  Login / Sign Up
                 </button>
               </div>
             </div>
@@ -204,55 +277,144 @@ const App: React.FC = () => {
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 text-center max-w-5xl mx-auto">
-        <div className="inline-flex items-center px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-sm font-medium mb-6">
-          <span className="flex h-2 w-2 rounded-full bg-indigo-600 mr-2"></span>
-          Now supporting both Seekers and Employers
-        </div>
-        <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-slate-900 mb-6 leading-tight">
-          Land Your Next Job <br/>
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">Smarter, Not Harder.</span>
-        </h1>
-        <p className="text-xl text-slate-600 mb-10 max-w-2xl mx-auto leading-relaxed">
-          RekrutIn.ai helps candidates track applications and employers find top talent. The all-in-one recruitment platform powered by AI.
-        </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <button 
-            onClick={() => {
-              setUserRole('seeker');
-              setCurrentView('dashboard');
-            }}
-            className="px-8 py-4 bg-indigo-600 text-white rounded-xl font-bold text-lg hover:bg-indigo-700 transition-all shadow-xl hover:shadow-indigo-500/30 flex items-center justify-center"
-          >
-            I'm a Job Seeker <ArrowRight className="ml-2" size={20} />
-          </button>
-           <button 
-            onClick={() => {
-              setUserRole('employer');
-              setCurrentView('dashboard');
-            }}
-            className="px-8 py-4 bg-white text-slate-700 border border-slate-200 rounded-xl font-bold text-lg hover:bg-slate-50 transition-all flex items-center justify-center"
-          >
-            I'm an Employer
-          </button>
+      {/* Hero Section - AI Search Style */}
+      <section className="pt-32 pb-24 px-4 sm:px-6 lg:px-8 text-center relative overflow-hidden">
+        {/* Decorative background blobs */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[600px] bg-gradient-to-b from-indigo-50/80 to-transparent -z-10 pointer-events-none"></div>
+        <div className="absolute top-20 right-[10%] w-72 h-72 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse-slow"></div>
+        <div className="absolute top-20 left-[10%] w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse-slow animation-delay-2000"></div>
+
+        <div className="max-w-4xl mx-auto relative z-10">
+          <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-sm font-semibold mb-8 shadow-sm">
+            <Sparkles size={14} className="mr-2 text-indigo-500" />
+            New: AI Copilot for your job hunt
+          </div>
+          
+          <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-slate-900 mb-6 leading-tight">
+            Land Your Next Job <br/>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">Smarter, Not Harder.</span>
+          </h1>
+          
+          <p className="text-lg md:text-xl text-slate-600 mb-10 max-w-2xl mx-auto">
+            Your personal AI recruiter. Track applications, analyze your CV, and find matching roles across the web in seconds.
+          </p>
+
+          {/* AI Search Bar Interface */}
+          <div className="max-w-3xl mx-auto relative group">
+            <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-500 rounded-2xl opacity-30 group-hover:opacity-50 blur transition duration-200"></div>
+            <div className="relative flex items-center bg-white rounded-2xl shadow-xl p-2 pr-2">
+              <div className="pl-4 text-indigo-500">
+                <Bot size={28} />
+              </div>
+              <input 
+                type="text" 
+                placeholder="Ask RekrutIn AI: Find me remote Product Design jobs in Jakarta..." 
+                className="w-full p-4 text-lg bg-transparent border-none outline-none text-slate-800 placeholder:text-slate-400"
+              />
+              <button 
+                onClick={() => {
+                   setUserRole('seeker');
+                   setCurrentView('dashboard');
+                }}
+                className="hidden sm:flex items-center px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-md"
+              >
+                Search <ArrowRight size={18} className="ml-2" />
+              </button>
+              <button 
+                 onClick={() => {
+                   setUserRole('seeker');
+                   setCurrentView('dashboard');
+                }}
+                className="sm:hidden p-3 bg-indigo-600 text-white rounded-xl"
+              >
+                <Search size={20} />
+              </button>
+            </div>
+          </div>
+
+          {/* Trending Tags */}
+          <div className="mt-6 flex flex-wrap justify-center gap-2 text-sm mb-10">
+            <span className="text-slate-500 font-medium mr-2">Trending:</span>
+            {TRENDING_SEARCHES.map((tag, i) => (
+              <button 
+                key={i} 
+                className="px-3 py-1 bg-white border border-slate-200 rounded-full text-slate-600 hover:border-indigo-300 hover:text-indigo-600 transition-colors shadow-sm"
+                onClick={() => {
+                  setUserRole('seeker');
+                  setCurrentView('dashboard');
+                }}
+              >
+                {tag}
+              </button>
+            ))}
+          </div>
+
+          {/* Statistics Section (Sexy Numbers) */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center max-w-4xl mx-auto">
+             <div className="p-4 rounded-2xl bg-white/60 border border-indigo-50 backdrop-blur-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+                <p className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-indigo-600 to-purple-600">250k+</p>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1">Active Jobs</p>
+             </div>
+             <div className="p-4 rounded-2xl bg-white/60 border border-indigo-50 backdrop-blur-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+                <p className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-indigo-600 to-purple-600">10k+</p>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1">Companies</p>
+             </div>
+             <div className="p-4 rounded-2xl bg-white/60 border border-indigo-50 backdrop-blur-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+                <p className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-indigo-600 to-purple-600">85%</p>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1">Hired Faster</p>
+             </div>
+             <div className="p-4 rounded-2xl bg-white/60 border border-indigo-50 backdrop-blur-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+                <p className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-indigo-600 to-purple-600">1.2M+</p>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1">Applications</p>
+             </div>
+          </div>
+
+          {/* Floating Avatars / Social Proof Elements (Decorative) */}
+          <div className="hidden xl:block absolute top-1/2 -left-32 animate-float">
+             <div className="bg-white p-2.5 rounded-xl shadow-xl border border-slate-100 flex items-center gap-3 w-56 transform rotate-[-4deg]">
+               <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center text-green-600 shadow-sm">
+                 <CheckCircle size={20} />
+               </div>
+               <div>
+                 <p className="text-sm font-bold text-slate-800">Offer Received! 🎉</p>
+                 <p className="text-xs text-slate-400">Google • Senior Dev</p>
+               </div>
+             </div>
+          </div>
+          <div className="hidden xl:block absolute top-1/3 -right-32 animate-float" style={{ animationDelay: '2s' }}>
+             <div className="bg-white p-2.5 rounded-xl shadow-xl border border-slate-100 flex items-center gap-3 w-56 transform rotate-[4deg]">
+               <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 shadow-sm">
+                 <Sparkles size={20} />
+               </div>
+               <div>
+                 <p className="text-sm font-bold text-slate-800">Resume Optimized</p>
+                 <p className="text-xs text-slate-400">Score: 65 ➝ 92</p>
+               </div>
+             </div>
+          </div>
+
         </div>
       </section>
 
-      {/* Product Showcase */}
-      <section className="py-24 bg-slate-50 border-y border-slate-200 overflow-hidden">
+      {/* Product Preview / Dashboard */}
+      <section className="py-12 bg-transparent relative z-10 -mt-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="relative mx-auto max-w-5xl">
-            <div className="rounded-2xl shadow-2xl bg-white border border-slate-200 overflow-hidden">
-              <div className="bg-slate-100 border-b border-slate-200 px-4 py-3 flex items-center gap-3">
+          <div className="relative mx-auto max-w-6xl">
+            {/* Glassmorphism Container */}
+            <div className="rounded-2xl shadow-2xl bg-white/60 backdrop-blur-xl border border-white/50 overflow-hidden ring-1 ring-slate-900/5">
+              <div className="bg-white/80 border-b border-slate-200 px-4 py-3 flex items-center gap-3">
                 <div className="flex gap-2">
-                  <div className="w-3 h-3 rounded-full bg-red-400"></div>
-                  <div className="w-3 h-3 rounded-full bg-amber-400"></div>
-                  <div className="w-3 h-3 rounded-full bg-emerald-400"></div>
+                  <div className="w-3 h-3 rounded-full bg-slate-300"></div>
+                  <div className="w-3 h-3 rounded-full bg-slate-300"></div>
+                  <div className="w-3 h-3 rounded-full bg-slate-300"></div>
                 </div>
+                <div className="mx-auto bg-slate-100 rounded-md px-3 py-1 text-xs text-slate-400 font-mono">rekrutin.ai/dashboard</div>
               </div>
               <div className="p-4 md:p-8 bg-slate-50/50">
-                 <SeekerAnalytics jobs={INITIAL_JOBS} />
+                 <div className="mb-6">
+                   <h3 className="text-lg font-bold text-slate-800 mb-2">Live Application Tracker</h3>
+                   <SeekerAnalytics jobs={INITIAL_JOBS} />
+                 </div>
                  <JobListView 
                     jobs={INITIAL_JOBS} 
                     onStatusChange={() => {}} 
@@ -260,24 +422,67 @@ const App: React.FC = () => {
                     onDelete={() => {}} 
                  />
               </div>
+              
+              {/* Overlay Gradient at bottom to fade content if it looks long */}
+              <div className="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
+              
+              <div className="absolute bottom-8 left-1/2 -translate-x-1/2">
+                <button 
+                  onClick={() => {
+                    setUserRole('seeker');
+                    setCurrentView('dashboard');
+                  }}
+                  className="px-6 py-2 bg-slate-900 text-white rounded-full font-bold shadow-lg hover:scale-105 transition-transform"
+                >
+                  Try Demo Dashboard
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Pricing */}
-      <section id="pricing" className="py-20 bg-white">
+      {/* Features Grid */}
+      <section id="features" className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-slate-900">Choose Your Plan</h2>
+            <h2 className="text-3xl font-extrabold text-slate-900">Everything You Need to Get Hired</h2>
+            <p className="mt-4 text-slate-500 max-w-2xl mx-auto">Stop using spreadsheets. Start using an AI-powered command center for your career.</p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-10">
+            {FEATURES.map((feature, idx) => (
+              <div key={idx} className="bg-slate-50 p-8 rounded-3xl border border-slate-100 hover:shadow-xl transition-shadow duration-300">
+                <div className="w-14 h-14 bg-white rounded-2xl shadow-sm flex items-center justify-center text-indigo-600 mb-6 border border-slate-100">
+                  {feature.icon === 'BarChart' && <BarChart3 size={28} />}
+                  {feature.icon === 'Bot' && <Bot size={28} />}
+                  {feature.icon === 'Calendar' && <Calendar size={28} />}
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 mb-3">{feature.title}</h3>
+                <p className="text-slate-600 leading-relaxed">{feature.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing */}
+      <section id="pricing" className="py-20 bg-slate-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold text-slate-900">Simple, Transparent Pricing</h2>
+            <p className="mt-4 text-slate-500">Invest in your career for less than the cost of a coffee.</p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
             {PRICING_PLANS.map((plan, idx) => (
-              <div key={idx} className={`p-6 rounded-3xl border ${plan.highlight ? 'border-indigo-600 shadow-xl ring-4 ring-indigo-50' : 'border-slate-200 bg-slate-50'} flex flex-col`}>
-                <h3 className="text-xl font-bold text-slate-900">{plan.name}</h3>
-                <div className="mt-4 mb-6">
-                  <span className="text-2xl font-extrabold text-slate-900">{plan.price}</span>
+              <div key={idx} className={`p-6 rounded-3xl border ${plan.highlight ? 'border-indigo-600 shadow-xl ring-4 ring-indigo-50 bg-white' : 'border-slate-200 bg-white'} flex flex-col transition-transform hover:-translate-y-1 duration-300`}>
+                <div className="flex justify-between items-center mb-2">
+                   <h3 className="text-xl font-bold text-slate-900">{plan.name}</h3>
+                   {plan.highlight && <span className="bg-indigo-100 text-indigo-700 text-xs font-bold px-2 py-0.5 rounded-full">Popular</span>}
+                </div>
+                <div className="mt-2 mb-6">
+                  <span className="text-3xl font-extrabold text-slate-900">{plan.price}</span>
                   <span className="text-slate-500 text-sm">/mo</span>
+                  <p className="text-xs text-slate-500 mt-1">{plan.description}</p>
                 </div>
                 <ul className="space-y-3 mb-8 flex-1">
                   {plan.features.map((feat, i) => (
@@ -292,7 +497,7 @@ const App: React.FC = () => {
                     setUserRole('seeker');
                     setCurrentView('dashboard');
                   }}
-                  className={`w-full py-2.5 rounded-xl font-bold text-sm ${plan.highlight ? 'bg-indigo-600 text-white' : 'bg-white text-slate-900 border'}`}
+                  className={`w-full py-3 rounded-xl font-bold text-sm shadow-sm transition-all ${plan.highlight ? 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-indigo-500/25' : 'bg-white text-slate-900 border border-slate-200 hover:bg-slate-50'}`}
                 >
                   {plan.cta}
                 </button>
@@ -301,16 +506,32 @@ const App: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {/* Footer */}
+      <footer className="bg-white border-t border-slate-200 py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+           <span className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">
+              RekrutIn.ai
+           </span>
+           <p className="text-slate-500 text-sm mt-4">© 2025 RekrutIn.ai — Designed with 💡 in Indonesia</p>
+           <div className="flex justify-center gap-6 mt-6">
+             <a href="#" className="text-slate-400 hover:text-indigo-600"><Linkedin size={20} /></a>
+             <a href="#" className="text-slate-400 hover:text-indigo-600"><Github size={20} /></a>
+           </div>
+        </div>
+      </footer>
     </div>
   );
 
   const renderDashboard = () => (
-    <div className="min-h-screen bg-slate-100 flex flex-col">
+    <div className="min-h-screen bg-slate-100 flex flex-col font-sans">
       {/* Dashboard Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-30">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex justify-between items-center">
           <div className="flex items-center cursor-pointer" onClick={() => setCurrentView('landing')}>
-            <span className="text-xl font-bold text-indigo-600 mr-8 hidden md:block">RekrutIn.ai</span>
+            <span className="text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600 mr-8 hidden md:block">
+              RekrutIn.ai
+            </span>
             
             {/* Role Switcher Tabs */}
             <div className="flex p-1 bg-slate-100 rounded-lg">
@@ -334,6 +555,62 @@ const App: React.FC = () => {
           </div>
 
           <div className="flex items-center space-x-3">
+             {/* Notification Bell (Seeker Only) */}
+             {userRole === 'seeker' && (
+               <div className="relative" ref={notificationRef}>
+                 <button 
+                   onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+                   className="p-2 text-slate-400 hover:text-indigo-600 transition-colors relative"
+                 >
+                   <Bell size={20} />
+                   {notifications.filter(n => !n.read).length > 0 && (
+                     <span className="absolute top-1 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
+                   )}
+                 </button>
+                 
+                 {isNotificationOpen && (
+                   <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-slate-200 z-50 animate-fade-in overflow-hidden">
+                     <div className="p-3 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                       <h3 className="font-semibold text-sm text-slate-800">Notifications</h3>
+                       {notifications.length > 0 && (
+                         <button onClick={handleClearNotifications} className="text-xs text-indigo-600 hover:text-indigo-800">Clear all</button>
+                       )}
+                     </div>
+                     <div className="max-h-80 overflow-y-auto">
+                       {notifications.length === 0 ? (
+                         <div className="p-6 text-center text-slate-400 text-sm">
+                           No new notifications
+                         </div>
+                       ) : (
+                         notifications.map(notification => (
+                           <div 
+                             key={notification.id} 
+                             onClick={() => {
+                               handleMarkNotificationRead(notification.id);
+                               if(notification.type === 'alert') setActiveTab('alerts');
+                               setIsNotificationOpen(false);
+                             }}
+                             className={`p-4 border-b border-slate-50 hover:bg-slate-50 cursor-pointer transition-colors ${!notification.read ? 'bg-indigo-50/50' : ''}`}
+                           >
+                             <div className="flex gap-3">
+                               <div className="flex-shrink-0 mt-1">
+                                  <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
+                               </div>
+                               <div>
+                                  <h4 className={`text-sm ${!notification.read ? 'font-bold text-slate-900' : 'font-medium text-slate-700'}`}>{notification.title}</h4>
+                                  <p className="text-xs text-slate-500 mt-1">{notification.message}</p>
+                                  <span className="text-[10px] text-slate-400 mt-2 block">{new Date(notification.timestamp).toLocaleTimeString()}</span>
+                               </div>
+                             </div>
+                           </div>
+                         ))
+                       )}
+                     </div>
+                   </div>
+                 )}
+               </div>
+             )}
+
             {userRole === 'seeker' ? (
               <button 
                 onClick={() => setIsAddModalOpen(true)}
@@ -383,6 +660,15 @@ const App: React.FC = () => {
                  Resume Manager
                </button>
                <button
+                 onClick={() => setActiveTab('alerts')}
+                 className={`w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${
+                   activeTab === 'alerts' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'
+                 }`}
+               >
+                 <Bell size={18} className="mr-3" />
+                 Job Alerts
+               </button>
+               <button
                  onClick={() => setActiveTab('profile')}
                  className={`w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${
                    activeTab === 'profile' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'
@@ -399,6 +685,15 @@ const App: React.FC = () => {
                >
                  <Sparkles size={18} className="mr-3" />
                  AI Career Agent
+               </button>
+               <button
+                 onClick={() => setActiveTab('billing')}
+                 className={`w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${
+                   activeTab === 'billing' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'
+                 }`}
+               >
+                 <CreditCard size={18} className="mr-3" />
+                 Pricing & Plans
                </button>
              </nav>
           </aside>
@@ -422,7 +717,7 @@ const App: React.FC = () => {
                             type="text"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="block w-full pl-10 pr-3 py-2 border border-slate-200 rounded-lg bg-white text-sm focus:ring-1 focus:ring-indigo-500 outline-none"
+                            className="block w-full pl-10 pr-3 py-2 border border-slate-200 rounded-lg bg-white text-sm focus:ring-1 focus:ring-indigo-500 outline-none transition-shadow focus:shadow-sm"
                             placeholder="Search applications..."
                           />
                         </div>
@@ -490,6 +785,15 @@ const App: React.FC = () => {
                   onUpdateResume={handleUpdateResume}
                 />
               )}
+              
+              {activeTab === 'alerts' && (
+                <JobAlertsSection 
+                  alerts={jobAlerts}
+                  matchedJobs={matchedEmployerJobs}
+                  onAddAlert={handleAddAlert}
+                  onDeleteAlert={handleDeleteAlert}
+                />
+              )}
 
               {activeTab === 'profile' && (
                 <ProfileSection 
@@ -502,6 +806,42 @@ const App: React.FC = () => {
                 <div className="max-w-4xl mx-auto space-y-4">
                    <SeekerAnalytics jobs={jobs} />
                    <AIAgentSection jobs={jobs} profile={profile} />
+                </div>
+              )}
+
+              {activeTab === 'billing' && (
+                <div className="max-w-7xl mx-auto">
+                  <div className="mb-8">
+                    <h2 className="text-2xl font-bold text-slate-900">Subscription Plans</h2>
+                    <p className="text-slate-500">Choose the best plan to accelerate your job search.</p>
+                  </div>
+                  <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {PRICING_PLANS.map((plan, idx) => (
+                      <div key={idx} className={`p-6 rounded-2xl border ${plan.highlight ? 'border-indigo-600 shadow-lg ring-1 ring-indigo-600 bg-white' : 'border-slate-200 bg-white shadow-sm'} flex flex-col transition-all hover:shadow-md`}>
+                        <div className="mb-4">
+                          <h3 className="text-lg font-bold text-slate-900">{plan.name}</h3>
+                          <div className="mt-2 flex items-baseline text-slate-900">
+                            <span className="text-3xl font-extrabold tracking-tight">{plan.price}</span>
+                            <span className="ml-1 text-sm font-medium text-slate-500">/mo</span>
+                          </div>
+                          {plan.description && <p className="mt-2 text-xs text-slate-500">{plan.description}</p>}
+                        </div>
+                        <ul className="space-y-3 mb-6 flex-1">
+                          {plan.features.map((feat, i) => (
+                            <li key={i} className="flex items-start text-xs text-slate-600">
+                              <CheckCircle size={14} className="text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                              {feat}
+                            </li>
+                          ))}
+                        </ul>
+                        <button 
+                          className={`w-full py-2 rounded-lg font-bold text-sm transition-colors ${plan.highlight ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-slate-50 text-slate-900 hover:bg-slate-100 border border-slate-200'}`}
+                        >
+                          {plan.cta}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </>

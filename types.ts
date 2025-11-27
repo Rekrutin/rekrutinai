@@ -1,3 +1,4 @@
+
 export enum JobStatus {
   SAVED = 'Saved',
   APPLIED = 'Applied',
@@ -62,9 +63,27 @@ export interface ChatMessage {
   timestamp: string;
 }
 
+export interface JobAlert {
+  id: string;
+  keywords: string;
+  location: string;
+  frequency: 'Instant' | 'Daily' | 'Weekly';
+  createdAt: string;
+}
+
+export interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  timestamp: string;
+  read: boolean;
+  jobId?: string;
+  type: 'alert' | 'system';
+}
+
 export type PlanType = 'Free' | 'Pro' | 'Career+' | 'Elite';
 export type UserRole = 'seeker' | 'employer';
-export type DashboardTab = 'tracker' | 'resumes' | 'profile' | 'agent';
+export type DashboardTab = 'tracker' | 'resumes' | 'profile' | 'agent' | 'alerts' | 'billing';
 
 export interface PricingPlan {
   name: PlanType | string;
