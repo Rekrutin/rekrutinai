@@ -4,7 +4,7 @@ import {
   Menu, X, CheckCircle, BarChart3, Bot, Calendar, ArrowRight, 
   Linkedin, Github, Plus, LayoutDashboard, LogOut, ChevronDown, 
   Briefcase, Users, Search, List as ListIcon, Kanban, FileText, UserCircle, Sparkles, Bell, CreditCard,
-  MapPin, TrendingUp
+  MapPin, TrendingUp, Rocket, Files, Zap, Target, Radar, Building2, ExternalLink, Trash2, BrainCircuit
 } from 'lucide-react';
 import { Job, JobStatus, JobAnalysis, UserRole, EmployerJob, DashboardTab, UserProfile, Resume, JobAlert, Notification, EmployerTab, CandidateApplication, ExternalJobMatch } from './types';
 import { INITIAL_JOBS, FEATURES, PRICING_PLANS, INITIAL_EMPLOYER_JOBS, TRENDING_SEARCHES, INITIAL_APPLICATIONS, INITIAL_EXTERNAL_MATCHES } from './constants';
@@ -20,6 +20,53 @@ import { ResumeSection } from './components/ResumeSection';
 import { AIAgentSection } from './components/AIAgentSection';
 import { JobAlertsSection } from './components/JobAlertsSection';
 import { EmployerCandidatesView } from './components/EmployerCandidatesView';
+
+// Animated Number Counter Component
+const CountUp = ({ end, suffix = '', duration = 2000, decimals = 0 }: { end: number, suffix?: string, duration?: number, decimals?: number }) => {
+  const [count, setCount] = useState(0);
+  const [isVisible, setIsVisible] = useState(false);
+  const ref = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+        }
+      },
+      { threshold: 0.1 }
+    );
+    
+    if (ref.current) {
+      observer.observe(ref.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+  
+  useEffect(() => {
+    if (!isVisible) return;
+
+    let startTimestamp: number | null = null;
+    const step = (timestamp: number) => {
+      if (!startTimestamp) startTimestamp = timestamp;
+      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+      // Ease out expo: 1 - pow(2, -10 * t)
+      const easeProgress = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+      
+      setCount(easeProgress * end);
+      
+      if (progress < 1) {
+        window.requestAnimationFrame(step);
+      }
+    };
+    window.requestAnimationFrame(step);
+  }, [end, duration, isVisible]);
+
+  return (
+    <span ref={ref}>{count.toFixed(decimals)}{suffix}</span>
+  );
+};
 
 // Mock simple HashRouter to avoid dependencies
 const HashRouter = ({ 
@@ -260,6 +307,55 @@ const App: React.FC = () => {
 
   // --- Render Helpers ---
 
+  // Helper function for the landing page scrolling row
+  const renderScrollingJobRow = (job: Job) => {
+    const getStatusColor = (status: JobStatus) => {
+      switch (status) {
+        case JobStatus.SAVED: return 'bg-slate-100 text-slate-700 border-slate-200';
+        case JobStatus.APPLIED: return 'bg-blue-50 text-blue-700 border-blue-200';
+        case JobStatus.INTERVIEW: return 'bg-purple-50 text-purple-700 border-purple-200';
+        case JobStatus.OFFER: return 'bg-green-50 text-green-700 border-green-200';
+        case JobStatus.REJECTED: return 'bg-red-50 text-red-700 border-red-200';
+        default: return 'bg-slate-100 text-slate-700';
+      }
+    };
+    
+    const getScoreBadgeStyle = (score: number) => {
+      if (score >= 80) return 'bg-green-100 text-green-700 border-green-200';
+      if (score >= 50) return 'bg-yellow-50 text-yellow-700 border-yellow-200';
+      return 'bg-red-50 text-red-700 border-red-200';
+    };
+
+    return (
+      <div key={job.id} className="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-xl mb-3 shadow-sm hover:shadow-md transition-shadow">
+         <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+               <h4 className="font-bold text-slate-900 truncate">{job.title}</h4>
+               {job.ai_analysis && (
+                 <span className={`text-[10px] px-1.5 py-0.5 rounded border font-bold flex items-center gap-1 ${getScoreBadgeStyle(job.ai_analysis.fitScore)}`}>
+                   <BrainCircuit size={10} /> {job.ai_analysis.fitScore}%
+                 </span>
+               )}
+            </div>
+            <div className="flex items-center text-xs text-slate-500">
+               <Building2 size={12} className="mr-1" />
+               <span className="truncate mr-3">{job.company}</span>
+               <MapPin size={12} className="mr-1" />
+               <span className="truncate">{job.location || 'Remote'}</span>
+            </div>
+         </div>
+         <div className="flex items-center gap-4 ml-4">
+            <span className={`text-xs px-2 py-1 rounded-full border font-bold ${getStatusColor(job.status)}`}>
+               {job.status}
+            </span>
+            <div className="text-slate-300">
+               <ChevronDown size={16} />
+            </div>
+         </div>
+      </div>
+    );
+  };
+
   const renderLanding = () => (
     <div className="min-h-screen bg-slate-50 font-sans overflow-x-hidden">
       {/* Navbar */}
@@ -382,21 +478,29 @@ const App: React.FC = () => {
 
           {/* Statistics Section (Sexy Numbers) */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center max-w-4xl mx-auto">
-             <div className="p-4 rounded-2xl bg-white/60 border border-indigo-50 backdrop-blur-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
-                <p className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-indigo-600 to-purple-600">250k+</p>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1">Active Jobs</p>
+             <div className="p-4 rounded-2xl bg-white/60 border border-indigo-50 backdrop-blur-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 group cursor-default">
+                <p className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-indigo-600 to-purple-600 group-hover:scale-110 transition-transform duration-300 origin-center inline-block">
+                  <CountUp end={250} suffix="k+" />
+                </p>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1 group-hover:text-indigo-600 transition-colors">Active Jobs</p>
              </div>
-             <div className="p-4 rounded-2xl bg-white/60 border border-indigo-50 backdrop-blur-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
-                <p className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-indigo-600 to-purple-600">10k+</p>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1">Companies</p>
+             <div className="p-4 rounded-2xl bg-white/60 border border-indigo-50 backdrop-blur-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 group cursor-default">
+                <p className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-indigo-600 to-purple-600 group-hover:scale-110 transition-transform duration-300 origin-center inline-block">
+                  <CountUp end={10} suffix="k+" />
+                </p>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1 group-hover:text-indigo-600 transition-colors">Companies</p>
              </div>
-             <div className="p-4 rounded-2xl bg-white/60 border border-indigo-50 backdrop-blur-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
-                <p className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-indigo-600 to-purple-600">85%</p>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1">Hired Faster</p>
+             <div className="p-4 rounded-2xl bg-white/60 border border-indigo-50 backdrop-blur-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 group cursor-default">
+                <p className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-indigo-600 to-purple-600 group-hover:scale-110 transition-transform duration-300 origin-center inline-block">
+                  <CountUp end={85} suffix="%" />
+                </p>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1 group-hover:text-indigo-600 transition-colors">Hired Faster</p>
              </div>
-             <div className="p-4 rounded-2xl bg-white/60 border border-indigo-50 backdrop-blur-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
-                <p className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-indigo-600 to-purple-600">1.2M+</p>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1">Applications</p>
+             <div className="p-4 rounded-2xl bg-white/60 border border-indigo-50 backdrop-blur-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 group cursor-default">
+                <p className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-indigo-600 to-purple-600 group-hover:scale-110 transition-transform duration-300 origin-center inline-block">
+                  <CountUp end={1.2} suffix="M+" decimals={1} />
+                </p>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1 group-hover:text-indigo-600 transition-colors">Applications</p>
              </div>
           </div>
 
@@ -442,28 +546,33 @@ const App: React.FC = () => {
                 <div className="mx-auto bg-slate-100 rounded-md px-3 py-1 text-xs text-slate-400 font-mono">rekrutin.ai/dashboard</div>
               </div>
               <div className="p-4 md:p-8 bg-slate-50/50">
-                 <div className="mb-6">
+                 <div className="mb-6 relative z-10">
                    <h3 className="text-lg font-bold text-slate-800 mb-2">Live Application Tracker</h3>
                    <SeekerAnalytics jobs={INITIAL_JOBS} />
                  </div>
-                 <JobListView 
-                    jobs={INITIAL_JOBS} 
-                    onStatusChange={() => {}} 
-                    onAnalyze={() => {}} 
-                    onDelete={() => {}} 
-                 />
+                 
+                 {/* Infinite Scrolling Marquee Container */}
+                 <div className="relative h-[450px] overflow-hidden -mx-2 px-2">
+                    {/* Gradient Masks */}
+                    <div className="absolute top-0 left-0 w-full h-16 bg-gradient-to-b from-slate-50/50 to-transparent z-10 pointer-events-none"></div>
+                    <div className="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-slate-50/80 to-transparent z-10 pointer-events-none"></div>
+
+                    {/* Scrolling Content */}
+                    <div className="animate-scroll-vertical hover-pause">
+                       {/* Render Jobs Twice for Seamless Loop */}
+                       {INITIAL_JOBS.map(job => renderScrollingJobRow(job))}
+                       {INITIAL_JOBS.map(job => renderScrollingJobRow(job))}
+                    </div>
+                 </div>
               </div>
               
-              {/* Overlay Gradient at bottom to fade content if it looks long */}
-              <div className="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
-              
-              <div className="absolute bottom-8 left-1/2 -translate-x-1/2">
+              <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20">
                 <button 
                   onClick={() => {
                     setUserRole('seeker');
                     setCurrentView('dashboard');
                   }}
-                  className="px-6 py-2 bg-slate-900 text-white rounded-full font-bold shadow-lg hover:scale-105 transition-transform"
+                  className="px-8 py-3 bg-slate-900 text-white rounded-full font-bold shadow-lg hover:scale-105 transition-transform hover:shadow-xl"
                 >
                   Try Demo Dashboard
                 </button>
@@ -555,9 +664,9 @@ const App: React.FC = () => {
   );
 
   const renderDashboard = () => (
-    <div className="min-h-screen bg-slate-100 flex flex-col font-sans">
+    <div className="h-screen bg-slate-100 flex flex-col font-sans overflow-hidden">
       {/* Dashboard Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+      <header className="bg-white border-b border-slate-200 z-30 shadow-sm flex-shrink-0">
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex justify-between items-center">
           <div className="flex items-center cursor-pointer" onClick={() => setCurrentView('landing')}>
             <span className="text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600 mr-8 hidden md:block">
@@ -670,61 +779,95 @@ const App: React.FC = () => {
         
         {/* Job Seeker Sidebar */}
         {userRole === 'seeker' && (
-          <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col pt-6 pb-6">
-             <nav className="space-y-1 px-3">
+          <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col overflow-y-auto">
+             {/* User Profile Widget */}
+             <div className="p-6 border-b border-slate-50">
+               <div className="flex items-center gap-3">
+                 <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold shadow-md">
+                   {profile.name.charAt(0)}
+                 </div>
+                 <div>
+                   <p className="text-sm font-bold text-slate-800 truncate w-32">{profile.name}</p>
+                   <p className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-full inline-block">PRO MEMBER</p>
+                 </div>
+               </div>
+             </div>
+
+             <nav className="space-y-2 px-4 py-6">
+               <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 pl-2">My Workspace</div>
+               
                <button
                  onClick={() => setActiveTab('tracker')}
-                 className={`w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${
-                   activeTab === 'tracker' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'
+                 className={`w-full flex items-center px-3 py-2.5 text-sm font-bold rounded-xl transition-all group ${
+                   activeTab === 'tracker' 
+                   ? 'bg-gradient-to-r from-indigo-50 to-white text-indigo-700 shadow-sm border border-indigo-100' 
+                   : 'text-slate-600 hover:bg-slate-50 hover:pl-4'
                  }`}
                >
-                 <LayoutDashboard size={18} className="mr-3" />
-                 Job Tracker
+                 <Rocket size={18} className={`mr-3 ${activeTab === 'tracker' ? 'text-indigo-600' : 'text-slate-400 group-hover:text-indigo-500'}`} />
+                 🚀 My Pipeline
                </button>
+               
                <button
                  onClick={() => setActiveTab('resumes')}
-                 className={`w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${
-                   activeTab === 'resumes' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'
+                 className={`w-full flex items-center px-3 py-2.5 text-sm font-bold rounded-xl transition-all group ${
+                   activeTab === 'resumes' 
+                   ? 'bg-gradient-to-r from-indigo-50 to-white text-indigo-700 shadow-sm border border-indigo-100' 
+                   : 'text-slate-600 hover:bg-slate-50 hover:pl-4'
                  }`}
                >
-                 <FileText size={18} className="mr-3" />
-                 Resume Manager
+                 <Files size={18} className={`mr-3 ${activeTab === 'resumes' ? 'text-indigo-600' : 'text-slate-400 group-hover:text-indigo-500'}`} />
+                 📄 Resume Vault
                </button>
+               
                <button
                  onClick={() => setActiveTab('alerts')}
-                 className={`w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${
-                   activeTab === 'alerts' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'
+                 className={`w-full flex items-center px-3 py-2.5 text-sm font-bold rounded-xl transition-all group ${
+                   activeTab === 'alerts' 
+                   ? 'bg-gradient-to-r from-indigo-50 to-white text-indigo-700 shadow-sm border border-indigo-100' 
+                   : 'text-slate-600 hover:bg-slate-50 hover:pl-4'
                  }`}
                >
-                 <Bell size={18} className="mr-3" />
-                 Job Alerts
+                 <Radar size={18} className={`mr-3 ${activeTab === 'alerts' ? 'text-indigo-600' : 'text-slate-400 group-hover:text-indigo-500'}`} />
+                 📡 Job Radar
                </button>
+
+               <div className="mt-6 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 pl-2">Career Tools</div>
+
                <button
                  onClick={() => setActiveTab('profile')}
-                 className={`w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${
-                   activeTab === 'profile' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'
+                 className={`w-full flex items-center px-3 py-2.5 text-sm font-bold rounded-xl transition-all group ${
+                   activeTab === 'profile' 
+                   ? 'bg-gradient-to-r from-indigo-50 to-white text-indigo-700 shadow-sm border border-indigo-100' 
+                   : 'text-slate-600 hover:bg-slate-50 hover:pl-4'
                  }`}
                >
-                 <UserCircle size={18} className="mr-3" />
-                 My Profile
+                 <UserCircle size={18} className={`mr-3 ${activeTab === 'profile' ? 'text-indigo-600' : 'text-slate-400 group-hover:text-indigo-500'}`} />
+                 💎 My Brand
                </button>
+               
                <button
                  onClick={() => setActiveTab('agent')}
-                 className={`w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${
-                   activeTab === 'agent' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'
+                 className={`w-full flex items-center px-3 py-2.5 text-sm font-bold rounded-xl transition-all group ${
+                   activeTab === 'agent' 
+                   ? 'bg-gradient-to-r from-indigo-50 to-white text-indigo-700 shadow-sm border border-indigo-100' 
+                   : 'text-slate-600 hover:bg-slate-50 hover:pl-4'
                  }`}
                >
-                 <Sparkles size={18} className="mr-3" />
-                 AI Career Agent
+                 <Bot size={18} className={`mr-3 ${activeTab === 'agent' ? 'text-indigo-600' : 'text-slate-400 group-hover:text-indigo-500'}`} />
+                 🤖 AI Co-Pilot
                </button>
+               
                <button
                  onClick={() => setActiveTab('billing')}
-                 className={`w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${
-                   activeTab === 'billing' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'
+                 className={`w-full flex items-center px-3 py-2.5 text-sm font-bold rounded-xl transition-all group ${
+                   activeTab === 'billing' 
+                   ? 'bg-gradient-to-r from-indigo-50 to-white text-indigo-700 shadow-sm border border-indigo-100' 
+                   : 'text-slate-600 hover:bg-slate-50 hover:pl-4'
                  }`}
                >
-                 <CreditCard size={18} className="mr-3" />
-                 Pricing & Plans
+                 <Zap size={18} className={`mr-3 ${activeTab === 'billing' ? 'text-indigo-600' : 'text-slate-400 group-hover:text-indigo-500'}`} />
+                 💳 Upgrade Plan
                </button>
              </nav>
           </aside>
@@ -732,41 +875,45 @@ const App: React.FC = () => {
 
         {/* Employer Sidebar */}
         {userRole === 'employer' && (
-          <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col pt-6 pb-6">
+          <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col pt-6 pb-6 overflow-y-auto">
              <div className="px-6 mb-6">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Recruiter Panel</p>
+                <p className="text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full w-fit">RECRUITER HUB</p>
              </div>
-             <nav className="space-y-1 px-3">
+             <nav className="space-y-2 px-4">
                <button
                  onClick={() => setEmployerTab('jobs')}
-                 className={`w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${
-                   employerTab === 'jobs' ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50'
+                 className={`w-full flex items-center px-3 py-2.5 text-sm font-bold rounded-xl transition-all group ${
+                   employerTab === 'jobs' 
+                   ? 'bg-gradient-to-r from-slate-100 to-white text-slate-900 shadow-sm border border-slate-200' 
+                   : 'text-slate-600 hover:bg-slate-50 hover:pl-4'
                  }`}
                >
-                 <Briefcase size={18} className="mr-3" />
-                 Job Postings
+                 <Briefcase size={18} className={`mr-3 ${employerTab === 'jobs' ? 'text-slate-800' : 'text-slate-400 group-hover:text-slate-600'}`} />
+                 📢 Active Missions
                </button>
                <button
                  onClick={() => setEmployerTab('candidates')}
-                 className={`w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${
-                   employerTab === 'candidates' ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50'
+                 className={`w-full flex items-center px-3 py-2.5 text-sm font-bold rounded-xl transition-all group ${
+                   employerTab === 'candidates' 
+                   ? 'bg-gradient-to-r from-slate-100 to-white text-slate-900 shadow-sm border border-slate-200' 
+                   : 'text-slate-600 hover:bg-slate-50 hover:pl-4'
                  }`}
                >
-                 <Users size={18} className="mr-3" />
-                 Candidates
+                 <Target size={18} className={`mr-3 ${employerTab === 'candidates' ? 'text-slate-800' : 'text-slate-400 group-hover:text-slate-600'}`} />
+                 🎯 Talent Pool
                </button>
              </nav>
           </aside>
         )}
 
         {/* Content Area */}
-        <main className="flex-1 overflow-x-auto overflow-y-auto bg-slate-50/50 p-6">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50/50 p-6 scrollbar-hide">
           {userRole === 'seeker' ? (
             <>
               {activeTab === 'tracker' && (
                 <div className="max-w-7xl mx-auto">
                    <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
-                     <h2 className="text-xl font-bold text-slate-800">Overview</h2>
+                     <h2 className="text-xl font-bold text-slate-800">Mission Overview</h2>
                      <div className="flex items-center space-x-4 mt-4 md:mt-0">
                         {/* Search Bar */}
                         <div className="relative group w-64">

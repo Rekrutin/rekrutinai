@@ -1,4 +1,5 @@
 
+
 export enum JobStatus {
   SAVED = 'Saved',
   APPLIED = 'Applied',
@@ -30,7 +31,7 @@ export interface EmployerJob {
   id: string;
   title: string;
   location: string;
-  type: 'Full-time' | 'Part-time' | 'Contract' | 'Internship';
+  type: 'Full-time' | 'Part-time' | 'Contract' | 'Internship' | 'Freelance';
   salary_range: string;
   applicants_count: number;
   status: 'Active' | 'Closed' | 'Draft';

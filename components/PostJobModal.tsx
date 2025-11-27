@@ -82,6 +82,7 @@ export const PostJobModal: React.FC<PostJobModalProps> = ({ isOpen, onClose, onP
                  <option value="Part-time">Part-time</option>
                  <option value="Contract">Contract</option>
                  <option value="Internship">Internship</option>
+                 <option value="Freelance">Freelance</option>
                </select>
             </div>
           </div>
