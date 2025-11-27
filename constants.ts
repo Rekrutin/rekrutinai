@@ -1,16 +1,20 @@
 
 import { JobStatus, Job, PricingPlan, EmployerJob, CandidateApplication, ExternalJobMatch } from './types';
 
-export const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-export const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-
 // Helper to safely get environment variables without crashing in browser
 export const getEnv = (key: string) => {
-  if (typeof process !== 'undefined' && process.env) {
-    return process.env[key];
+  try {
+    if (typeof process !== 'undefined' && process.env) {
+      return process.env[key] || '';
+    }
+  } catch (error) {
+    // Ignore error if process is not available
   }
   return '';
 };
+
+export const SUPABASE_URL = getEnv('NEXT_PUBLIC_SUPABASE_URL');
+export const SUPABASE_ANON_KEY = getEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY');
 
 export const INITIAL_JOBS: Job[] = [
   {

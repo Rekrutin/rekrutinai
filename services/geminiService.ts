@@ -1,9 +1,11 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { JobAnalysis, Job, UserProfile } from "../types";
+import { getEnv } from "../constants";
 
 // Initialize the API client strictly according to guidelines.
 // If process.env.API_KEY is missing in a dev env, we handle the null client gracefully in the function.
-const apiKey = process.env.API_KEY;
+const apiKey = getEnv('API_KEY');
 const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
 export const analyzeJobFit = async (resumeText: string, jobDescription: string): Promise<JobAnalysis> => {
