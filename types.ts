@@ -38,6 +38,19 @@ export interface EmployerJob {
   description: string;
 }
 
+export interface CandidateApplication {
+  id: string;
+  jobId: string;
+  candidateName: string;
+  candidateEmail: string;
+  candidateTitle: string;
+  appliedDate: string;
+  status: 'New' | 'Reviewed' | 'Interview' | 'Rejected';
+  aiFitScore: number;
+  aiSummary: string;
+  skills: string[];
+}
+
 export interface UserProfile {
   name: string;
   title: string;
@@ -84,6 +97,7 @@ export interface Notification {
 export type PlanType = 'Free' | 'Pro' | 'Career+' | 'Elite';
 export type UserRole = 'seeker' | 'employer';
 export type DashboardTab = 'tracker' | 'resumes' | 'profile' | 'agent' | 'alerts' | 'billing';
+export type EmployerTab = 'jobs' | 'candidates';
 
 export interface PricingPlan {
   name: PlanType | string;
@@ -92,4 +106,20 @@ export interface PricingPlan {
   cta: string;
   highlight?: boolean;
   description?: string;
+}
+
+export type JobPlatform = 'RekrutIn' | 'LinkedIn' | 'Glints' | 'JobStreet';
+
+export interface ExternalJobMatch {
+  id: string;
+  title: string;
+  company: string;
+  location: string;
+  type: string;
+  salary_range?: string;
+  source: JobPlatform;
+  externalUrl?: string;
+  postedAt: string;
+  description: string;
+  aiFitScore: number;
 }

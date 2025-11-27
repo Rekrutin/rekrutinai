@@ -22,12 +22,22 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onMove, onAnalyze, onDele
   const isFirst = statusIndex === 0;
   const isLast = statusIndex === statusOrder.length - 1;
 
-  // Determine border color based on fit score
+  // Determine border color and badge style based on fit score
   let scoreColor = 'border-slate-200';
+  let badgeStyle = 'bg-slate-100 text-slate-600 hover:bg-slate-200';
+  
   if (job.ai_analysis) {
-    if (job.ai_analysis.fitScore >= 80) scoreColor = 'border-green-400';
-    else if (job.ai_analysis.fitScore >= 50) scoreColor = 'border-yellow-400';
-    else scoreColor = 'border-red-400';
+    const score = job.ai_analysis.fitScore;
+    if (score >= 80) {
+      scoreColor = 'border-green-400';
+      badgeStyle = 'bg-green-100 text-green-700 hover:bg-green-200 border border-green-200';
+    } else if (score >= 50) {
+      scoreColor = 'border-yellow-400';
+      badgeStyle = 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100 border border-yellow-200';
+    } else {
+      scoreColor = 'border-red-400';
+      badgeStyle = 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200';
+    }
   }
 
   return (
@@ -60,7 +70,7 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onMove, onAnalyze, onDele
           onClick={() => onAnalyze(job)}
           className={`flex items-center text-xs font-medium px-2 py-1 rounded-md transition-colors ${
             job.ai_analysis 
-              ? 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100' 
+              ? badgeStyle
               : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
           }`}
         >

@@ -6,8 +6,8 @@ import {
   Briefcase, Users, Search, List as ListIcon, Kanban, FileText, UserCircle, Sparkles, Bell, CreditCard,
   MapPin, TrendingUp
 } from 'lucide-react';
-import { Job, JobStatus, JobAnalysis, UserRole, EmployerJob, DashboardTab, UserProfile, Resume, JobAlert, Notification } from './types';
-import { INITIAL_JOBS, FEATURES, PRICING_PLANS, INITIAL_EMPLOYER_JOBS, TRENDING_SEARCHES } from './constants';
+import { Job, JobStatus, JobAnalysis, UserRole, EmployerJob, DashboardTab, UserProfile, Resume, JobAlert, Notification, EmployerTab, CandidateApplication, ExternalJobMatch } from './types';
+import { INITIAL_JOBS, FEATURES, PRICING_PLANS, INITIAL_EMPLOYER_JOBS, TRENDING_SEARCHES, INITIAL_APPLICATIONS, INITIAL_EXTERNAL_MATCHES } from './constants';
 import { supabase } from './services/supabaseClient';
 import { JobCard } from './components/JobCard';
 import { JobListView } from './components/JobListView';
@@ -19,6 +19,7 @@ import { ProfileSection } from './components/ProfileSection';
 import { ResumeSection } from './components/ResumeSection';
 import { AIAgentSection } from './components/AIAgentSection';
 import { JobAlertsSection } from './components/JobAlertsSection';
+import { EmployerCandidatesView } from './components/EmployerCandidatesView';
 
 // Mock simple HashRouter to avoid dependencies
 const HashRouter = ({ 
@@ -72,7 +73,10 @@ const App: React.FC = () => {
 
   // Employer State
   const [employerJobs, setEmployerJobs] = useState<EmployerJob[]>(INITIAL_EMPLOYER_JOBS);
+  const [applications, setApplications] = useState<CandidateApplication[]>(INITIAL_APPLICATIONS);
   const [isPostJobModalOpen, setIsPostJobModalOpen] = useState(false);
+  const [employerTab, setEmployerTab] = useState<EmployerTab>('jobs');
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -104,7 +108,24 @@ const App: React.FC = () => {
   }, [userRole]);
 
   // Derived State: Matched jobs based on alerts
-  const matchedEmployerJobs = employerJobs.filter(job => 
+  // COMBINE INTERNAL EMPLOYER JOBS AND EXTERNAL MOCK JOBS for the Alert View
+  const allPotentialJobs: ExternalJobMatch[] = [
+    ...employerJobs.map(ej => ({
+      id: ej.id,
+      title: ej.title,
+      company: 'Verified Partner', // Clearer name for internal jobs
+      location: ej.location,
+      type: ej.type,
+      salary_range: ej.salary_range,
+      source: 'RekrutIn' as const,
+      postedAt: ej.created_at,
+      description: ej.description,
+      aiFitScore: Math.floor(Math.random() * (99 - 80 + 1)) + 80 // Randomize score 80-99 for dynamic look
+    })),
+    ...INITIAL_EXTERNAL_MATCHES
+  ];
+
+  const matchedJobs = allPotentialJobs.filter(job => 
     jobAlerts.some(alert => 
       job.title.toLowerCase().includes(alert.keywords.toLowerCase()) &&
       (!alert.location || job.location.toLowerCase().includes(alert.location.toLowerCase()))
@@ -207,7 +228,6 @@ const App: React.FC = () => {
     if (supabase) await supabase.from('employer_jobs').insert([newJob]);
 
     // CHECK FOR MATCHES (Simulate Notification System)
-    // In a real app, this happens on the backend
     const matchedAlerts = jobAlerts.filter(alert => 
       newJob.title.toLowerCase().includes(alert.keywords.toLowerCase()) && 
       (!alert.location || newJob.location.toLowerCase().includes(alert.location.toLowerCase()))
@@ -226,6 +246,17 @@ const App: React.FC = () => {
       setNotifications(prev => [newNotification, ...prev]);
     }
   }
+
+  const handleViewApplicants = (jobId: string) => {
+    setSelectedJobId(jobId);
+    setEmployerTab('candidates');
+  };
+
+  const handleUpdateCandidateStatus = (id: string, status: CandidateApplication['status']) => {
+    setApplications(prev => prev.map(app => 
+      app.id === id ? { ...app, status } : app
+    ));
+  };
 
   // --- Render Helpers ---
 
@@ -699,6 +730,35 @@ const App: React.FC = () => {
           </aside>
         )}
 
+        {/* Employer Sidebar */}
+        {userRole === 'employer' && (
+          <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col pt-6 pb-6">
+             <div className="px-6 mb-6">
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Recruiter Panel</p>
+             </div>
+             <nav className="space-y-1 px-3">
+               <button
+                 onClick={() => setEmployerTab('jobs')}
+                 className={`w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${
+                   employerTab === 'jobs' ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50'
+                 }`}
+               >
+                 <Briefcase size={18} className="mr-3" />
+                 Job Postings
+               </button>
+               <button
+                 onClick={() => setEmployerTab('candidates')}
+                 className={`w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${
+                   employerTab === 'candidates' ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50'
+                 }`}
+               >
+                 <Users size={18} className="mr-3" />
+                 Candidates
+               </button>
+             </nav>
+          </aside>
+        )}
+
         {/* Content Area */}
         <main className="flex-1 overflow-x-auto overflow-y-auto bg-slate-50/50 p-6">
           {userRole === 'seeker' ? (
@@ -789,7 +849,7 @@ const App: React.FC = () => {
               {activeTab === 'alerts' && (
                 <JobAlertsSection 
                   alerts={jobAlerts}
-                  matchedJobs={matchedEmployerJobs}
+                  matchedJobs={matchedJobs}
                   onAddAlert={handleAddAlert}
                   onDeleteAlert={handleDeleteAlert}
                 />
@@ -847,51 +907,74 @@ const App: React.FC = () => {
             </>
           ) : (
             // --- EMPLOYER VIEW ---
-            <div className="max-w-7xl mx-auto w-full">
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                 <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-                   <div>
-                      <h2 className="text-xl font-bold text-slate-900">Your Job Postings</h2>
+            <div className="max-w-7xl mx-auto w-full h-full">
+              {employerTab === 'jobs' && (
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden animate-fade-in">
+                   <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+                     <div>
+                        <h2 className="text-xl font-bold text-slate-900">Your Job Postings</h2>
+                     </div>
+                     <div className="flex items-center gap-3">
+                        <div className="px-4 py-2 bg-slate-50 rounded-lg text-center">
+                            <span className="block text-xl font-bold text-slate-900">{employerJobs.length}</span>
+                            <span className="text-xs text-slate-500 font-medium">Active</span>
+                        </div>
+                     </div>
                    </div>
-                   <div className="px-4 py-2 bg-slate-50 rounded-lg text-center">
-                      <span className="block text-xl font-bold text-slate-900">{employerJobs.length}</span>
-                      <span className="text-xs text-slate-500 font-medium">Active</span>
-                   </div>
-                 </div>
-                 
-                 {employerJobs.length === 0 ? (
-                   <div className="p-20 text-center">
-                     <h3 className="text-lg font-medium text-slate-900">No jobs posted yet</h3>
-                     <button 
-                      onClick={() => setIsPostJobModalOpen(true)}
-                      className="mt-4 px-4 py-2 bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-800"
-                    >
-                      Create Job Posting
-                    </button>
-                   </div>
-                 ) : (
-                   <div className="divide-y divide-slate-100">
-                     {employerJobs.map((job) => (
-                       <div key={job.id} className="p-6 hover:bg-slate-50 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-1">
-                              <h3 className="text-lg font-bold text-slate-900">{job.title}</h3>
-                              <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${
-                                job.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-600'
-                              }`}>
-                                {job.status}
-                              </span>
+                   
+                   {employerJobs.length === 0 ? (
+                     <div className="p-20 text-center">
+                       <h3 className="text-lg font-medium text-slate-900">No jobs posted yet</h3>
+                       <button 
+                        onClick={() => setIsPostJobModalOpen(true)}
+                        className="mt-4 px-4 py-2 bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-800"
+                      >
+                        Create Job Posting
+                      </button>
+                     </div>
+                   ) : (
+                     <div className="divide-y divide-slate-100">
+                       {employerJobs.map((job) => (
+                         <div key={job.id} className="p-6 hover:bg-slate-50 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-1">
+                                <h3 className="text-lg font-bold text-slate-900">{job.title}</h3>
+                                <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${
+                                  job.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-600'
+                                }`}>
+                                  {job.status}
+                                </span>
+                              </div>
+                              <div className="flex flex-wrap gap-4 text-sm text-slate-500 mt-2">
+                                 <span className="flex items-center gap-1"><Briefcase size={14} /> {job.type}</span>
+                                 <span className="flex items-center gap-1"><MapPin size={14} /> {job.location}</span>
+                                 <span className="flex items-center gap-1"><Users size={14} /> {applications.filter(a => a.jobId === job.id).length} Applicants</span>
+                              </div>
                             </div>
-                            <div className="flex flex-wrap gap-4 text-sm text-slate-500 mt-2">
-                               <span className="flex items-center gap-1"><Briefcase size={14} /> {job.type}</span>
-                               <span className="flex items-center gap-1"><Users size={14} /> {job.applicants_count} Applicants</span>
+                            <div className="flex items-center gap-2">
+                               <button 
+                                 onClick={() => handleViewApplicants(job.id)}
+                                 className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors shadow-sm"
+                               >
+                                 View Applicants
+                               </button>
                             </div>
-                          </div>
-                       </div>
-                     ))}
-                   </div>
-                 )}
-              </div>
+                         </div>
+                       ))}
+                     </div>
+                   )}
+                </div>
+              )}
+
+              {employerTab === 'candidates' && (
+                <EmployerCandidatesView 
+                  jobs={employerJobs}
+                  candidates={applications}
+                  selectedJobId={selectedJobId}
+                  onSelectJob={setSelectedJobId}
+                  onUpdateStatus={handleUpdateCandidateStatus}
+                />
+              )}
             </div>
           )}
         </main>

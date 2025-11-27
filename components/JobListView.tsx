@@ -29,6 +29,12 @@ export const JobListView: React.FC<JobListViewProps> = ({ jobs, onStatusChange, 
     }
   };
 
+  const getScoreBadgeStyle = (score: number) => {
+    if (score >= 80) return 'bg-green-100 text-green-700 border-green-200 hover:bg-green-200';
+    if (score >= 50) return 'bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100';
+    return 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100';
+  };
+
   return (
     <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden animate-fade-in">
       <div className="overflow-x-auto">
@@ -82,7 +88,7 @@ export const JobListView: React.FC<JobListViewProps> = ({ jobs, onStatusChange, 
                     onClick={() => onAnalyze(job)}
                     className={`flex items-center text-xs font-medium px-2 py-1 rounded-md transition-colors border ${
                       job.ai_analysis 
-                        ? 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100' 
+                        ? getScoreBadgeStyle(job.ai_analysis.fitScore)
                         : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
                     }`}
                   >
