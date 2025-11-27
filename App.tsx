@@ -20,6 +20,9 @@ import { ResumeSection } from './components/ResumeSection';
 import { AIAgentSection } from './components/AIAgentSection';
 import { JobAlertsSection } from './components/JobAlertsSection';
 import { EmployerCandidatesView } from './components/EmployerCandidatesView';
+import { EmployerDashboardSummary } from './components/EmployerDashboardSummary';
+import { SignupModal } from './components/SignupModal';
+import { LoginModal } from './components/LoginModal';
 
 // Animated Number Counter Component
 const CountUp = ({ end, suffix = '', duration = 2000, decimals = 0 }: { end: number, suffix?: string, duration?: number, decimals?: number }) => {
@@ -90,6 +93,10 @@ const App: React.FC = () => {
   const [viewMode, setViewMode] = useState<'board' | 'list'>('list');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [analyzingJob, setAnalyzingJob] = useState<Job | null>(null);
+  
+  // Auth & Onboarding State
+  const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
   // New Features State
   const [profile, setProfile] = useState<UserProfile>({
@@ -122,7 +129,7 @@ const App: React.FC = () => {
   const [employerJobs, setEmployerJobs] = useState<EmployerJob[]>(INITIAL_EMPLOYER_JOBS);
   const [applications, setApplications] = useState<CandidateApplication[]>(INITIAL_APPLICATIONS);
   const [isPostJobModalOpen, setIsPostJobModalOpen] = useState(false);
-  const [employerTab, setEmployerTab] = useState<EmployerTab>('jobs');
+  const [employerTab, setEmployerTab] = useState<EmployerTab>('overview'); // Default to overview
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -304,6 +311,41 @@ const App: React.FC = () => {
       app.id === id ? { ...app, status } : app
     ));
   };
+  
+  // --- Auth & Signup Flow ---
+  const handleSignupComplete = (newProfile: UserProfile, initialResume: Resume) => {
+    setProfile(newProfile);
+    setResumes([initialResume, ...resumes]); // Add the uploaded resume
+    setIsSignupModalOpen(false);
+    setUserRole('seeker');
+    setCurrentView('dashboard');
+    setActiveTab('profile'); // Land on profile to see the magic
+    
+    // Welcome Notification
+    setNotifications(prev => [{
+      id: 'welcome',
+      title: 'Welcome to RekrutIn.ai! 🚀',
+      message: 'Your profile has been auto-created from your resume. Check out your AI Co-Pilot!',
+      timestamp: new Date().toISOString(),
+      read: false,
+      type: 'system'
+    }, ...prev]);
+  };
+
+  const handleLogin = (email: string) => {
+    // In a real app, verify credentials.
+    // For mock, we just update the profile email and log in.
+    setProfile(prev => ({ ...prev, email }));
+    setIsLoginModalOpen(false);
+    setUserRole('seeker');
+    setCurrentView('dashboard');
+    setActiveTab('tracker');
+  };
+
+  const handleLogout = () => {
+    setCurrentView('landing');
+    setIsNotificationOpen(false);
+  };
 
   // --- Render Helpers ---
 
@@ -383,14 +425,19 @@ const App: React.FC = () => {
                 >
                   For Employers
                 </button>
+                 
                  <button 
-                  onClick={() => {
-                    setUserRole('seeker');
-                    setCurrentView('dashboard');
-                  }}
+                  onClick={() => setIsLoginModalOpen(true)}
+                  className="text-slate-600 hover:text-indigo-600 font-bold px-4 py-2 text-sm transition-colors"
+                >
+                  Login
+                </button>
+
+                 <button 
+                  onClick={() => setIsSignupModalOpen(true)}
                   className="bg-indigo-600 text-white px-5 py-2.5 rounded-full font-bold hover:bg-indigo-700 transition-all shadow-lg hover:shadow-indigo-500/20 text-sm"
                 >
-                  Login / Sign Up
+                  Sign Up
                 </button>
               </div>
             </div>
@@ -568,13 +615,11 @@ const App: React.FC = () => {
               
               <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20">
                 <button 
-                  onClick={() => {
-                    setUserRole('seeker');
-                    setCurrentView('dashboard');
-                  }}
-                  className="px-8 py-3 bg-slate-900 text-white rounded-full font-bold shadow-lg hover:scale-105 transition-transform hover:shadow-xl"
+                  onClick={() => setIsSignupModalOpen(true)}
+                  className="px-8 py-3 bg-slate-900 text-white rounded-full font-bold shadow-lg hover:scale-105 transition-transform hover:shadow-xl flex items-center gap-2"
                 >
-                  Try Demo Dashboard
+                  <Sparkles size={18} className="text-yellow-300" />
+                  Try AI Dashboard Free
                 </button>
               </div>
             </div>
@@ -633,10 +678,7 @@ const App: React.FC = () => {
                   ))}
                 </ul>
                 <button 
-                  onClick={() => {
-                    setUserRole('seeker');
-                    setCurrentView('dashboard');
-                  }}
+                  onClick={() => setIsSignupModalOpen(true)}
                   className={`w-full py-3 rounded-xl font-bold text-sm shadow-sm transition-all ${plan.highlight ? 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-indigo-500/25' : 'bg-white text-slate-900 border border-slate-200 hover:bg-slate-50'}`}
                 >
                   {plan.cta}
@@ -660,6 +702,22 @@ const App: React.FC = () => {
            </div>
         </div>
       </footer>
+      
+      <SignupModal
+        isOpen={isSignupModalOpen}
+        onClose={() => setIsSignupModalOpen(false)}
+        onComplete={handleSignupComplete}
+      />
+      
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        onLogin={handleLogin}
+        onSwitchToSignup={() => {
+          setIsLoginModalOpen(false);
+          setIsSignupModalOpen(true);
+        }}
+      />
     </div>
   );
 
@@ -767,7 +825,7 @@ const App: React.FC = () => {
               </button>
             )}
             
-            <button onClick={() => setCurrentView('landing')} className="text-slate-400 hover:text-slate-600 ml-4">
+            <button onClick={handleLogout} className="text-slate-400 hover:text-slate-600 ml-4">
               <LogOut size={18} />
             </button>
           </div>
@@ -779,9 +837,9 @@ const App: React.FC = () => {
         
         {/* Job Seeker Sidebar */}
         {userRole === 'seeker' && (
-          <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col overflow-y-auto">
+          <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col h-full">
              {/* User Profile Widget */}
-             <div className="p-6 border-b border-slate-50">
+             <div className="p-6 border-b border-slate-50 flex-shrink-0">
                <div className="flex items-center gap-3">
                  <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold shadow-md">
                    {profile.name.charAt(0)}
@@ -793,7 +851,7 @@ const App: React.FC = () => {
                </div>
              </div>
 
-             <nav className="space-y-2 px-4 py-6">
+             <nav className="space-y-2 px-4 py-6 flex-1 overflow-y-auto scrollbar-hide">
                <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 pl-2">My Workspace</div>
                
                <button
@@ -870,6 +928,17 @@ const App: React.FC = () => {
                  💳 Upgrade Plan
                </button>
              </nav>
+
+             {/* Logout Section Pinned to Bottom */}
+             <div className="p-4 border-t border-slate-50 flex-shrink-0">
+               <button
+                 onClick={handleLogout}
+                 className="w-full flex items-center px-3 py-2.5 text-sm font-bold rounded-xl transition-all text-slate-500 hover:bg-red-50 hover:text-red-600 group"
+               >
+                 <LogOut size={18} className="mr-3 group-hover:text-red-500" />
+                 Logout
+               </button>
+             </div>
           </aside>
         )}
 
@@ -880,6 +949,17 @@ const App: React.FC = () => {
                 <p className="text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full w-fit">RECRUITER HUB</p>
              </div>
              <nav className="space-y-2 px-4">
+               <button
+                 onClick={() => setEmployerTab('overview')}
+                 className={`w-full flex items-center px-3 py-2.5 text-sm font-bold rounded-xl transition-all group ${
+                   employerTab === 'overview' 
+                   ? 'bg-gradient-to-r from-slate-100 to-white text-slate-900 shadow-sm border border-slate-200' 
+                   : 'text-slate-600 hover:bg-slate-50 hover:pl-4'
+                 }`}
+               >
+                 <LayoutDashboard size={18} className={`mr-3 ${employerTab === 'overview' ? 'text-slate-800' : 'text-slate-400 group-hover:text-slate-600'}`} />
+                 📊 Dashboard
+               </button>
                <button
                  onClick={() => setEmployerTab('jobs')}
                  className={`w-full flex items-center px-3 py-2.5 text-sm font-bold rounded-xl transition-all group ${
@@ -1055,6 +1135,14 @@ const App: React.FC = () => {
           ) : (
             // --- EMPLOYER VIEW ---
             <div className="max-w-7xl mx-auto w-full h-full">
+              {employerTab === 'overview' && (
+                <EmployerDashboardSummary 
+                  jobs={employerJobs}
+                  applications={applications}
+                  onNavigate={setEmployerTab}
+                />
+              )}
+
               {employerTab === 'jobs' && (
                 <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden animate-fade-in">
                    <div className="p-6 border-b border-slate-100 flex justify-between items-center">
@@ -1148,6 +1236,24 @@ const App: React.FC = () => {
           onAnalysisComplete={handleAnalysisComplete}
         />
       )}
+
+      {/* New Signup Modal */}
+      <SignupModal
+        isOpen={isSignupModalOpen}
+        onClose={() => setIsSignupModalOpen(false)}
+        onComplete={handleSignupComplete}
+      />
+      
+      {/* Login Modal */}
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        onLogin={handleLogin}
+        onSwitchToSignup={() => {
+          setIsLoginModalOpen(false);
+          setIsSignupModalOpen(true);
+        }}
+      />
     </div>
   );
 
