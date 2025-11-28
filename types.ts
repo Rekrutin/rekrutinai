@@ -60,6 +60,7 @@ export interface UserProfile {
   resumeText?: string;
   plan: PlanType;
   atsScansUsed: number;
+  companyName?: string; // Added for Employer
 }
 
 export interface Resume {

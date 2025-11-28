@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { EmployerJob } from '../types';
 import { X } from 'lucide-react';
@@ -6,9 +7,10 @@ interface PostJobModalProps {
   isOpen: boolean;
   onClose: () => void;
   onPost: (job: Omit<EmployerJob, 'id' | 'created_at' | 'applicants_count' | 'status'>) => void;
+  isMandatory?: boolean; // New prop to enforce posting
 }
 
-export const PostJobModal: React.FC<PostJobModalProps> = ({ isOpen, onClose, onPost }) => {
+export const PostJobModal: React.FC<PostJobModalProps> = ({ isOpen, onClose, onPost, isMandatory = false }) => {
   const [title, setTitle] = useState('');
   const [location, setLocation] = useState('');
   const [type, setType] = useState<EmployerJob['type']>('Full-time');
@@ -33,18 +35,41 @@ export const PostJobModal: React.FC<PostJobModalProps> = ({ isOpen, onClose, onP
       setType('Full-time');
       setSalary('');
       setDescription('');
+      
+      // Only close if not mandatory (handled by parent if mandatory)
+      if (!isMandatory) {
+        onClose();
+      }
+    }
+  };
+
+  // If mandatory, user cannot close via X or backdrop
+  const handleClose = () => {
+    if (!isMandatory) {
       onClose();
     }
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg">
+      {/* If mandatory, prevent clicking outside */}
+      {isMandatory && <div className="absolute inset-0 z-0 bg-black/20" />}
+      
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg relative z-10 animate-fade-in">
         <div className="flex justify-between items-center p-6 border-b border-slate-100">
-          <h2 className="text-lg font-bold text-slate-800">Post a Job</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
-            <X size={20} />
-          </button>
+          <div>
+            <h2 className="text-lg font-bold text-slate-800">
+              {isMandatory ? 'Create Your First Job Posting' : 'Post a Job'}
+            </h2>
+            {isMandatory && (
+              <p className="text-xs text-indigo-600 font-medium mt-1">Required to access dashboard</p>
+            )}
+          </div>
+          {!isMandatory && (
+            <button onClick={handleClose} className="text-slate-400 hover:text-slate-600">
+              <X size={20} />
+            </button>
+          )}
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
@@ -114,7 +139,7 @@ export const PostJobModal: React.FC<PostJobModalProps> = ({ isOpen, onClose, onP
               type="submit"
               className="w-full bg-slate-900 text-white py-2.5 rounded-lg font-semibold hover:bg-slate-800 transition-colors"
             >
-              Post Job Now
+              {isMandatory ? 'Post Job & Go to Dashboard' : 'Post Job Now'}
             </button>
           </div>
         </form>
