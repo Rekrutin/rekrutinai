@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Job, JobStatus } from '../types';
-import { BrainCircuit, ExternalLink, Trash2, Calendar, MapPin, Building2, Plus } from 'lucide-react';
+import { BrainCircuit, ExternalLink, Trash2, Calendar, MapPin, Building2, Plus, Bell } from 'lucide-react';
 
 interface JobListViewProps {
   jobs: Job[];
@@ -79,8 +79,14 @@ export const JobListView: React.FC<JobListViewProps> = ({ jobs, onStatusChange, 
                       {job.location && (
                         <>
                           <MapPin size={12} className="mr-1" />
-                          <span>{job.location}</span>
+                          <span className="mr-3">{job.location}</span>
                         </>
+                      )}
+                      {job.followUpDate && (
+                        <span className="flex items-center text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100" title={`Reminder: ${new Date(job.followUpDate).toLocaleDateString()}`}>
+                          <Bell size={10} className="mr-1" />
+                          {new Date(job.followUpDate).toLocaleDateString()}
+                        </span>
                       )}
                     </div>
                   </div>

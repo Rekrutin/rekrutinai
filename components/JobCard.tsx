@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Job, JobStatus } from '../types';
-import { Briefcase, MapPin, BrainCircuit, GripVertical, ChevronRight, ChevronLeft, Trash2 } from 'lucide-react';
+import { Briefcase, MapPin, BrainCircuit, GripVertical, ChevronRight, ChevronLeft, Trash2, Bell } from 'lucide-react';
 
 interface JobCardProps {
   job: Job;
@@ -56,6 +56,12 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onMove, onAnalyze, onDele
               <div className="flex items-center text-xs text-slate-400 mt-1">
                 <MapPin size={12} className="mr-1" />
                 <span>{job.location}</span>
+              </div>
+            )}
+            {job.followUpDate && (
+              <div className="flex items-center text-xs text-amber-600 mt-2 bg-amber-50 px-2 py-1 rounded w-fit border border-amber-100">
+                <Bell size={10} className="mr-1" />
+                {new Date(job.followUpDate).toLocaleDateString()}
               </div>
             )}
           </div>

@@ -43,6 +43,7 @@ export interface Job {
   status: JobStatus;
   created_at: string;
   ai_analysis?: JobAnalysis | null;
+  followUpDate?: string; // New field for reminder
   // CRM Features (Huntr Style)
   contacts?: JobContact[];
   notes?: string; // Simplified for demo

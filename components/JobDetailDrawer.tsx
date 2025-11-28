@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Job, JobContact, JobStatus } from '../types';
-import { X, Calendar, MapPin, Building2, ExternalLink, Mail, Linkedin, Plus, MessageSquare, Clock, CheckCircle, BrainCircuit, User } from 'lucide-react';
+import { X, Calendar, MapPin, Building2, ExternalLink, Mail, Linkedin, Plus, MessageSquare, Clock, CheckCircle, BrainCircuit, User, Bell } from 'lucide-react';
 
 interface JobDetailDrawerProps {
   job: Job | null;
@@ -45,6 +45,8 @@ export const JobDetailDrawer: React.FC<JobDetailDrawerProps> = ({ job, isOpen, o
     }
   };
 
+  const isFollowUpEligible = job.status === JobStatus.APPLIED || job.status === JobStatus.INTERVIEW;
+
   return (
     <>
       <div 
@@ -57,7 +59,7 @@ export const JobDetailDrawer: React.FC<JobDetailDrawerProps> = ({ job, isOpen, o
         {/* Header */}
         <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-start bg-slate-50/50">
           <div className="flex-1">
-             <div className="flex items-center gap-2 mb-2">
+             <div className="flex flex-wrap items-center gap-2 mb-2">
                 <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${getStatusColor(job.status)} uppercase tracking-wide`}>
                   {job.status}
                 </span>
@@ -65,6 +67,22 @@ export const JobDetailDrawer: React.FC<JobDetailDrawerProps> = ({ job, isOpen, o
                   <span className="text-xs text-slate-400 flex items-center gap-1">
                     <Clock size={12} /> Added {new Date(job.created_at).toLocaleDateString()}
                   </span>
+                )}
+                
+                {/* Follow-Up Reminder Setting */}
+                {isFollowUpEligible && (
+                  <div className={`flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border transition-colors cursor-pointer relative group ${
+                    job.followUpDate ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
+                  }`}>
+                     <Bell size={12} className="mr-1.5" />
+                     <span>{job.followUpDate ? `Reminder: ${new Date(job.followUpDate).toLocaleDateString()}` : 'Set Follow-up'}</span>
+                     <input
+                        type="date"
+                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                        onChange={(e) => onUpdateJob(job.id, { followUpDate: e.target.value })}
+                        value={job.followUpDate || ''}
+                     />
+                  </div>
                 )}
              </div>
              <h2 className="text-2xl font-bold text-slate-900 leading-tight mb-1">{job.title}</h2>
