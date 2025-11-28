@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { Mail, Lock, X, Eye, EyeOff, LogIn } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Mail, Lock, X, Eye, EyeOff, LogIn, CheckSquare, Square } from 'lucide-react';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -14,6 +14,18 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+
+  // Load remembered email on mount
+  useEffect(() => {
+    if (isOpen) {
+      const savedEmail = localStorage.getItem('rekrutin_remember_email');
+      if (savedEmail) {
+        setEmail(savedEmail);
+        setRememberMe(true);
+      }
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -21,12 +33,19 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
     e.preventDefault();
     if (email && password) {
       setIsLoading(true);
+      
+      // Handle "Remember Me" logic
+      if (rememberMe) {
+        localStorage.setItem('rekrutin_remember_email', email);
+      } else {
+        localStorage.removeItem('rekrutin_remember_email');
+      }
+
       // Simulate API call
       setTimeout(() => {
         onLogin(email);
         setIsLoading(false);
-        // Reset form
-        setEmail('');
+        // Reset sensitive fields
         setPassword('');
       }, 1000);
     }
@@ -60,6 +79,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
                 </div>
                 <input 
                   type="email" 
+                  name="email"
+                  autoComplete="username"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -80,6 +101,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
                 </div>
                 <input 
                   type={showPassword ? "text" : "password"}
+                  name="password"
+                  autoComplete="current-password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -96,7 +119,22 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
               </div>
             </div>
 
-            <div className="pt-4">
+            <div className="flex items-center">
+              <button
+                type="button"
+                onClick={() => setRememberMe(!rememberMe)}
+                className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900"
+              >
+                {rememberMe ? (
+                  <CheckSquare size={18} className="text-indigo-600" />
+                ) : (
+                  <Square size={18} className="text-slate-400" />
+                )}
+                Remember me
+              </button>
+            </div>
+
+            <div className="pt-2">
               <button 
                 type="submit"
                 disabled={isLoading}

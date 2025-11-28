@@ -58,7 +58,15 @@ const App: React.FC = () => {
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
   const [isEmployerSignupModalOpen, setIsEmployerSignupModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [registeredUsers, setRegisteredUsers] = useState<string[]>([]);
+  
+  // Initialize registered users from localStorage to persist accounts across refreshes
+  const [registeredUsers, setRegisteredUsers] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('rekrutin_users');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) { return []; }
+  });
+
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
 
   // New Features State
@@ -98,6 +106,32 @@ const App: React.FC = () => {
   const t = TRANSLATIONS[language];
   const pricingPlans = getPricingPlans(language);
   const features = getFeatures(language);
+
+  // Persistence Effects
+  useEffect(() => {
+    localStorage.setItem('rekrutin_users', JSON.stringify(registeredUsers));
+  }, [registeredUsers]);
+
+  // Check for active session on mount
+  useEffect(() => {
+    const savedSession = localStorage.getItem('rekrutin_session');
+    if (savedSession) {
+      try {
+        const sessionData = JSON.parse(savedSession);
+        setProfile(sessionData.profile);
+        setUserRole(sessionData.role || 'seeker');
+        setCurrentView('dashboard');
+        // Restore some basic state if available
+        if (sessionData.role === 'employer') {
+           // For employer demo, we might want to restore data, but keep it empty for "fresh" logic
+        } else {
+           // For seeker
+        }
+      } catch (e) {
+        console.error("Failed to restore session", e);
+      }
+    }
+  }, []);
 
   // Click outside to close notification dropdown
   useEffect(() => {
@@ -365,8 +399,12 @@ const App: React.FC = () => {
     setEmployerJobs([]);
     setApplications([]);
     
-    // 3. Register in mock DB
-    setRegisteredUsers(prev => [...prev, newProfile.email]);
+    // 3. Register in persistent DB
+    setRegisteredUsers(prev => {
+      const updated = [...prev, newProfile.email];
+      localStorage.setItem('rekrutin_users', JSON.stringify(updated));
+      return updated;
+    });
 
     // 4. Close Signup and FORCE OPEN POST JOB MODAL (Rule 1)
     setIsEmployerSignupModalOpen(false);
@@ -396,7 +434,16 @@ const App: React.FC = () => {
     setProfile(completeProfile);
     setJobs([]); 
     setResumes([analyzedResume]);
-    setRegisteredUsers(prev => [...prev, newProfile.email]);
+    
+    // Update Persistent Users
+    setRegisteredUsers(prev => {
+      const updated = [...prev, newProfile.email];
+      localStorage.setItem('rekrutin_users', JSON.stringify(updated));
+      return updated;
+    });
+
+    // Save Session
+    localStorage.setItem('rekrutin_session', JSON.stringify({ profile: completeProfile, role: 'seeker' }));
 
     setIsSignupModalOpen(false);
     setUserRole('seeker');
@@ -415,11 +462,15 @@ const App: React.FC = () => {
 
   const handleLogin = (email: string) => {
     if (registeredUsers.includes(email)) {
-      setProfile(prev => ({ ...prev, email }));
+      const newProfile = { ...profile, email };
+      setProfile(newProfile);
       setIsLoginModalOpen(false);
       setUserRole('seeker');
       setCurrentView('dashboard');
       setActiveTab('tracker');
+      
+      // Persist Session
+      localStorage.setItem('rekrutin_session', JSON.stringify({ profile: newProfile, role: 'seeker' }));
     } else {
       alert("Account not found. Please Sign Up.");
       setIsLoginModalOpen(false);
@@ -430,6 +481,7 @@ const App: React.FC = () => {
     setCurrentView('landing');
     setIsNotificationOpen(false);
     setIsMandatoryJobPost(false);
+    localStorage.removeItem('rekrutin_session');
   };
 
   const toggleLanguage = () => {
