@@ -1,6 +1,6 @@
 
 import React, { useState, useCallback } from 'react';
-import { Upload, FileText, CheckCircle, Sparkles, X, ArrowRight, Loader2, Lock, Mail, Eye, EyeOff } from 'lucide-react';
+import { Upload, FileText, CheckCircle, Sparkles, X, ArrowRight, Loader2, Lock, Mail, Eye, EyeOff, User, Briefcase, Hash } from 'lucide-react';
 import { UserProfile, Resume } from '../types';
 
 interface SignupModalProps {
@@ -13,9 +13,9 @@ export const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose, onCom
   const [step, setStep] = useState<'upload' | 'scanning' | 'review' | 'credentials'>('upload');
   const [isDragging, setIsDragging] = useState(false);
   const [file, setFile] = useState<File | null>(null);
+  
+  // Form State
   const [scannedData, setScannedData] = useState<UserProfile | null>(null);
-
-  // Credentials State
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -35,20 +35,27 @@ export const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose, onCom
     setFile(uploadedFile);
     setStep('scanning');
 
-    // Simulate AI Scanning Animation
+    // SMART SIMULATION: Extract data from filename
+    // e.g., "Muhammad_Fauzan_Frontend.pdf" -> Name: Muhammad Fauzan, Title: Frontend
+    const filenameBase = uploadedFile.name.replace(/\.[^/.]+$/, ""); // Remove extension
+    const nameParts = filenameBase.split(/[_-]/); // Split by _ or -
+    
+    // Guessing logic
+    const guessedName = nameParts.slice(0, 2).join(' ') || 'Guest User';
+    const guessedTitle = nameParts.length > 2 ? nameParts.slice(2).join(' ') : 'Software Engineer';
+
     setTimeout(() => {
-      // Mock extracted data
       const mockProfile: UserProfile = {
-        name: 'Guest User', // In real app, extract from filename or content
-        email: 'guest@example.com', // Extracted email
-        title: 'Software Developer',
-        summary: 'Passionate developer with experience in building web applications.',
-        skills: ['React', 'TypeScript', 'Tailwind', 'Node.js'],
+        name: guessedName, 
+        email: 'guest@example.com',
+        title: guessedTitle,
+        summary: `Experienced ${guessedTitle} with a proven track record in building scalable solutions. Passionate about technology and continuous learning.`,
+        skills: ['React', 'TypeScript', 'Node.js', 'System Design', 'Agile'], // Default strong stack
         plan: 'Free',
         atsScansUsed: 0
       };
       setScannedData(mockProfile);
-      setEmail(mockProfile.email); // Pre-fill email
+      setEmail(''); // Reset email for manual entry
       setStep('review');
     }, 2500);
   };
@@ -67,6 +74,12 @@ export const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose, onCom
     }
   };
 
+  const handleUpdateScannedData = (field: keyof UserProfile, value: any) => {
+    if (scannedData) {
+      setScannedData({ ...scannedData, [field]: value });
+    }
+  };
+
   const handleContinueToCredentials = () => {
     setStep('credentials');
   };
@@ -74,7 +87,6 @@ export const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose, onCom
   const handleCreateAccount = (e: React.FormEvent) => {
     e.preventDefault();
     if (scannedData && file && email && password) {
-      // Create final profile with user confirmed email
       const finalProfile: UserProfile = {
         ...scannedData,
         email: email
@@ -92,25 +104,15 @@ SKILLS
 ${finalProfile.skills.join(' • ')}
 
 EXPERIENCE
-Frontend Developer | Tech Startup | 2021 - Present
-- Built scalable web applications using React and TypeScript.
-- Improved site performance by 30% through code splitting and optimization.
-- Collaborated with UX designers to implement pixel-perfect designs.
-
-Junior Web Developer | Digital Agency | 2019 - 2021
-- Developed responsive websites for various clients.
-- Maintained legacy codebases and fixed critical bugs.
+${finalProfile.title} | Tech Company | 2021 - Present
+- Delivered key projects using ${finalProfile.skills[0] || 'Modern Tech'}.
+- Optimized performance and scalability.
 
 EDUCATION
-Bachelor of Science in Computer Science
-University of Technology | 2015 - 2019
-
-PROJECTS
-E-commerce Platform: Built a full-stack shop using Next.js and Stripe.
-Task Manager App: Created a productivity tool with real-time sync.
+Bachelor of Science
+University of Technology | 2017 - 2021
 `;
 
-      // Create resume object, but leave ATS data empty so App.tsx can populate it via service
       const newResume: Resume = {
         id: 'initial-resume',
         name: file.name,
@@ -195,31 +197,55 @@ Task Manager App: Created a productivity tool with real-time sync.
 
         {step === 'review' && scannedData && (
           <div className="p-8">
-            <div className="text-center mb-8">
+            <div className="text-center mb-6">
               <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-green-600">
                 <CheckCircle size={28} />
               </div>
               <h2 className="text-2xl font-bold text-slate-900">Resume Parsed!</h2>
-              <p className="text-slate-500">We found the following information.</p>
+              <p className="text-slate-500">Review the extracted details below.</p>
             </div>
 
-            <div className="bg-slate-50 rounded-xl p-5 border border-slate-100 mb-6 space-y-3">
-               <div className="flex justify-between items-center border-b border-slate-200 pb-2">
-                 <span className="text-sm text-slate-500">Full Name</span>
-                 <span className="font-semibold text-slate-800">{scannedData.name}</span>
-               </div>
-               <div className="flex justify-between items-center border-b border-slate-200 pb-2">
-                 <span className="text-sm text-slate-500">Job Title</span>
-                 <span className="font-semibold text-slate-800">{scannedData.title}</span>
-               </div>
+            <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100 mb-6 space-y-4 shadow-inner">
+               {/* Name Input */}
                <div>
-                 <span className="text-sm text-slate-500 block mb-2">Top Skills Found</span>
+                 <label className="text-xs font-bold text-slate-400 uppercase mb-1 flex items-center gap-1">
+                   <User size={12} /> Full Name
+                 </label>
+                 <input 
+                    type="text" 
+                    value={scannedData.name}
+                    onChange={(e) => handleUpdateScannedData('name', e.target.value)}
+                    className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none"
+                 />
+               </div>
+
+               {/* Title Input */}
+               <div>
+                 <label className="text-xs font-bold text-slate-400 uppercase mb-1 flex items-center gap-1">
+                   <Briefcase size={12} /> Job Title
+                 </label>
+                 <input 
+                    type="text" 
+                    value={scannedData.title}
+                    onChange={(e) => handleUpdateScannedData('title', e.target.value)}
+                    className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none"
+                 />
+               </div>
+
+               {/* Skills Tag Input (Simulated as text for now) */}
+               <div>
+                 <label className="text-xs font-bold text-slate-400 uppercase mb-1 flex items-center gap-1">
+                   <Hash size={12} /> Top Skills Found
+                 </label>
                  <div className="flex flex-wrap gap-2">
                    {scannedData.skills.map((skill, i) => (
-                     <span key={i} className="px-2 py-1 bg-white border border-slate-200 rounded text-xs font-medium text-indigo-600">
+                     <span key={i} className="px-2 py-1 bg-white border border-slate-200 rounded text-xs font-medium text-indigo-600 shadow-sm">
                        {skill}
                      </span>
                    ))}
+                   <span className="px-2 py-1 border border-dashed border-slate-300 rounded text-xs text-slate-400">
+                     + Edit in Profile
+                   </span>
                  </div>
                </div>
             </div>
@@ -256,6 +282,7 @@ Task Manager App: Created a productivity tool with real-time sync.
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         className="w-full pl-10 p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-shadow"
+                        placeholder="name@example.com"
                       />
                    </div>
                 </div>
