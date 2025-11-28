@@ -28,7 +28,7 @@ import { EmployerSignupModal } from './components/EmployerSignupModal';
 import { analyzeResumeATS } from './services/geminiService';
 import { CountUp } from './components/CountUp';
 import { JobDetailDrawer } from './components/JobDetailDrawer';
-import { AdminDashboard } from './components/AdminDashboard'; // Import Admin Component
+import { AdminDashboard } from './components/AdminDashboard'; 
 
 // Mock simple HashRouter to avoid dependencies
 const HashRouter = ({ 
@@ -53,7 +53,7 @@ const App: React.FC = () => {
   const [viewMode, setViewMode] = useState<'board' | 'list'>('list');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [analyzingJob, setAnalyzingJob] = useState<Job | null>(null);
-  const [selectedJob, setSelectedJob] = useState<Job | null>(null); // For Detail Drawer
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null); 
   
   // Auth & Onboarding State
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
@@ -77,7 +77,7 @@ const App: React.FC = () => {
     email: '',
     summary: 'Join to create your profile.',
     skills: [],
-    plan: 'Free', // Default plan
+    plan: 'Free', 
     atsScansUsed: 0
   });
   
@@ -91,15 +91,17 @@ const App: React.FC = () => {
   const notificationRef = useRef<HTMLDivElement>(null);
 
   // Employer State
-  // New employers start with empty jobs (Rule 2)
   const [employerJobs, setEmployerJobs] = useState<EmployerJob[]>([]);
   const [applications, setApplications] = useState<CandidateApplication[]>([]);
   
   const [isPostJobModalOpen, setIsPostJobModalOpen] = useState(false);
   const [isMandatoryJobPost, setIsMandatoryJobPost] = useState(false);
   
-  const [employerTab, setEmployerTab] = useState<EmployerTab>('overview'); // Default to overview
+  const [employerTab, setEmployerTab] = useState<EmployerTab>('overview'); 
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+
+  // Admin / Import State
+  const [importedJobs, setImportedJobs] = useState<ExternalJobMatch[]>(INITIAL_EXTERNAL_MATCHES);
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -173,7 +175,7 @@ const App: React.FC = () => {
       description: ej.description,
       aiFitScore: Math.floor(Math.random() * (99 - 80 + 1)) + 80
     })),
-    ...INITIAL_EXTERNAL_MATCHES
+    ...importedJobs // Updated to use dynamic state instead of constant
   ];
 
   const matchedJobs = allPotentialJobs.filter(job => 
@@ -409,6 +411,11 @@ const App: React.FC = () => {
     setIsMandatoryJobPost(true);
     setIsPostJobModalOpen(true);
   };
+
+  // --- Admin Actions ---
+  const handleAdminImportJobs = (newJobs: ExternalJobMatch[]) => {
+    setImportedJobs(prev => [...newJobs, ...prev]);
+  };
   
   // --- Auth & Signup Flow ---
   const handleSignupComplete = async (newProfile: UserProfile, initialResume: Resume) => {
@@ -496,7 +503,11 @@ const App: React.FC = () => {
     setLanguage(prev => prev === 'en' ? 'id' : 'en');
   };
 
-  // Common Navbar Component
+  // ... (Navbar, Render functions, Helper functions same as previous) ...
+  // [I will omit repeating the entire render logic for brevity, just highlighting the switch update]
+  // But since this is a complete file replacement, I must include everything.
+  // Re-pasting standard render functions to ensure full file integrity.
+
   const Navbar = () => (
     <nav className="fixed w-full z-40 bg-white/80 backdrop-blur-md border-b border-slate-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -557,9 +568,7 @@ const App: React.FC = () => {
     </nav>
   );
 
-  // Helper function for the landing page scrolling row
   const renderScrollingJobRow = (job: Job) => {
-    // ... (No change to helper logic)
     const getStatusColor = (status: JobStatus) => {
       switch (status) {
         case JobStatus.SAVED: return 'bg-slate-100 text-slate-700 border-slate-200';
@@ -611,7 +620,6 @@ const App: React.FC = () => {
     <div className="min-h-screen bg-slate-50 font-sans overflow-x-hidden">
       <Navbar />
       <section className="pt-32 pb-24 px-4 sm:px-6 lg:px-8 text-center relative overflow-hidden">
-        {/* ... (Existing Hero Background) ... */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[600px] bg-gradient-to-b from-indigo-50/80 to-transparent -z-10 pointer-events-none"></div>
         <div className="absolute top-20 right-[10%] w-72 h-72 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse-slow"></div>
         <div className="absolute top-20 left-[10%] w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse-slow animation-delay-2000"></div>
@@ -631,7 +639,6 @@ const App: React.FC = () => {
             {t.HERO_DESC}
           </p>
 
-          {/* AI Search Bar Interface */}
           <div className="max-w-3xl mx-auto relative group">
             <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-500 rounded-2xl opacity-30 group-hover:opacity-50 blur transition duration-200"></div>
             <div className="relative flex items-center bg-white rounded-2xl shadow-xl p-2 pr-2">
@@ -658,7 +665,6 @@ const App: React.FC = () => {
             </div>
           </div>
 
-          {/* Trending Tags */}
           <div className="mt-6 flex flex-wrap justify-center gap-2 text-sm mb-10">
             <span className="text-slate-500 font-medium mr-2">{t.TRENDING}</span>
             {TRENDING_SEARCHES.map((tag, i) => (
@@ -672,7 +678,6 @@ const App: React.FC = () => {
             ))}
           </div>
 
-          {/* Statistics Section (Sexy Numbers) */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center max-w-4xl mx-auto">
              <div className="p-4 rounded-2xl bg-white/60 border border-indigo-50 backdrop-blur-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 group cursor-default">
                 <p className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-indigo-600 to-purple-600 group-hover:scale-110 transition-transform duration-300 origin-center inline-block">
@@ -700,7 +705,6 @@ const App: React.FC = () => {
              </div>
           </div>
 
-          {/* Floating Avatars */}
           <div className="hidden xl:block absolute top-1/2 -left-32 animate-float">
              <div className="bg-white p-2.5 rounded-xl shadow-xl border border-slate-100 flex items-center gap-3 w-56 transform rotate-[-4deg]">
                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center text-green-600 shadow-sm">
@@ -726,7 +730,6 @@ const App: React.FC = () => {
         </div>
       </section>
 
-      {/* Product Preview */}
       <section className="py-12 bg-transparent relative z-10 -mt-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="relative mx-auto max-w-6xl">
@@ -770,7 +773,6 @@ const App: React.FC = () => {
         </div>
       </section>
 
-      {/* Features Grid */}
       <section id="features" className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
@@ -793,7 +795,6 @@ const App: React.FC = () => {
         </div>
       </section>
 
-      {/* Footer */}
       <footer className="bg-white border-t border-slate-200 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
            <span className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">
@@ -1475,6 +1476,10 @@ const App: React.FC = () => {
           liveUsers={registeredUsers}
           employerJobs={employerJobs}
           applications={applications}
+          seekerJobs={jobs}
+          seekerResumes={resumes}
+          importedJobs={importedJobs}
+          onImportJobs={handleAdminImportJobs}
         />
       );
     case 'pricing': return renderPricingPage();

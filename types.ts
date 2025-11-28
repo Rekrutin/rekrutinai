@@ -43,10 +43,9 @@ export interface Job {
   status: JobStatus;
   created_at: string;
   ai_analysis?: JobAnalysis | null;
-  followUpDate?: string; // New field for reminder
-  // CRM Features (Huntr Style)
+  followUpDate?: string; 
   contacts?: JobContact[];
-  notes?: string; // Simplified for demo
+  notes?: string; 
   timeline?: JobTimelineEvent[];
 }
 
@@ -84,13 +83,13 @@ export interface UserProfile {
   resumeText?: string;
   plan: PlanType;
   atsScansUsed: number;
-  companyName?: string; // Added for Employer
+  companyName?: string;
 }
 
 export interface Resume {
   id: string;
   name: string;
-  content: string; // Text content for analysis
+  content: string; 
   uploadDate: string;
   atsScore?: number;
   atsAnalysis?: string[];
@@ -125,9 +124,51 @@ export type PlanType = 'Free' | 'Pro' | 'Career+' | 'Elite';
 export type UserRole = 'seeker' | 'employer' | 'admin';
 export type DashboardTab = 'tracker' | 'resumes' | 'profile' | 'agent' | 'alerts' | 'billing';
 export type EmployerTab = 'overview' | 'jobs' | 'candidates';
-export type AdminTab = 'overview' | 'users' | 'employers' | 'jobs' | 'activity';
+export type AdminView = 'overview' | 'revenue' | 'users' | 'resumes' | 'apps' | 'employers' | 'jobs' | 'logs' | 'settings';
 export type OnboardingStep = 'idle' | 'upload' | 'scanning' | 'review' | 'credentials' | 'complete';
 export type Language = 'en' | 'id';
+
+export interface AdminUser {
+  id: string;
+  email: string;
+  name: string;
+  role: 'seeker' | 'employer' | 'admin';
+  status: 'active' | 'suspended';
+  joinedDate: string;
+  lastActive: string;
+  plan: PlanType;
+  resumesCount: number;
+  appsCount: number;
+}
+
+export interface AdminEmployer {
+  id: string;
+  companyName: string;
+  contactPerson: string;
+  email: string;
+  jobsPosted: number;
+  status: 'active' | 'suspended';
+  joinedDate: string;
+}
+
+export interface Transaction {
+  id: string;
+  userEmail: string;
+  plan: PlanType;
+  amount: string;
+  date: string;
+  status: 'Success' | 'Failed' | 'Pending';
+  method: 'Credit Card' | 'PayPal' | 'Bank Transfer';
+}
+
+export interface SystemLog {
+  id: string;
+  event: string;
+  details: string;
+  user?: string;
+  timestamp: string;
+  severity: 'INFO' | 'WARN' | 'ERROR' | 'SUCCESS';
+}
 
 export interface PricingPlan {
   name: PlanType | string;
