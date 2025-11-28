@@ -1,20 +1,36 @@
+
 import React, { useState } from 'react';
-import { Resume } from '../types';
-import { analyzeResumeATS } from '../services/geminiService';
-import { FileText, Upload, CheckCircle, AlertCircle, Trash2, Search } from 'lucide-react';
+import { Resume, PlanType } from '../types';
+import { FileText, Upload, CheckCircle, AlertCircle, Trash2, Search, Lock } from 'lucide-react';
+import { MAX_FREE_ATS_SCANS } from '../constants';
 
 interface ResumeSectionProps {
   resumes: Resume[];
   onAddResume: (resume: Resume) => void;
   onDeleteResume: (id: string) => void;
   onUpdateResume: (id: string, updates: Partial<Resume>) => void;
+  onAnalyzeResume: (resume: Resume) => Promise<void>;
+  plan: PlanType;
+  scansUsed: number;
 }
 
-export const ResumeSection: React.FC<ResumeSectionProps> = ({ resumes, onAddResume, onDeleteResume, onUpdateResume }) => {
+export const ResumeSection: React.FC<ResumeSectionProps> = ({ 
+  resumes, 
+  onAddResume, 
+  onDeleteResume, 
+  onUpdateResume, 
+  onAnalyzeResume,
+  plan,
+  scansUsed
+}) => {
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [newResumeText, setNewResumeText] = useState('');
   const [newResumeName, setNewResumeName] = useState('');
   const [analyzingId, setAnalyzingId] = useState<string | null>(null);
+
+  const isFree = plan === 'Free';
+  const scansRemaining = Math.max(0, MAX_FREE_ATS_SCANS - scansUsed);
+  const isLimitReached = isFree && scansRemaining === 0;
 
   const handleUpload = (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,14 +48,10 @@ export const ResumeSection: React.FC<ResumeSectionProps> = ({ resumes, onAddResu
     }
   };
 
-  const handleAnalyze = async (resume: Resume) => {
+  const handleAnalyzeClick = async (resume: Resume) => {
     setAnalyzingId(resume.id);
     try {
-      const result = await analyzeResumeATS(resume.content);
-      onUpdateResume(resume.id, {
-        atsScore: result.score,
-        atsAnalysis: result.feedback
-      });
+      await onAnalyzeResume(resume);
     } catch (error) {
       console.error("Analysis failed", error);
     } finally {
@@ -49,7 +61,7 @@ export const ResumeSection: React.FC<ResumeSectionProps> = ({ resumes, onAddResu
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-end">
         <div>
            <h2 className="text-xl font-bold text-slate-900">Resume Manager</h2>
            <p className="text-slate-500 text-sm">Upload multiple versions and check their ATS compatibility.</p>
@@ -61,6 +73,30 @@ export const ResumeSection: React.FC<ResumeSectionProps> = ({ resumes, onAddResu
           <Upload size={16} className="mr-2" /> Upload Resume
         </button>
       </div>
+
+      {/* Usage Banner */}
+      {isFree && (
+        <div className={`p-4 rounded-xl border flex justify-between items-center ${isLimitReached ? 'bg-red-50 border-red-200' : 'bg-indigo-50 border-indigo-200'}`}>
+           <div className="flex items-center gap-3">
+             <div className={`p-2 rounded-lg ${isLimitReached ? 'bg-red-100 text-red-600' : 'bg-indigo-100 text-indigo-600'}`}>
+               {isLimitReached ? <Lock size={20} /> : <Search size={20} />}
+             </div>
+             <div>
+               <p className={`text-sm font-bold ${isLimitReached ? 'text-red-800' : 'text-indigo-900'}`}>
+                 {isLimitReached ? 'Free AI Scans Limit Reached' : 'Free AI Scans Available'}
+               </p>
+               <p className="text-xs text-slate-500">
+                 You have used <span className="font-bold">{scansUsed}</span> of <span className="font-bold">{MAX_FREE_ATS_SCANS}</span> free scans.
+               </p>
+             </div>
+           </div>
+           {isLimitReached && (
+             <span className="text-xs font-bold text-indigo-600 bg-white px-3 py-1.5 rounded-lg border border-indigo-100 shadow-sm">
+               Upgrade to Unlock
+             </span>
+           )}
+        </div>
+      )}
 
       {isUploadOpen && (
         <div className="bg-white p-6 rounded-xl border border-indigo-100 shadow-lg animate-fade-in">
@@ -153,14 +189,21 @@ export const ResumeSection: React.FC<ResumeSectionProps> = ({ resumes, onAddResu
                   <div className="bg-slate-50 rounded-lg p-3 text-center">
                     <p className="text-xs text-slate-500 mb-2">Not analyzed yet</p>
                     <button 
-                      onClick={() => handleAnalyze(resume)}
+                      onClick={() => handleAnalyzeClick(resume)}
                       disabled={analyzingId === resume.id}
-                      className="w-full py-1.5 bg-white border border-slate-300 rounded text-xs font-semibold text-slate-700 hover:text-indigo-600 hover:border-indigo-300 transition-colors flex items-center justify-center"
+                      className={`w-full py-1.5 border rounded text-xs font-semibold transition-colors flex items-center justify-center ${
+                        isLimitReached 
+                          ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed' 
+                          : 'bg-white text-slate-700 border-slate-300 hover:text-indigo-600 hover:border-indigo-300'
+                      }`}
                     >
                       {analyzingId === resume.id ? (
                         <span className="animate-pulse">Analyzing...</span>
                       ) : (
-                        <><Search size={12} className="mr-1.5" /> Check ATS Score</>
+                        <>
+                           {isLimitReached ? <Lock size={12} className="mr-1.5" /> : <Search size={12} className="mr-1.5" />} 
+                           {isLimitReached ? 'Limit Reached' : 'Check ATS Score'}
+                        </>
                       )}
                     </button>
                   </div>

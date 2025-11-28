@@ -1,19 +1,33 @@
+
 import React from 'react';
 import { Job, JobStatus } from '../types';
-import { BrainCircuit, ExternalLink, Trash2, Calendar, MapPin, Building2 } from 'lucide-react';
+import { BrainCircuit, ExternalLink, Trash2, Calendar, MapPin, Building2, Plus } from 'lucide-react';
 
 interface JobListViewProps {
   jobs: Job[];
   onStatusChange: (id: string, newStatus: JobStatus) => void;
   onAnalyze: (job: Job) => void;
   onDelete: (id: string) => void;
+  onAddJob?: () => void; // Optional prop to trigger add modal from empty state
 }
 
-export const JobListView: React.FC<JobListViewProps> = ({ jobs, onStatusChange, onAnalyze, onDelete }) => {
+export const JobListView: React.FC<JobListViewProps> = ({ jobs, onStatusChange, onAnalyze, onDelete, onAddJob }) => {
   if (jobs.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center p-12 text-slate-400 bg-white rounded-xl border border-slate-200">
-        <p>No jobs found.</p>
+      <div className="flex flex-col items-center justify-center py-20 px-4 text-center bg-white rounded-xl border border-dashed border-slate-300">
+        <div className="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600 mb-4 shadow-sm">
+          <Calendar size={28} />
+        </div>
+        <h3 className="text-lg font-bold text-slate-900 mb-2">Track Your First Job Application</h3>
+        <p className="text-slate-500 max-w-sm mb-6">Start organizing your search. Add a job you've applied for or found interesting.</p>
+        {onAddJob && (
+          <button 
+            onClick={onAddJob}
+            className="flex items-center px-6 py-2.5 bg-indigo-600 text-white rounded-lg font-bold shadow-sm hover:bg-indigo-700 transition-all hover:scale-105"
+          >
+            <Plus size={18} className="mr-2" /> Add Application
+          </button>
+        )}
       </div>
     );
   }

@@ -43,7 +43,9 @@ export const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose, onCom
         email: 'guest@example.com', // Extracted email
         title: 'Software Developer',
         summary: 'Passionate developer with experience in building web applications.',
-        skills: ['React', 'TypeScript', 'Tailwind', 'Node.js']
+        skills: ['React', 'TypeScript', 'Tailwind', 'Node.js'],
+        plan: 'Free',
+        atsScansUsed: 0
       };
       setScannedData(mockProfile);
       setEmail(mockProfile.email); // Pre-fill email
@@ -78,13 +80,12 @@ export const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose, onCom
         email: email
       };
 
+      // Create resume object, but leave ATS data empty so App.tsx can populate it via service
       const newResume: Resume = {
         id: 'initial-resume',
         name: file.name,
-        content: "Simulated content extracted from PDF...", // In real app, parse PDF
+        content: "Simulated content extracted from PDF... (Skills: React, TypeScript, Node.js)", // In real app, parse PDF
         uploadDate: new Date().toISOString(),
-        atsScore: 72, // Initial teaser score
-        atsAnalysis: ['Good header format', 'Add more metrics to experience']
       };
       
       onComplete(finalProfile, newResume);

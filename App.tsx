@@ -7,7 +7,7 @@ import {
   MapPin, TrendingUp, Rocket, Files, Zap, Target, Radar, Building2, ExternalLink, Trash2, BrainCircuit
 } from 'lucide-react';
 import { Job, JobStatus, JobAnalysis, UserRole, EmployerJob, DashboardTab, UserProfile, Resume, JobAlert, Notification, EmployerTab, CandidateApplication, ExternalJobMatch, Language } from './types';
-import { INITIAL_JOBS, getFeatures, getPricingPlans, INITIAL_EMPLOYER_JOBS, TRENDING_SEARCHES, INITIAL_APPLICATIONS, INITIAL_EXTERNAL_MATCHES, TRANSLATIONS } from './constants';
+import { INITIAL_JOBS, getFeatures, getPricingPlans, INITIAL_EMPLOYER_JOBS, TRENDING_SEARCHES, INITIAL_APPLICATIONS, INITIAL_EXTERNAL_MATCHES, TRANSLATIONS, MAX_FREE_ATS_SCANS } from './constants';
 import { supabase } from './services/supabaseClient';
 import { JobCard } from './components/JobCard';
 import { JobListView } from './components/JobListView';
@@ -23,6 +23,8 @@ import { EmployerCandidatesView } from './components/EmployerCandidatesView';
 import { EmployerDashboardSummary } from './components/EmployerDashboardSummary';
 import { SignupModal } from './components/SignupModal';
 import { LoginModal } from './components/LoginModal';
+import { UpgradeLimitModal } from './components/UpgradeLimitModal';
+import { analyzeResumeATS } from './services/geminiService';
 
 // Animated Number Counter Component
 const CountUp = ({ end, suffix = '', duration = 2000, decimals = 0 }: { end: number, suffix?: string, duration?: number, decimals?: number }) => {
@@ -88,7 +90,8 @@ const App: React.FC = () => {
   const [language, setLanguage] = useState<Language>('en');
   
   // Job Seeker State
-  const [jobs, setJobs] = useState<Job[]>(INITIAL_JOBS);
+  // New users start with empty jobs. INITIAL_JOBS is only used for Landing Page showcase.
+  const [jobs, setJobs] = useState<Job[]>([]); 
   const [activeTab, setActiveTab] = useState<DashboardTab>('tracker');
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'board' | 'list'>('list');
@@ -98,30 +101,26 @@ const App: React.FC = () => {
   // Auth & Onboarding State
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  // Mock Database for Registered Users
+  const [registeredUsers, setRegisteredUsers] = useState<string[]>([]);
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
 
   // New Features State
   const [profile, setProfile] = useState<UserProfile>({
-    name: 'Alex Johnson',
-    title: 'Software Engineer',
-    email: 'alex@example.com',
-    summary: 'Passionate developer with 5 years of experience in React and Node.js.',
-    skills: ['React', 'TypeScript', 'Tailwind', 'Node.js']
+    name: 'Guest User',
+    title: 'Explorer',
+    email: '',
+    summary: 'Join to create your profile.',
+    skills: [],
+    plan: 'Free', // Default plan
+    atsScansUsed: 0
   });
-  const [resumes, setResumes] = useState<Resume[]>([
-    { 
-      id: '1', 
-      name: 'Software Engineer CV', 
-      content: 'Experience: 5 years React... Education: BSc CS...', 
-      uploadDate: new Date().toISOString(),
-      atsScore: 78,
-      atsAnalysis: ['Good use of keywords', 'Add more quantifiable metrics']
-    }
-  ]);
+  
+  // Initial empty resume list for new users
+  const [resumes, setResumes] = useState<Resume[]>([]);
   
   // Alerts & Notifications
-  const [jobAlerts, setJobAlerts] = useState<JobAlert[]>([
-    { id: 'a1', keywords: 'Frontend', location: 'Remote', frequency: 'Instant', createdAt: new Date().toISOString() }
-  ]);
+  const [jobAlerts, setJobAlerts] = useState<JobAlert[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
@@ -252,6 +251,42 @@ const App: React.FC = () => {
     setResumes(prev => prev.map(r => r.id === id ? { ...r, ...updates } : r));
   };
 
+  // Limit Check for ATS Analysis
+  const handleAnalyzeResume = async (resume: Resume) => {
+    // Check Limits
+    if (profile.plan === 'Free' && profile.atsScansUsed >= MAX_FREE_ATS_SCANS) {
+      setIsUpgradeModalOpen(true);
+      return;
+    }
+
+    // Proceed if allowed
+    try {
+      const result = await analyzeResumeATS(resume.content);
+      handleUpdateResume(resume.id, {
+        atsScore: result.score,
+        atsAnalysis: result.feedback
+      });
+      // Increment Usage
+      setProfile(prev => ({ ...prev, atsScansUsed: prev.atsScansUsed + 1 }));
+    } catch (error) {
+      console.error("Analysis failed", error);
+    }
+  };
+
+  const handleUpgradeToPro = () => {
+    setProfile(prev => ({ ...prev, plan: 'Pro' }));
+    setIsUpgradeModalOpen(false);
+    // Notification
+    setNotifications(prev => [{
+      id: Date.now().toString(),
+      title: 'Welcome to Pro! 🌟',
+      message: 'You now have unlimited ATS scans and AI analysis.',
+      timestamp: new Date().toISOString(),
+      read: false,
+      type: 'system'
+    }, ...prev]);
+  };
+
   // --- Alert Actions ---
   const handleAddAlert = (alertData: Omit<JobAlert, 'id' | 'createdAt'>) => {
     const newAlert: JobAlert = {
@@ -319,19 +354,48 @@ const App: React.FC = () => {
   };
   
   // --- Auth & Signup Flow ---
-  const handleSignupComplete = (newProfile: UserProfile, initialResume: Resume) => {
-    setProfile(newProfile);
-    setResumes([initialResume, ...resumes]); // Add the uploaded resume
+  const handleSignupComplete = async (newProfile: UserProfile, initialResume: Resume) => {
+    // 1. Automatically evaluate the uploaded resume (1st Free Scan)
+    let analyzedResume = { ...initialResume };
+    try {
+      const analysisResult = await analyzeResumeATS(initialResume.content);
+      analyzedResume = {
+        ...initialResume,
+        atsScore: analysisResult.score,
+        atsAnalysis: analysisResult.feedback
+      };
+    } catch (e) {
+      console.error("Initial ATS scan failed during signup", e);
+    }
+
+    // 2. Set User Profile with Free Plan defaults
+    // Mark 1 scan as used for the initial auto-evaluation
+    const completeProfile: UserProfile = {
+      ...newProfile,
+      plan: 'Free',
+      atsScansUsed: 1 
+    };
+    setProfile(completeProfile);
+    
+    // 3. Clear Dashboard for new user (Strict Rule)
+    setJobs([]); 
+
+    // 4. Add uploaded (and analyzed) resume
+    setResumes([analyzedResume]);
+
+    // 5. Register User (Mock DB)
+    setRegisteredUsers(prev => [...prev, newProfile.email]);
+
     setIsSignupModalOpen(false);
     setUserRole('seeker');
     setCurrentView('dashboard');
-    setActiveTab('profile'); // Land on profile to see the magic
+    setActiveTab('profile'); 
     
     // Welcome Notification
     setNotifications(prev => [{
       id: 'welcome',
       title: 'Welcome to RekrutIn.ai! 🚀',
-      message: 'Your profile has been auto-created from your resume. Check out your AI Co-Pilot!',
+      message: `Your profile is live. We've scanned your resume (1/2 free scans used).`,
       timestamp: new Date().toISOString(),
       read: false,
       type: 'system'
@@ -339,11 +403,18 @@ const App: React.FC = () => {
   };
 
   const handleLogin = (email: string) => {
-    setProfile(prev => ({ ...prev, email }));
-    setIsLoginModalOpen(false);
-    setUserRole('seeker');
-    setCurrentView('dashboard');
-    setActiveTab('tracker');
+    // Basic Check if user registered
+    if (registeredUsers.includes(email)) {
+      setProfile(prev => ({ ...prev, email }));
+      setIsLoginModalOpen(false);
+      setUserRole('seeker');
+      setCurrentView('dashboard');
+      setActiveTab('tracker');
+    } else {
+      alert("Account not found. Please Sign Up to upload your resume and create an account.");
+      setIsLoginModalOpen(false);
+      setIsSignupModalOpen(true);
+    }
   };
 
   const handleLogout = () => {
@@ -510,19 +581,13 @@ const App: React.FC = () => {
                 className="w-full p-4 text-lg bg-transparent border-none outline-none text-slate-800 placeholder:text-slate-400"
               />
               <button 
-                onClick={() => {
-                   setUserRole('seeker');
-                   setCurrentView('dashboard');
-                }}
+                onClick={() => setIsSignupModalOpen(true)}
                 className="hidden sm:flex items-center px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-md"
               >
                 {t.SEARCH_BUTTON} <ArrowRight size={18} className="ml-2" />
               </button>
               <button 
-                 onClick={() => {
-                   setUserRole('seeker');
-                   setCurrentView('dashboard');
-                }}
+                 onClick={() => setIsSignupModalOpen(true)}
                 className="sm:hidden p-3 bg-indigo-600 text-white rounded-xl"
               >
                 <Search size={20} />
@@ -537,10 +602,7 @@ const App: React.FC = () => {
               <button 
                 key={i} 
                 className="px-3 py-1 bg-white border border-slate-200 rounded-full text-slate-600 hover:border-indigo-300 hover:text-indigo-600 transition-colors shadow-sm"
-                onClick={() => {
-                  setUserRole('seeker');
-                  setCurrentView('dashboard');
-                }}
+                onClick={() => setIsSignupModalOpen(true)}
               >
                 {tag}
               </button>
@@ -898,7 +960,11 @@ const App: React.FC = () => {
                  </div>
                  <div>
                    <p className="text-sm font-bold text-slate-800 truncate w-32">{profile.name}</p>
-                   <p className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-full inline-block">PRO MEMBER</p>
+                   {profile.plan !== 'Free' ? (
+                     <p className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-full inline-block uppercase">{profile.plan} Member</p>
+                   ) : (
+                     <p className="text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded-full inline-block">Free Plan</p>
+                   )}
                  </div>
                </div>
              </div>
@@ -1081,36 +1147,47 @@ const App: React.FC = () => {
                    <SeekerAnalytics jobs={jobs} />
 
                    {viewMode === 'board' ? (
-                      <div className="flex overflow-x-auto pb-4 space-x-6">
-                         {Object.values(JobStatus).map((status) => {
-                           const statusJobs = filteredJobs.filter(j => j.status === status);
-                           return (
-                             <div key={status} className="w-80 flex-shrink-0">
-                               <div className="mb-3 px-1 flex justify-between items-center">
-                                 <h3 className="text-sm font-bold text-slate-700 uppercase">{status}</h3>
-                                 <span className="bg-slate-200 text-slate-600 text-xs px-2 py-0.5 rounded-full font-bold">{statusJobs.length}</span>
+                      jobs.length === 0 ? (
+                        <JobListView 
+                          jobs={jobs} 
+                          onStatusChange={handleStatusChange}
+                          onAnalyze={(j) => setAnalyzingJob(j)}
+                          onDelete={handleDeleteJob}
+                          onAddJob={() => setIsAddModalOpen(true)}
+                        />
+                      ) : (
+                        <div className="flex overflow-x-auto pb-4 space-x-6">
+                           {Object.values(JobStatus).map((status) => {
+                             const statusJobs = filteredJobs.filter(j => j.status === status);
+                             return (
+                               <div key={status} className="w-80 flex-shrink-0">
+                                 <div className="mb-3 px-1 flex justify-between items-center">
+                                   <h3 className="text-sm font-bold text-slate-700 uppercase">{status}</h3>
+                                   <span className="bg-slate-200 text-slate-600 text-xs px-2 py-0.5 rounded-full font-bold">{statusJobs.length}</span>
+                                 </div>
+                                 <div className="space-y-3">
+                                    {statusJobs.map(job => (
+                                      <JobCard 
+                                        key={job.id} 
+                                        job={job} 
+                                        onMove={handleMoveJob}
+                                        onAnalyze={(j) => setAnalyzingJob(j)}
+                                        onDelete={handleDeleteJob}
+                                      />
+                                    ))}
+                                 </div>
                                </div>
-                               <div className="space-y-3">
-                                  {statusJobs.map(job => (
-                                    <JobCard 
-                                      key={job.id} 
-                                      job={job} 
-                                      onMove={handleMoveJob}
-                                      onAnalyze={(j) => setAnalyzingJob(j)}
-                                      onDelete={handleDeleteJob}
-                                    />
-                                  ))}
-                               </div>
-                             </div>
-                           );
-                         })}
-                      </div>
+                             );
+                           })}
+                        </div>
+                      )
                    ) : (
                      <JobListView 
                         jobs={filteredJobs} 
                         onStatusChange={handleStatusChange}
                         onAnalyze={(j) => setAnalyzingJob(j)}
                         onDelete={handleDeleteJob}
+                        onAddJob={() => setIsAddModalOpen(true)}
                      />
                    )}
                 </div>
@@ -1122,6 +1199,9 @@ const App: React.FC = () => {
                   onAddResume={handleAddResume}
                   onDeleteResume={handleDeleteResume}
                   onUpdateResume={handleUpdateResume}
+                  onAnalyzeResume={handleAnalyzeResume}
+                  plan={profile.plan}
+                  scansUsed={profile.atsScansUsed}
                 />
               )}
               
@@ -1174,6 +1254,7 @@ const App: React.FC = () => {
                           ))}
                         </ul>
                         <button 
+                          onClick={handleUpgradeToPro}
                           className={`w-full py-2 rounded-lg font-bold text-sm transition-colors ${plan.highlight ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-slate-50 text-slate-900 hover:bg-slate-100 border border-slate-200'}`}
                         >
                           {plan.cta}
@@ -1289,7 +1370,7 @@ const App: React.FC = () => {
         />
       )}
 
-      {/* New Signup Modal */}
+      {/* Signup Modal - Onboarding */}
       <SignupModal
         isOpen={isSignupModalOpen}
         onClose={() => setIsSignupModalOpen(false)}
@@ -1305,6 +1386,14 @@ const App: React.FC = () => {
           setIsLoginModalOpen(false);
           setIsSignupModalOpen(true);
         }}
+      />
+      
+      {/* Upgrade Limit Modal */}
+      <UpgradeLimitModal
+        isOpen={isUpgradeModalOpen}
+        onClose={() => setIsUpgradeModalOpen(false)}
+        onUpgrade={handleUpgradeToPro}
+        featureName="AI Resume Analysis"
       />
     </div>
   );

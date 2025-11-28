@@ -57,7 +57,9 @@ export interface UserProfile {
   email: string;
   summary: string;
   skills: string[];
-  resumeText?: string; // Legacy field, kept for compatibility but preferred in Resume interface
+  resumeText?: string;
+  plan: PlanType;
+  atsScansUsed: number;
 }
 
 export interface Resume {
