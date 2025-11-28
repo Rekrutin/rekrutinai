@@ -903,26 +903,6 @@ const App: React.FC = () => {
             <span className="text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600 mr-8 hidden md:block">
               RekrutIn.ai
             </span>
-            
-            {/* Role Switcher Tabs */}
-            <div className="flex p-1 bg-slate-100 rounded-lg">
-              <button 
-                onClick={() => setUserRole('seeker')}
-                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
-                  userRole === 'seeker' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-                }`}
-              >
-                Job Seeker
-              </button>
-              <button 
-                onClick={() => setUserRole('employer')}
-                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
-                  userRole === 'employer' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-                }`}
-              >
-                Employer
-              </button>
-            </div>
           </div>
 
           <div className="flex items-center space-x-3">
