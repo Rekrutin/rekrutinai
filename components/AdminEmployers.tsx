@@ -1,13 +1,22 @@
 
 import React from 'react';
 import { AdminEmployer } from '../types';
-import { Building2, Mail, Calendar, MoreHorizontal, Ban, Trash2 } from 'lucide-react';
+import { Building2, Mail, Calendar, Ban, Trash2, CheckCircle } from 'lucide-react';
 
 interface AdminEmployersProps {
   employers: AdminEmployer[];
+  onDelete: (id: string) => void;
+  onSuspend: (id: string) => void;
 }
 
-export const AdminEmployers: React.FC<AdminEmployersProps> = ({ employers }) => {
+export const AdminEmployers: React.FC<AdminEmployersProps> = ({ employers, onDelete, onSuspend }) => {
+  
+  const handleDelete = (id: string) => {
+    if (window.confirm("Permanently remove this employer account?")) {
+      onDelete(id);
+    }
+  };
+
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden animate-fade-in">
       <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
@@ -68,10 +77,22 @@ export const AdminEmployers: React.FC<AdminEmployersProps> = ({ employers }) => 
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                       <button className="p-2 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors" title="Suspend">
-                          <Ban size={16} />
+                       <button 
+                        onClick={() => onSuspend(emp.id)}
+                        className={`p-2 rounded-lg transition-colors ${
+                          emp.status === 'active' 
+                            ? 'text-slate-400 hover:text-orange-600 hover:bg-orange-50' 
+                            : 'text-green-500 hover:text-green-700 hover:bg-green-50'
+                        }`}
+                        title={emp.status === 'active' ? "Suspend" : "Activate"}
+                       >
+                          {emp.status === 'active' ? <Ban size={16} /> : <CheckCircle size={16} />}
                        </button>
-                       <button className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
+                       <button 
+                        onClick={() => handleDelete(emp.id)}
+                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" 
+                        title="Delete"
+                       >
                           <Trash2 size={16} />
                        </button>
                     </div>

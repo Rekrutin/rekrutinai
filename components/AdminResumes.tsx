@@ -1,13 +1,22 @@
 
 import React from 'react';
 import { Resume } from '../types';
-import { FileText, Download, Eye, Calendar, User } from 'lucide-react';
+import { FileText, Download, Eye, Calendar, User, Trash2 } from 'lucide-react';
 
 interface AdminResumesProps {
   resumes: Resume[];
+  onView: (resume: Resume) => void;
+  onDelete: (id: string) => void;
 }
 
-export const AdminResumes: React.FC<AdminResumesProps> = ({ resumes }) => {
+export const AdminResumes: React.FC<AdminResumesProps> = ({ resumes, onView, onDelete }) => {
+  
+  const handleDelete = (id: string) => {
+    if (window.confirm("Delete this resume permanently?")) {
+      onDelete(id);
+    }
+  };
+
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden animate-fade-in">
       <div className="p-6 border-b border-slate-100 bg-slate-50/50">
@@ -70,11 +79,17 @@ export const AdminResumes: React.FC<AdminResumesProps> = ({ resumes }) => {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
-                       <button className="text-blue-600 hover:text-blue-800 text-xs font-bold flex items-center gap-1">
+                       <button 
+                        onClick={() => onView(resume)}
+                        className="text-blue-600 hover:text-blue-800 text-xs font-bold flex items-center gap-1 bg-blue-50 px-2 py-1 rounded hover:bg-blue-100 transition-colors"
+                       >
                           <Eye size={14} /> View
                        </button>
-                       <button className="text-slate-400 hover:text-slate-600 text-xs font-bold flex items-center gap-1 ml-2">
-                          <Download size={14} /> PDF
+                       <button 
+                        onClick={() => handleDelete(resume.id)}
+                        className="text-red-400 hover:text-red-600 text-xs font-bold flex items-center gap-1 ml-2 p-1 rounded hover:bg-red-50 transition-colors"
+                       >
+                          <Trash2 size={14} />
                        </button>
                     </div>
                   </td>

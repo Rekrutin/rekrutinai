@@ -416,6 +416,28 @@ const App: React.FC = () => {
   const handleAdminImportJobs = (newJobs: ExternalJobMatch[]) => {
     setImportedJobs(prev => [...newJobs, ...prev]);
   };
+
+  const handleAdminDeleteUser = (email: string) => {
+    setRegisteredUsers(prev => {
+      const updated = prev.filter(u => u !== email);
+      localStorage.setItem('rekrutin_users', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const handleAdminDeleteResume = (id: string) => {
+    // For demo: if it matches a seeker resume, delete it
+    if (resumes.some(r => r.id === id)) {
+      handleDeleteResume(id);
+    }
+  };
+
+  const handleAdminDeleteJob = (id: string) => {
+    // For demo: if it matches a seeker tracked job
+    if (jobs.some(j => j.id === id)) {
+      handleDeleteJob(id);
+    }
+  };
   
   // --- Auth & Signup Flow ---
   const handleSignupComplete = async (newProfile: UserProfile, initialResume: Resume) => {
@@ -1480,6 +1502,9 @@ const App: React.FC = () => {
           seekerResumes={resumes}
           importedJobs={importedJobs}
           onImportJobs={handleAdminImportJobs}
+          onDeleteUser={handleAdminDeleteUser}
+          onDeleteResume={handleAdminDeleteResume}
+          onDeleteJob={handleAdminDeleteJob}
         />
       );
     case 'pricing': return renderPricingPage();

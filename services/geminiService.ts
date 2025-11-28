@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { JobAnalysis, Job, UserProfile } from "../types";
+import { JobAnalysis, Job, UserProfile, ChatMessage } from "../types";
 import { getEnv } from "../constants";
 
 // Initialize the API client strictly according to guidelines.
@@ -106,49 +106,76 @@ export const analyzeResumeATS = async (resumeText: string): Promise<{ score: num
 };
 
 export const chatWithCareerAgent = async (
-  message: string, 
+  history: ChatMessage[],
+  newMessage: string,
   context: { jobs: Job[]; profile: UserProfile }
 ): Promise<string> => {
   if (!ai) {
-    return "I am a simulated AI agent. Please configure your API Key to get real personalized advice based on your " + context.jobs.length + " applications.";
+    return "I am a simulated AI agent (API Key missing). I see you have " + context.jobs.length + " jobs tracked. I can help you analyze them once connected.";
   }
 
-  // Construct context string
-  const jobsContext = context.jobs.map(j => 
-    `- Role: ${j.title} at ${j.company} (Status: ${j.status}). Description snippet: ${j.description?.substring(0, 100)}...`
-  ).join("\n");
-
+  // 1. Construct the System Context
+  // We feed the AI the user's data so it can "see" what the user sees.
   const profileContext = `
-    User Name: ${context.profile.name}
+    USER PROFILE:
+    Name: ${context.profile.name}
     Title: ${context.profile.title}
     Skills: ${context.profile.skills.join(", ")}
     Summary: ${context.profile.summary}
   `;
 
+  const jobsContext = `
+    TRACKED JOBS:
+    ${context.jobs.map(j => 
+      `- ${j.title} at ${j.company} (Status: ${j.status}). Desc: ${j.description ? 'Available' : 'Missing'}`
+    ).join("\n")}
+  `;
+
+  const systemInstruction = `
+    You are RekrutIn AI, a dedicated Career Strategy Agent.
+    
+    YOUR KNOWLEDGE BASE:
+    ${profileContext}
+    ${jobsContext}
+
+    YOUR GOAL:
+    Help the user land a job. tailored to their profile and tracked applications.
+    
+    GUIDELINES:
+    - Be encouraging, strategic, and concise.
+    - Reference specific jobs from their list when relevant.
+    - If they ask about a specific company, check if it's in their list first.
+    - Suggest specific improvements based on their skills vs job requirements.
+    - Keep responses under 150 words unless asked for a detailed guide.
+  `;
+
   try {
+    // 2. Map local ChatMessage history to Gemini Content format
+    // Map 'assistant' role to 'model' for the API
+    const contents = history.map(msg => ({
+      role: msg.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: msg.content }]
+    }));
+
+    // Add the new message
+    contents.push({
+      role: 'user',
+      parts: [{ text: newMessage }]
+    });
+
+    // 3. Generate Response with System Instruction
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
-      contents: `
-        You are a helpful, encouraging, and strategic AI Career Agent for RekrutIn.ai.
-        
-        USER PROFILE:
-        ${profileContext}
-        
-        USER'S JOB APPLICATIONS:
-        ${jobsContext}
-        
-        USER QUESTION:
-        "${message}"
-        
-        Answer the user's question based on their specific profile and job list. 
-        If they ask for matches, compare their skills to the job descriptions provided.
-        Keep the tone professional yet conversational.
-      `
+      contents: contents,
+      config: {
+        systemInstruction: systemInstruction,
+        temperature: 0.7, // Balance between creativity and focus
+      }
     });
 
     return response.text || "I couldn't generate a response at this time.";
   } catch (error) {
     console.error("Chat Agent Error", error);
-    return "Sorry, I encountered an error processing your request.";
+    return "Sorry, I encountered an error communicating with the AI service.";
   }
 };

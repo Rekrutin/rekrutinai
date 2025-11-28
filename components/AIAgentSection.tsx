@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Job, UserProfile, ChatMessage } from '../types';
 import { chatWithCareerAgent } from '../services/geminiService';
@@ -13,7 +14,14 @@ export const AIAgentSection: React.FC<AIAgentSectionProps> = ({ jobs, profile })
     {
       id: 'welcome',
       role: 'assistant',
-      content: `Hi ${profile.name || 'there'}! I'm your AI Career Agent. I have access to your profile and your ${jobs.length} job applications. \n\nYou can ask me things like:\n• "Which job application matches my profile best?"\n• "What skills am I missing for the Senior Engineer role?"\n• "Draft a follow-up email for Google."`,
+      content: `Hi ${profile.name.split(' ')[0] || 'there'}! I'm your AI Career Agent. 
+      
+I've analyzed your profile and your ${jobs.length} tracked applications. I can help you:
+• Prepare for your interview at ${jobs.find(j => j.status === 'Interview')?.company || 'your target company'}
+• Identify skill gaps for the ${jobs[0]?.title || 'next role'}
+• Draft follow-up emails
+
+What's on your mind?`,
       timestamp: new Date().toISOString()
     }
   ]);
@@ -40,12 +48,16 @@ export const AIAgentSection: React.FC<AIAgentSectionProps> = ({ jobs, profile })
       timestamp: new Date().toISOString()
     };
 
+    // Optimistically add user message
     setMessages(prev => [...prev, userMsg]);
     setInputValue('');
     setIsTyping(true);
 
     try {
-      const responseText = await chatWithCareerAgent(userMsg.content, { jobs, profile });
+      // Pass the CURRENT history (excluding the new message we just added visually, 
+      // but the service function handles appending the new message)
+      // We pass `messages` which is the history *before* this new turn.
+      const responseText = await chatWithCareerAgent(messages, userMsg.content, { jobs, profile });
       
       const aiMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
@@ -57,6 +69,13 @@ export const AIAgentSection: React.FC<AIAgentSectionProps> = ({ jobs, profile })
       setMessages(prev => [...prev, aiMsg]);
     } catch (err) {
       console.error(err);
+      const errorMsg: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: "I'm having trouble connecting right now. Please try again.",
+        timestamp: new Date().toISOString()
+      };
+      setMessages(prev => [...prev, errorMsg]);
     } finally {
       setIsTyping(false);
     }
@@ -71,7 +90,7 @@ export const AIAgentSection: React.FC<AIAgentSectionProps> = ({ jobs, profile })
         </div>
         <div>
           <h3 className="font-bold text-slate-800 text-sm">AI Career Agent</h3>
-          <p className="text-xs text-slate-500">Powered by Gemini 2.5</p>
+          <p className="text-xs text-slate-500">Context-Aware • Powered by Gemini 2.5</p>
         </div>
       </div>
 
@@ -79,16 +98,16 @@ export const AIAgentSection: React.FC<AIAgentSectionProps> = ({ jobs, profile })
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/30">
         {messages.map((msg) => (
           <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`flex max-w-[80%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1 ${
+            <div className={`flex max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1 shadow-sm ${
                 msg.role === 'user' ? 'bg-slate-200 text-slate-600 ml-2' : 'bg-indigo-100 text-indigo-600 mr-2'
               }`}>
                 {msg.role === 'user' ? <User size={14} /> : <Bot size={14} />}
               </div>
-              <div className={`p-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
+              <div className={`p-3.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap shadow-sm ${
                 msg.role === 'user' 
                   ? 'bg-slate-800 text-white rounded-tr-none' 
-                  : 'bg-white border border-slate-200 text-slate-700 rounded-tl-none shadow-sm'
+                  : 'bg-white border border-slate-200 text-slate-700 rounded-tl-none'
               }`}>
                 {msg.content}
               </div>
@@ -116,7 +135,7 @@ export const AIAgentSection: React.FC<AIAgentSectionProps> = ({ jobs, profile })
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            placeholder="Ask anything about your jobs or profile..."
+            placeholder="Ask about your applications or skills..."
             className="w-full pl-4 pr-12 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm shadow-sm"
           />
           <button 

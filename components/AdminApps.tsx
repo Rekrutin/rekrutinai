@@ -1,13 +1,14 @@
 
 import React from 'react';
 import { Job, JobStatus } from '../types';
-import { Building2, MapPin, Calendar, ExternalLink } from 'lucide-react';
+import { Building2, MapPin, Calendar, ExternalLink, Trash2 } from 'lucide-react';
 
 interface AdminAppsProps {
   jobs: Job[];
+  onDelete: (id: string) => void;
 }
 
-export const AdminApps: React.FC<AdminAppsProps> = ({ jobs }) => {
+export const AdminApps: React.FC<AdminAppsProps> = ({ jobs, onDelete }) => {
   const getStatusColor = (status: JobStatus) => {
     switch (status) {
       case JobStatus.SAVED: return 'bg-slate-100 text-slate-700 border-slate-200';
@@ -18,6 +19,12 @@ export const AdminApps: React.FC<AdminAppsProps> = ({ jobs }) => {
       default: return 'bg-slate-100 text-slate-700';
     }
   };
+
+  const handleDelete = (id: string) => {
+    if(window.confirm("Remove this application record from the user's dashboard?")) {
+      onDelete(id);
+    }
+  }
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden animate-fade-in">
@@ -39,7 +46,7 @@ export const AdminApps: React.FC<AdminAppsProps> = ({ jobs }) => {
               <th className="px-6 py-4">Location</th>
               <th className="px-6 py-4">Status</th>
               <th className="px-6 py-4">Date Tracked</th>
-              <th className="px-6 py-4 text-right">Link</th>
+              <th className="px-6 py-4 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -51,7 +58,7 @@ export const AdminApps: React.FC<AdminAppsProps> = ({ jobs }) => {
               </tr>
             ) : (
               jobs.map((job) => (
-                <tr key={job.id} className="hover:bg-slate-50 transition-colors">
+                <tr key={job.id} className="hover:bg-slate-50 transition-colors group">
                   <td className="px-6 py-4">
                     <div>
                       <p className="font-bold text-slate-900">{job.company}</p>
@@ -77,13 +84,20 @@ export const AdminApps: React.FC<AdminAppsProps> = ({ jobs }) => {
                     </div>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    {job.url ? (
-                        <a href={job.url} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 inline-flex items-center gap-1 text-xs font-bold">
-                            View <ExternalLink size={12} />
-                        </a>
-                    ) : (
-                        <span className="text-slate-300 text-xs">-</span>
-                    )}
+                    <div className="flex items-center justify-end gap-3">
+                      {job.url && (
+                          <a href={job.url} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 inline-flex items-center gap-1 text-xs font-bold">
+                              Link <ExternalLink size={12} />
+                          </a>
+                      )}
+                      <button 
+                        onClick={() => handleDelete(job.id)}
+                        className="text-slate-300 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100"
+                        title="Delete Application"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))

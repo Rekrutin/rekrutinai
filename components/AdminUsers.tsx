@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Search, MoreHorizontal, Trash2, Eye, Mail, Calendar, Ban } from 'lucide-react';
+import { Search, Trash2, Eye, Mail, Calendar, Ban } from 'lucide-react';
 import { AdminUser } from '../types';
 
 interface AdminUsersProps {
@@ -15,6 +15,12 @@ export const AdminUsers: React.FC<AdminUsersProps> = ({ users, onDeleteUser }) =
     u.email.toLowerCase().includes(searchQuery.toLowerCase()) || 
     u.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleDelete = (email: string) => {
+    if (window.confirm(`Are you sure you want to permanently delete user ${email}?`)) {
+      onDeleteUser(email);
+    }
+  };
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden animate-fade-in">
@@ -108,7 +114,7 @@ export const AdminUsers: React.FC<AdminUsersProps> = ({ users, onDeleteUser }) =
                           <Ban size={16} />
                        </button>
                        <button 
-                        onClick={() => onDeleteUser(user.email)}
+                        onClick={() => handleDelete(user.email)}
                         className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" 
                         title="Delete User"
                        >
