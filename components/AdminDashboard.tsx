@@ -2,9 +2,9 @@
 import React, { useState } from 'react';
 import { 
   LayoutDashboard, Users, Briefcase, FileText, Activity, LogOut, 
-  Search, TrendingUp, DollarSign, Globe, CheckCircle, Clock, Building2, User 
+  Search, TrendingUp, DollarSign, Building2
 } from 'lucide-react';
-import { AdminTab, EmployerJob, CandidateApplication, UserProfile } from '../types';
+import { AdminTab, EmployerJob, CandidateApplication } from '../types';
 import { INITIAL_EMPLOYER_JOBS, INITIAL_APPLICATIONS } from '../constants';
 
 interface AdminDashboardProps {
@@ -24,24 +24,29 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
 
   // --- AGGREGATED DATA (Mock DB + Live State) ---
+  // We keep INITIAL jobs/apps as they represent the "System Data" visible to users.
   const allEmployerJobs = [...INITIAL_EMPLOYER_JOBS, ...employerJobs];
   const allApplications = [...INITIAL_APPLICATIONS, ...applications];
   
-  // Calculate Stats
-  const totalUsers = 1200 + liveUsers.length; // 1200 Mock base
-  const totalEmployers = 45 + (liveUsers.length > 0 ? 1 : 0); // Mock base
-  const totalJobs = allEmployerJobs.length;
-  const totalApplications = allApplications.length;
+  // Calculate Real Stats
+  const totalUsers = liveUsers.length; 
+  // In this demo architecture, we don't have a separate Employer DB, so we estimate or start at 0
+  const totalEmployers = liveUsers.length > 0 ? 1 : 0; 
   const activeJobs = allEmployerJobs.filter(j => j.status === 'Active').length;
+  const totalApplications = allApplications.length;
   
-  // Simulated Recent Activity
+  // Simulated Recent Activity (kept minimal or empty for "start from scratch" feel if preferred, 
+  // but useful to show system events. We'll keep dynamic events only if we had them, 
+  // for now we'll show a placeholder if no real activity exists)
   const activities = [
-    { id: 1, type: 'user', text: 'New user registered: sarah@example.com', time: '2 mins ago' },
-    { id: 2, type: 'job', text: 'TechFlow Inc. posted "Senior React Dev"', time: '15 mins ago' },
-    { id: 3, type: 'app', text: 'Application received for "Product Manager"', time: '1 hour ago' },
-    { id: 4, type: 'user', text: 'User upgraded to Pro Plan', time: '3 hours ago' },
-    { id: 5, type: 'employer', text: 'New employer "Acme Corp" verified', time: '5 hours ago' },
-  ];
+    { id: 1, type: 'system', text: 'System initialized', time: 'Just now' },
+    ...liveUsers.map((u, i) => ({ 
+        id: i + 10, 
+        type: 'user', 
+        text: `New user registered: ${u}`, 
+        time: 'Recent' 
+    }))
+  ].slice(0, 10);
 
   const renderSidebar = () => (
     <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col h-full border-r border-slate-800">
@@ -111,7 +116,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         <span className="text-green-600 font-bold flex items-center">
           <TrendingUp size={14} className="mr-1" /> {change}
         </span>
-        <span className="text-slate-400 ml-2">vs last month</span>
+        <span className="text-slate-400 ml-2">since start</span>
       </div>
     </div>
   );
@@ -123,28 +128,28 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           title="Total Users" 
           value={totalUsers.toLocaleString()} 
           icon={<Users size={24} className="text-blue-600" />} 
-          change="+12%"
+          change="Real-time"
           color="bg-blue-600"
         />
         <StatCard 
           title="Active Jobs" 
           value={activeJobs} 
           icon={<Briefcase size={24} className="text-indigo-600" />} 
-          change="+5%"
+          change="System Wide"
           color="bg-indigo-600"
         />
         <StatCard 
           title="Applications" 
           value={totalApplications.toLocaleString()} 
           icon={<FileText size={24} className="text-purple-600" />} 
-          change="+24%"
+          change="Total"
           color="bg-purple-600"
         />
         <StatCard 
           title="Total Revenue" 
-          value="Rp 450M" 
+          value="Rp 0" 
           icon={<DollarSign size={24} className="text-green-600" />} 
-          change="+8%"
+          change="0%"
           color="bg-green-600"
         />
       </div>
@@ -154,12 +159,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <div className="p-6 border-b border-slate-100 flex justify-between items-center">
             <h3 className="font-bold text-slate-800">Platform Growth</h3>
             <select className="text-sm border-none bg-slate-50 rounded-lg p-2 font-medium text-slate-600 outline-none">
-              <option>Last 30 Days</option>
-              <option>This Year</option>
+              <option>Realtime</option>
             </select>
           </div>
           <div className="p-6 h-64 flex items-center justify-center bg-slate-50/50">
-            <p className="text-slate-400 text-sm">Chart Visualization Component Placeholder</p>
+            {totalUsers > 0 ? (
+               <div className="text-center">
+                  <p className="text-3xl font-bold text-indigo-600">{totalUsers}</p>
+                  <p className="text-slate-500 text-sm">New User Signups</p>
+               </div>
+            ) : (
+                <p className="text-slate-400 text-sm">Waiting for first user...</p>
+            )}
           </div>
         </div>
 
@@ -168,8 +179,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <h3 className="font-bold text-slate-800">Recent Activity</h3>
           </div>
           <div className="divide-y divide-slate-100">
-            {activities.map(activity => (
-              <div key={activity.id} className="p-4 flex items-start gap-3 hover:bg-slate-50 transition-colors">
+            {activities.map((activity, i) => (
+              <div key={i} className="p-4 flex items-start gap-3 hover:bg-slate-50 transition-colors">
                 <div className={`mt-1 w-2 h-2 rounded-full flex-shrink-0 ${
                   activity.type === 'user' ? 'bg-blue-500' : 
                   activity.type === 'job' ? 'bg-indigo-500' : 'bg-green-500'
@@ -212,25 +223,32 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
-          {/* Mocked Rows */}
-          {[...liveUsers, 'john@example.com', 'sarah.m@gmail.com', 'david.tech@yahoo.com'].map((email, i) => (
-            <tr key={i} className="hover:bg-slate-50 transition-colors">
-              <td className="px-6 py-4 font-medium text-slate-900 flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 font-bold">
-                  {email.charAt(0).toUpperCase()}
-                </div>
-                {email}
-              </td>
-              <td className="px-6 py-4 text-slate-600">{i === 0 && liveUsers.length > 0 ? 'Employer' : 'Job Seeker'}</td>
-              <td className="px-6 py-4">
-                <span className="px-2 py-1 rounded-full bg-green-100 text-green-700 text-xs font-bold">Active</span>
-              </td>
-              <td className="px-6 py-4 text-slate-500">{new Date().toLocaleDateString()}</td>
-              <td className="px-6 py-4 text-right">
-                <button className="text-blue-600 hover:text-blue-800 font-medium">View</button>
+          {liveUsers.length === 0 ? (
+            <tr>
+              <td colSpan={5} className="px-6 py-8 text-center text-slate-400">
+                No users registered yet.
               </td>
             </tr>
-          ))}
+          ) : (
+            liveUsers.map((email, i) => (
+              <tr key={i} className="hover:bg-slate-50 transition-colors">
+                <td className="px-6 py-4 font-medium text-slate-900 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 font-bold">
+                    {email.charAt(0).toUpperCase()}
+                  </div>
+                  {email}
+                </td>
+                <td className="px-6 py-4 text-slate-600">User</td>
+                <td className="px-6 py-4">
+                  <span className="px-2 py-1 rounded-full bg-green-100 text-green-700 text-xs font-bold">Active</span>
+                </td>
+                <td className="px-6 py-4 text-slate-500">{new Date().toLocaleDateString()}</td>
+                <td className="px-6 py-4 text-right">
+                  <button className="text-blue-600 hover:text-blue-800 font-medium">View</button>
+                </td>
+              </tr>
+            ))
+          )}
         </tbody>
       </table>
     </div>
@@ -315,7 +333,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
              <div className="text-center py-20 text-slate-400">
                <Building2 size={48} className="mx-auto mb-4 opacity-50" />
                <h3 className="text-lg font-medium">Employer Management</h3>
-               <p>Same table structure as Users, filtered by role='employer'</p>
+               <p>Employers will appear here upon registration.</p>
              </div>
           )}
           {activeTab === 'jobs' && renderJobsTable()}
@@ -323,11 +341,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
              <div className="bg-white rounded-xl border border-slate-200 p-8">
                 <h3 className="font-bold text-slate-800 mb-6">Full System Logs</h3>
                 <div className="space-y-4">
-                   {[...Array(10)].map((_, i) => (
+                   {[...Array(5)].map((_, i) => (
                      <div key={i} className="flex gap-4 items-center text-sm font-mono text-slate-600 border-b border-slate-50 pb-2">
                        <span className="text-slate-400">2025-01-20 10:{30+i}:00</span>
                        <span className="text-blue-600 font-bold">[INFO]</span>
-                       <span>API Request to /api/jobs handled successfully ({120 + i}ms)</span>
+                       <span>System heartbeat check OK</span>
                      </div>
                    ))}
                 </div>
