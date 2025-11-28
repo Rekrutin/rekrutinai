@@ -79,12 +79,42 @@ export const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose, onCom
         ...scannedData,
         email: email
       };
+      
+      const enrichedResumeContent = `
+NAME: ${finalProfile.name}
+EMAIL: ${email}
+TITLE: ${finalProfile.title}
+
+PROFESSIONAL SUMMARY
+${finalProfile.summary}
+
+SKILLS
+${finalProfile.skills.join(' • ')}
+
+EXPERIENCE
+Frontend Developer | Tech Startup | 2021 - Present
+- Built scalable web applications using React and TypeScript.
+- Improved site performance by 30% through code splitting and optimization.
+- Collaborated with UX designers to implement pixel-perfect designs.
+
+Junior Web Developer | Digital Agency | 2019 - 2021
+- Developed responsive websites for various clients.
+- Maintained legacy codebases and fixed critical bugs.
+
+EDUCATION
+Bachelor of Science in Computer Science
+University of Technology | 2015 - 2019
+
+PROJECTS
+E-commerce Platform: Built a full-stack shop using Next.js and Stripe.
+Task Manager App: Created a productivity tool with real-time sync.
+`;
 
       // Create resume object, but leave ATS data empty so App.tsx can populate it via service
       const newResume: Resume = {
         id: 'initial-resume',
         name: file.name,
-        content: "Simulated content extracted from PDF... (Skills: React, TypeScript, Node.js)", // In real app, parse PDF
+        content: enrichedResumeContent, 
         uploadDate: new Date().toISOString(),
       };
       

@@ -1,8 +1,9 @@
 
 import React, { useState } from 'react';
 import { Resume, PlanType } from '../types';
-import { FileText, Upload, CheckCircle, AlertCircle, Trash2, Search, Lock } from 'lucide-react';
+import { FileText, Upload, CheckCircle, AlertCircle, Trash2, Search, Lock, Eye } from 'lucide-react';
 import { MAX_FREE_ATS_SCANS } from '../constants';
+import { ResumePreviewDrawer } from './ResumePreviewDrawer';
 
 interface ResumeSectionProps {
   resumes: Resume[];
@@ -27,6 +28,10 @@ export const ResumeSection: React.FC<ResumeSectionProps> = ({
   const [newResumeText, setNewResumeText] = useState('');
   const [newResumeName, setNewResumeName] = useState('');
   const [analyzingId, setAnalyzingId] = useState<string | null>(null);
+  
+  // Drawer State
+  const [selectedResume, setSelectedResume] = useState<Resume | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   const isFree = plan === 'Free';
   const scansRemaining = Math.max(0, MAX_FREE_ATS_SCANS - scansUsed);
@@ -57,6 +62,11 @@ export const ResumeSection: React.FC<ResumeSectionProps> = ({
     } finally {
       setAnalyzingId(null);
     }
+  };
+  
+  const handleViewResume = (resume: Resume) => {
+    setSelectedResume(resume);
+    setIsDrawerOpen(true);
   };
 
   return (
@@ -145,20 +155,33 @@ export const ResumeSection: React.FC<ResumeSectionProps> = ({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {resumes.map(resume => (
-          <div key={resume.id} className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 hover:shadow-md transition-shadow">
+          <div key={resume.id} className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 hover:shadow-md transition-shadow group">
              <div className="flex justify-between items-start mb-4">
                <div className="flex items-center">
                  <div className="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center text-indigo-600 mr-3">
                    <FileText size={20} />
                  </div>
                  <div>
-                   <h3 className="font-bold text-slate-800">{resume.name}</h3>
+                   <h3 className="font-bold text-slate-800 truncate max-w-[150px]">{resume.name}</h3>
                    <span className="text-xs text-slate-400">Added {new Date(resume.uploadDate).toLocaleDateString()}</span>
                  </div>
                </div>
-               <button onClick={() => onDeleteResume(resume.id)} className="text-slate-300 hover:text-red-500">
-                 <Trash2 size={16} />
-               </button>
+               <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button 
+                    onClick={() => handleViewResume(resume)} 
+                    className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                    title="View Resume"
+                  >
+                    <Eye size={16} />
+                  </button>
+                  <button 
+                    onClick={() => onDeleteResume(resume.id)} 
+                    className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                    title="Delete Resume"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+               </div>
              </div>
 
              {/* ATS Score Section */}
@@ -210,7 +233,10 @@ export const ResumeSection: React.FC<ResumeSectionProps> = ({
                 )}
              </div>
              
-             <div className="text-xs text-slate-400 truncate">
+             <div 
+               className="text-xs text-slate-400 truncate cursor-pointer hover:text-indigo-500"
+               onClick={() => handleViewResume(resume)}
+             >
                 {resume.content.substring(0, 60)}...
              </div>
           </div>
@@ -223,6 +249,12 @@ export const ResumeSection: React.FC<ResumeSectionProps> = ({
           </div>
         )}
       </div>
+
+      <ResumePreviewDrawer 
+        resume={selectedResume}
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+      />
     </div>
   );
 };

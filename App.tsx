@@ -26,53 +26,7 @@ import { LoginModal } from './components/LoginModal';
 import { UpgradeLimitModal } from './components/UpgradeLimitModal';
 import { EmployerSignupModal } from './components/EmployerSignupModal';
 import { analyzeResumeATS } from './services/geminiService';
-
-// Animated Number Counter Component
-const CountUp = ({ end, suffix = '', duration = 2000, decimals = 0 }: { end: number, suffix?: string, duration?: number, decimals?: number }) => {
-  const [count, setCount] = useState(0);
-  const [isVisible, setIsVisible] = useState(false);
-  const ref = useRef<HTMLSpanElement>(null);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-        }
-      },
-      { threshold: 0.1 }
-    );
-    
-    if (ref.current) {
-      observer.observe(ref.current);
-    }
-
-    return () => observer.disconnect();
-  }, []);
-  
-  useEffect(() => {
-    if (!isVisible) return;
-
-    let startTimestamp: number | null = null;
-    const step = (timestamp: number) => {
-      if (!startTimestamp) startTimestamp = timestamp;
-      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-      // Ease out expo: 1 - pow(2, -10 * t)
-      const easeProgress = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
-      
-      setCount(easeProgress * end);
-      
-      if (progress < 1) {
-        window.requestAnimationFrame(step);
-      }
-    };
-    window.requestAnimationFrame(step);
-  }, [end, duration, isVisible]);
-
-  return (
-    <span ref={ref}>{count.toFixed(decimals)}{suffix}</span>
-  );
-};
+import { CountUp } from './components/CountUp';
 
 // Mock simple HashRouter to avoid dependencies
 const HashRouter = ({ 
@@ -521,7 +475,6 @@ const App: React.FC = () => {
 
   // Helper function for the landing page scrolling row
   const renderScrollingJobRow = (job: Job) => {
-    // ... (no changes to helper logic)
     const getStatusColor = (status: JobStatus) => {
       switch (status) {
         case JobStatus.SAVED: return 'bg-slate-100 text-slate-700 border-slate-200';
@@ -572,7 +525,6 @@ const App: React.FC = () => {
   const renderLanding = () => (
     <div className="min-h-screen bg-slate-50 font-sans overflow-x-hidden">
       <Navbar />
-      {/* ... (Existing Landing Page Content) ... */}
       <section className="pt-32 pb-24 px-4 sm:px-6 lg:px-8 text-center relative overflow-hidden">
         {/* ... (Existing Hero Background) ... */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[600px] bg-gradient-to-b from-indigo-50/80 to-transparent -z-10 pointer-events-none"></div>
@@ -795,10 +747,8 @@ const App: React.FC = () => {
   );
 
   // ... (rest of the file: renderPricingPage, renderDashboard, default export)
-  // Re-exporting renderDashboard to fix context, but focusing on the updated modal logic
   
   const renderPricingPage = () => (
-     // (Same content as previous file - abbreviated for brevity as no logic changed here)
     <div className="min-h-screen bg-slate-50 font-sans">
       <Navbar />
       <div className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
