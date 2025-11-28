@@ -27,6 +27,7 @@ import { UpgradeLimitModal } from './components/UpgradeLimitModal';
 import { EmployerSignupModal } from './components/EmployerSignupModal';
 import { analyzeResumeATS } from './services/geminiService';
 import { CountUp } from './components/CountUp';
+import { JobDetailDrawer } from './components/JobDetailDrawer';
 
 // Mock simple HashRouter to avoid dependencies
 const HashRouter = ({ 
@@ -51,6 +52,7 @@ const App: React.FC = () => {
   const [viewMode, setViewMode] = useState<'board' | 'list'>('list');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [analyzingJob, setAnalyzingJob] = useState<Job | null>(null);
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null); // For Detail Drawer
   
   // Auth & Onboarding State
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
@@ -160,7 +162,8 @@ const App: React.FC = () => {
     const newJob: Job = {
       ...newJobData,
       id: Math.random().toString(36).substr(2, 9),
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
+      timeline: [{ status: newJobData.status, date: new Date().toISOString() }]
     };
     setJobs(prev => [newJob, ...prev]);
     if (supabase) await supabase.from('jobs').insert([newJob]);
@@ -168,6 +171,7 @@ const App: React.FC = () => {
 
   const handleDeleteJob = async (id: string) => {
     setJobs(prev => prev.filter(j => j.id !== id));
+    if (selectedJob?.id === id) setSelectedJob(null);
     if (supabase) await supabase.from('jobs').delete().eq('id', id);
   }
 
@@ -178,28 +182,56 @@ const App: React.FC = () => {
     
     if (newIndex >= 0 && newIndex < statusOrder.length) {
       const newStatus = statusOrder[newIndex];
+      const updatedJob = { 
+        ...job, 
+        status: newStatus,
+        timeline: [...(job.timeline || []), { status: newStatus, date: new Date().toISOString() }]
+      };
+      
       const updatedJobs = jobs.map(j => 
-        j.id === job.id ? { ...j, status: newStatus } : j
+        j.id === job.id ? updatedJob : j
       );
       setJobs(updatedJobs);
+      if(selectedJob?.id === job.id) setSelectedJob(updatedJob);
       if (supabase) await supabase.from('jobs').update({ status: newStatus }).eq('id', job.id);
     }
   };
 
   const handleStatusChange = async (id: string, newStatus: JobStatus) => {
-    const updatedJobs = jobs.map(j => 
-      j.id === id ? { ...j, status: newStatus } : j
-    );
+    const job = jobs.find(j => j.id === id);
+    if (!job) return;
+
+    const updatedJob = {
+      ...job,
+      status: newStatus,
+      timeline: [...(job.timeline || []), { status: newStatus, date: new Date().toISOString() }]
+    };
+
+    const updatedJobs = jobs.map(j => j.id === id ? updatedJob : j);
     setJobs(updatedJobs);
+    if(selectedJob?.id === id) setSelectedJob(updatedJob);
     if (supabase) await supabase.from('jobs').update({ status: newStatus }).eq('id', id);
   };
 
   const handleAnalysisComplete = async (jobId: string, analysis: JobAnalysis) => {
-    const updatedJobs = jobs.map(j => 
-      j.id === jobId ? { ...j, ai_analysis: analysis } : j
-    );
+    const job = jobs.find(j => j.id === jobId);
+    if (!job) return;
+    
+    const updatedJob = { ...job, ai_analysis: analysis };
+    const updatedJobs = jobs.map(j => j.id === jobId ? updatedJob : j);
+    
     setJobs(updatedJobs);
+    if(selectedJob?.id === jobId) setSelectedJob(updatedJob);
     if (supabase) await supabase.from('jobs').update({ ai_analysis: analysis }).eq('id', jobId);
+  };
+
+  const handleUpdateJobDetails = (id: string, updates: Partial<Job>) => {
+    const updatedJobs = jobs.map(j => j.id === id ? { ...j, ...updates } : j);
+    setJobs(updatedJobs);
+    
+    if(selectedJob?.id === id) {
+      setSelectedJob(prev => prev ? { ...prev, ...updates } : null);
+    }
   };
 
   // --- Resume Actions ---
@@ -383,34 +415,26 @@ const App: React.FC = () => {
 
   const handleLogin = (email: string) => {
     if (registeredUsers.includes(email)) {
-      // Simple mock login - we assume same role based on context or store role in DB
-      // For this demo, we can't easily distinguish role from email alone without backend
-      // So we default to seeker, but if they click "Employer" button they can switch.
       setProfile(prev => ({ ...prev, email }));
       setIsLoginModalOpen(false);
-      // Determine dashboard state? For now, go to seeker by default
       setUserRole('seeker');
       setCurrentView('dashboard');
       setActiveTab('tracker');
     } else {
       alert("Account not found. Please Sign Up.");
       setIsLoginModalOpen(false);
-      // We don't auto open signup to avoid confusion, user should click Sign Up
     }
   };
 
   const handleLogout = () => {
     setCurrentView('landing');
     setIsNotificationOpen(false);
-    // Reset mandatory flags
     setIsMandatoryJobPost(false);
   };
 
   const toggleLanguage = () => {
     setLanguage(prev => prev === 'en' ? 'id' : 'en');
   };
-
-  // --- Render Helpers ---
 
   // Common Navbar Component
   const Navbar = () => (
@@ -746,8 +770,6 @@ const App: React.FC = () => {
     </div>
   );
 
-  // ... (rest of the file: renderPricingPage, renderDashboard, default export)
-  
   const renderPricingPage = () => (
     <div className="min-h-screen bg-slate-50 font-sans">
       <Navbar />
@@ -1141,6 +1163,7 @@ const App: React.FC = () => {
                           onAnalyze={(j) => setAnalyzingJob(j)}
                           onDelete={handleDeleteJob}
                           onAddJob={() => setIsAddModalOpen(true)}
+                          onJobClick={(j) => setSelectedJob(j)}
                         />
                       ) : (
                         <div className="flex overflow-x-auto pb-4 space-x-6">
@@ -1160,6 +1183,7 @@ const App: React.FC = () => {
                                         onMove={handleMoveJob}
                                         onAnalyze={(j) => setAnalyzingJob(j)}
                                         onDelete={handleDeleteJob}
+                                        onClick={(j) => setSelectedJob(j)}
                                       />
                                     ))}
                                  </div>
@@ -1175,6 +1199,7 @@ const App: React.FC = () => {
                         onAnalyze={(j) => setAnalyzingJob(j)}
                         onDelete={handleDeleteJob}
                         onAddJob={() => setIsAddModalOpen(true)}
+                        onJobClick={(j) => setSelectedJob(j)}
                      />
                    )}
                 </div>
@@ -1358,6 +1383,14 @@ const App: React.FC = () => {
           onAnalysisComplete={handleAnalysisComplete}
         />
       )}
+
+      {/* Job Detail Drawer (CRM) */}
+      <JobDetailDrawer
+        job={selectedJob}
+        isOpen={!!selectedJob}
+        onClose={() => setSelectedJob(null)}
+        onUpdateJob={handleUpdateJobDetails}
+      />
 
       {/* Signup Modal - Onboarding */}
       <SignupModal

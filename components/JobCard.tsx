@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Job, JobStatus } from '../types';
 import { Briefcase, MapPin, BrainCircuit, GripVertical, ChevronRight, ChevronLeft, Trash2 } from 'lucide-react';
@@ -7,6 +8,7 @@ interface JobCardProps {
   onMove: (job: Job, direction: 'next' | 'prev') => void;
   onAnalyze: (job: Job) => void;
   onDelete: (id: string) => void;
+  onClick?: (job: Job) => void;
 }
 
 const statusOrder = [
@@ -17,7 +19,7 @@ const statusOrder = [
   JobStatus.REJECTED
 ];
 
-export const JobCard: React.FC<JobCardProps> = ({ job, onMove, onAnalyze, onDelete }) => {
+export const JobCard: React.FC<JobCardProps> = ({ job, onMove, onAnalyze, onDelete, onClick }) => {
   const statusIndex = statusOrder.indexOf(job.status);
   const isFirst = statusIndex === 0;
   const isLast = statusIndex === statusOrder.length - 1;
@@ -42,32 +44,40 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onMove, onAnalyze, onDele
 
   return (
     <div className={`bg-white p-4 rounded-xl shadow-sm border-l-4 ${scoreColor} mb-3 hover:shadow-md transition-shadow group relative`}>
-      <div className="flex justify-between items-start mb-2">
-        <div>
-          <h3 className="font-semibold text-slate-800 leading-tight">{job.title}</h3>
-          <div className="flex items-center text-sm text-slate-500 mt-1">
-            <Briefcase size={14} className="mr-1" />
-            <span className="truncate max-w-[120px]">{job.company}</span>
-          </div>
-          {job.location && (
-            <div className="flex items-center text-xs text-slate-400 mt-1">
-              <MapPin size={12} className="mr-1" />
-              <span>{job.location}</span>
+      <div className="cursor-pointer" onClick={() => onClick && onClick(job)}>
+        <div className="flex justify-between items-start mb-2">
+          <div>
+            <h3 className="font-semibold text-slate-800 leading-tight hover:text-indigo-600 transition-colors">{job.title}</h3>
+            <div className="flex items-center text-sm text-slate-500 mt-1">
+              <Briefcase size={14} className="mr-1" />
+              <span className="truncate max-w-[120px]">{job.company}</span>
             </div>
-          )}
+            {job.location && (
+              <div className="flex items-center text-xs text-slate-400 mt-1">
+                <MapPin size={12} className="mr-1" />
+                <span>{job.location}</span>
+              </div>
+            )}
+          </div>
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(job.id);
+            }}
+            className="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+            aria-label="Delete job"
+          >
+            <Trash2 size={16} />
+          </button>
         </div>
-        <button 
-          onClick={() => onDelete(job.id)}
-          className="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-          aria-label="Delete job"
-        >
-          <Trash2 size={16} />
-        </button>
       </div>
 
       <div className="flex items-center justify-between mt-4">
         <button
-          onClick={() => onAnalyze(job)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onAnalyze(job);
+          }}
           className={`flex items-center text-xs font-medium px-2 py-1 rounded-md transition-colors ${
             job.ai_analysis 
               ? badgeStyle
@@ -80,7 +90,10 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onMove, onAnalyze, onDele
 
         <div className="flex space-x-1">
           <button
-            onClick={() => onMove(job, 'prev')}
+            onClick={(e) => {
+              e.stopPropagation();
+              onMove(job, 'prev');
+            }}
             disabled={isFirst}
             className={`p-1 rounded hover:bg-slate-100 ${isFirst ? 'text-slate-200 cursor-not-allowed' : 'text-slate-500'}`}
             title="Move back"
@@ -88,7 +101,10 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onMove, onAnalyze, onDele
             <ChevronLeft size={18} />
           </button>
           <button
-            onClick={() => onMove(job, 'next')}
+            onClick={(e) => {
+              e.stopPropagation();
+              onMove(job, 'next');
+            }}
             disabled={isLast}
             className={`p-1 rounded hover:bg-slate-100 ${isLast ? 'text-slate-200 cursor-not-allowed' : 'text-slate-500'}`}
             title="Move forward"

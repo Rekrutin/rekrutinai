@@ -215,7 +215,16 @@ export const INITIAL_JOBS: Job[] = [
       fitScore: 85,
       analysis: 'Strong match for technical skills, but lacks specific mention of GraphQL.',
       improvements: ['Highlight GraphQL projects', 'Emphasize leadership experience']
-    }
+    },
+    contacts: [
+      { id: 'c1', name: 'Sarah Miller', role: 'Talent Acquisition', email: 'sarah@techflow.com' }
+    ],
+    notes: "Interview went well. Need to brush up on System Design for the next round.",
+    timeline: [
+      { status: JobStatus.SAVED, date: new Date(Date.now() - 86400000 * 5).toISOString() },
+      { status: JobStatus.APPLIED, date: new Date(Date.now() - 86400000 * 4).toISOString() },
+      { status: JobStatus.INTERVIEW, date: new Date(Date.now() - 86400000 * 1).toISOString() }
+    ]
   },
   {
     id: '2',
@@ -225,6 +234,9 @@ export const INITIAL_JOBS: Job[] = [
     status: JobStatus.APPLIED,
     created_at: new Date(Date.now() - 86400000 * 1).toISOString(),
     description: 'Looking for a UI/UX designer proficient in Figma.',
+    timeline: [
+      { status: JobStatus.APPLIED, date: new Date().toISOString() }
+    ]
   },
   {
     id: '3',
@@ -247,7 +259,16 @@ export const INITIAL_JOBS: Job[] = [
       fitScore: 92,
       analysis: 'Perfect match. Your experience with Node.js scaling aligns perfectly.',
       improvements: []
-    }
+    },
+    contacts: [
+       { id: 'c2', name: 'Budi Santoso', role: 'Engineering Manager', email: 'budi@tokopedia.com' }
+    ],
+    notes: "Offer received! Base salary Rp 35jt/mo. Pending equity details.",
+    timeline: [
+      { status: JobStatus.APPLIED, date: new Date(Date.now() - 86400000 * 10).toISOString() },
+      { status: JobStatus.INTERVIEW, date: new Date(Date.now() - 86400000 * 5).toISOString() },
+      { status: JobStatus.OFFER, date: new Date().toISOString() }
+    ]
   },
   {
     id: '5',
@@ -284,7 +305,14 @@ export const INITIAL_JOBS: Job[] = [
       fitScore: 78,
       analysis: 'Good strategic fit, but experience is more B2B than B2C.',
       improvements: ['Highlight B2C side projects']
-    }
+    },
+    contacts: [
+      { id: 'c3', name: 'Dian Sastro', role: 'Head of Product', email: 'dian@bukalapak.com' }
+    ],
+    timeline: [
+      { status: JobStatus.APPLIED, date: new Date(Date.now() - 86400000 * 14).toISOString() },
+      { status: JobStatus.INTERVIEW, date: new Date(Date.now() - 86400000 * 2).toISOString() }
+    ]
   },
   {
     id: '8',

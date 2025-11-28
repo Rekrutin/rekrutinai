@@ -9,9 +9,10 @@ interface JobListViewProps {
   onAnalyze: (job: Job) => void;
   onDelete: (id: string) => void;
   onAddJob?: () => void; // Optional prop to trigger add modal from empty state
+  onJobClick?: (job: Job) => void;
 }
 
-export const JobListView: React.FC<JobListViewProps> = ({ jobs, onStatusChange, onAnalyze, onDelete, onAddJob }) => {
+export const JobListView: React.FC<JobListViewProps> = ({ jobs, onStatusChange, onAnalyze, onDelete, onAddJob, onJobClick }) => {
   if (jobs.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 px-4 text-center bg-white rounded-xl border border-dashed border-slate-300">
@@ -64,10 +65,14 @@ export const JobListView: React.FC<JobListViewProps> = ({ jobs, onStatusChange, 
           </thead>
           <tbody className="bg-white divide-y divide-slate-200">
             {jobs.map((job) => (
-              <tr key={job.id} className="hover:bg-slate-50 transition-colors">
+              <tr 
+                key={job.id} 
+                className="hover:bg-slate-50 transition-colors cursor-pointer group"
+                onClick={() => onJobClick && onJobClick(job)}
+              >
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex flex-col">
-                    <span className="text-sm font-bold text-slate-900">{job.title}</span>
+                    <span className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{job.title}</span>
                     <div className="flex items-center text-xs text-slate-500 mt-1">
                       <Building2 size={12} className="mr-1" />
                       <span className="mr-3">{job.company}</span>
@@ -89,6 +94,7 @@ export const JobListView: React.FC<JobListViewProps> = ({ jobs, onStatusChange, 
                 <td className="px-6 py-4 whitespace-nowrap">
                   <select
                     value={job.status}
+                    onClick={(e) => e.stopPropagation()} // Prevent row click
                     onChange={(e) => onStatusChange(job.id, e.target.value as JobStatus)}
                     className={`text-xs font-bold px-2 py-1 rounded-full border cursor-pointer outline-none focus:ring-2 focus:ring-indigo-500 ${getStatusColor(job.status)}`}
                   >
@@ -99,7 +105,10 @@ export const JobListView: React.FC<JobListViewProps> = ({ jobs, onStatusChange, 
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                    <button
-                    onClick={() => onAnalyze(job)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onAnalyze(job);
+                    }}
                     className={`flex items-center text-xs font-medium px-2 py-1 rounded-md transition-colors border ${
                       job.ai_analysis 
                         ? getScoreBadgeStyle(job.ai_analysis.fitScore)
@@ -117,6 +126,7 @@ export const JobListView: React.FC<JobListViewProps> = ({ jobs, onStatusChange, 
                         href={job.url} 
                         target="_blank" 
                         rel="noreferrer" 
+                        onClick={(e) => e.stopPropagation()}
                         className="text-slate-400 hover:text-indigo-600 transition-colors"
                         title="Go to Job Post"
                       >
@@ -124,7 +134,10 @@ export const JobListView: React.FC<JobListViewProps> = ({ jobs, onStatusChange, 
                       </a>
                     )}
                     <button 
-                      onClick={() => onDelete(job.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDelete(job.id);
+                      }}
                       className="text-slate-400 hover:text-red-600 transition-colors"
                       title="Delete Application"
                     >

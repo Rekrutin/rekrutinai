@@ -13,6 +13,25 @@ export interface JobAnalysis {
   improvements: string[];
 }
 
+export interface JobContact {
+  id: string;
+  name: string;
+  role: string;
+  email?: string;
+  linkedin?: string;
+}
+
+export interface JobNote {
+  id: string;
+  content: string;
+  updatedAt: string;
+}
+
+export interface JobTimelineEvent {
+  status: JobStatus;
+  date: string;
+}
+
 export interface Job {
   id: string;
   title: string;
@@ -24,6 +43,10 @@ export interface Job {
   status: JobStatus;
   created_at: string;
   ai_analysis?: JobAnalysis | null;
+  // CRM Features (Huntr Style)
+  contacts?: JobContact[];
+  notes?: string; // Simplified for demo
+  timeline?: JobTimelineEvent[];
 }
 
 export interface EmployerJob {
