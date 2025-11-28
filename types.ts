@@ -122,9 +122,10 @@ export interface Notification {
 }
 
 export type PlanType = 'Free' | 'Pro' | 'Career+' | 'Elite';
-export type UserRole = 'seeker' | 'employer';
+export type UserRole = 'seeker' | 'employer' | 'admin';
 export type DashboardTab = 'tracker' | 'resumes' | 'profile' | 'agent' | 'alerts' | 'billing';
 export type EmployerTab = 'overview' | 'jobs' | 'candidates';
+export type AdminTab = 'overview' | 'users' | 'employers' | 'jobs' | 'activity';
 export type OnboardingStep = 'idle' | 'upload' | 'scanning' | 'review' | 'credentials' | 'complete';
 export type Language = 'en' | 'id';
 

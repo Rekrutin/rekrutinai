@@ -28,6 +28,7 @@ import { EmployerSignupModal } from './components/EmployerSignupModal';
 import { analyzeResumeATS } from './services/geminiService';
 import { CountUp } from './components/CountUp';
 import { JobDetailDrawer } from './components/JobDetailDrawer';
+import { AdminDashboard } from './components/AdminDashboard'; // Import Admin Component
 
 // Mock simple HashRouter to avoid dependencies
 const HashRouter = ({ 
@@ -41,7 +42,7 @@ const HashRouter = ({
 };
 
 const App: React.FC = () => {
-  const [currentView, setCurrentView] = useState<'landing' | 'pricing' | 'dashboard'>('landing');
+  const [currentView, setCurrentView] = useState<'landing' | 'pricing' | 'dashboard' | 'admin'>('landing');
   const [userRole, setUserRole] = useState<UserRole>('seeker');
   const [language, setLanguage] = useState<Language>('en');
   
@@ -120,13 +121,14 @@ const App: React.FC = () => {
         const sessionData = JSON.parse(savedSession);
         setProfile(sessionData.profile);
         setUserRole(sessionData.role || 'seeker');
-        setCurrentView('dashboard');
-        // Restore some basic state if available
-        if (sessionData.role === 'employer') {
-           // For employer demo, we might want to restore data, but keep it empty for "fresh" logic
+        
+        // Handle redirect based on role
+        if (sessionData.role === 'admin') {
+          setCurrentView('admin');
         } else {
-           // For seeker
+          setCurrentView('dashboard');
         }
+        
       } catch (e) {
         console.error("Failed to restore session", e);
       }
@@ -151,10 +153,6 @@ const App: React.FC = () => {
         if (userRole === 'seeker') {
           const { data, error } = await supabase.from('jobs').select('*');
           if (!error && data) setJobs(data as unknown as Job[]);
-        } else {
-          // In real implementation, this would fetch data, but for the enforced flow demo,
-          // we are keeping local state clean for new users unless they are already "logged in" with data.
-          // For demo purposes, we do NOT load mock data if the list is empty to respect "New User" flow.
         }
       }
     };
@@ -461,6 +459,16 @@ const App: React.FC = () => {
   };
 
   const handleLogin = (email: string) => {
+    // ADMIN CHECK
+    if (email === 'admin@rekrutin.ai') {
+      setUserRole('admin');
+      setCurrentView('admin');
+      setIsLoginModalOpen(false);
+      localStorage.setItem('rekrutin_session', JSON.stringify({ profile: { name: 'Admin', email }, role: 'admin' }));
+      return;
+    }
+
+    // STANDARD USER CHECK
     if (registeredUsers.includes(email)) {
       const newProfile = { ...profile, email };
       setProfile(newProfile);
@@ -551,6 +559,7 @@ const App: React.FC = () => {
 
   // Helper function for the landing page scrolling row
   const renderScrollingJobRow = (job: Job) => {
+    // ... (No change to helper logic)
     const getStatusColor = (status: JobStatus) => {
       switch (status) {
         case JobStatus.SAVED: return 'bg-slate-100 text-slate-700 border-slate-200';
@@ -1459,6 +1468,15 @@ const App: React.FC = () => {
   );
 
   switch (currentView) {
+    case 'admin':
+      return (
+        <AdminDashboard 
+          onLogout={handleLogout}
+          liveUsers={registeredUsers}
+          employerJobs={employerJobs}
+          applications={applications}
+        />
+      );
     case 'pricing': return renderPricingPage();
     case 'dashboard': return renderDashboard();
     default: return renderLanding();
