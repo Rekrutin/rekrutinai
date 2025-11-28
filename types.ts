@@ -99,6 +99,7 @@ export type UserRole = 'seeker' | 'employer';
 export type DashboardTab = 'tracker' | 'resumes' | 'profile' | 'agent' | 'alerts' | 'billing';
 export type EmployerTab = 'overview' | 'jobs' | 'candidates';
 export type OnboardingStep = 'idle' | 'upload' | 'scanning' | 'review' | 'credentials' | 'complete';
+export type Language = 'en' | 'id';
 
 export interface PricingPlan {
   name: PlanType | string;

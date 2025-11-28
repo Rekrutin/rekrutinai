@@ -6,8 +6,8 @@ import {
   Briefcase, Users, Search, List as ListIcon, Kanban, FileText, UserCircle, Sparkles, Bell, CreditCard,
   MapPin, TrendingUp, Rocket, Files, Zap, Target, Radar, Building2, ExternalLink, Trash2, BrainCircuit
 } from 'lucide-react';
-import { Job, JobStatus, JobAnalysis, UserRole, EmployerJob, DashboardTab, UserProfile, Resume, JobAlert, Notification, EmployerTab, CandidateApplication, ExternalJobMatch } from './types';
-import { INITIAL_JOBS, FEATURES, PRICING_PLANS, INITIAL_EMPLOYER_JOBS, TRENDING_SEARCHES, INITIAL_APPLICATIONS, INITIAL_EXTERNAL_MATCHES } from './constants';
+import { Job, JobStatus, JobAnalysis, UserRole, EmployerJob, DashboardTab, UserProfile, Resume, JobAlert, Notification, EmployerTab, CandidateApplication, ExternalJobMatch, Language } from './types';
+import { INITIAL_JOBS, getFeatures, getPricingPlans, INITIAL_EMPLOYER_JOBS, TRENDING_SEARCHES, INITIAL_APPLICATIONS, INITIAL_EXTERNAL_MATCHES, TRANSLATIONS } from './constants';
 import { supabase } from './services/supabaseClient';
 import { JobCard } from './components/JobCard';
 import { JobListView } from './components/JobListView';
@@ -83,8 +83,9 @@ const HashRouter = ({
 };
 
 const App: React.FC = () => {
-  const [currentView, setCurrentView] = useState<'landing' | 'dashboard'>('landing');
+  const [currentView, setCurrentView] = useState<'landing' | 'pricing' | 'dashboard'>('landing');
   const [userRole, setUserRole] = useState<UserRole>('seeker');
+  const [language, setLanguage] = useState<Language>('en');
   
   // Job Seeker State
   const [jobs, setJobs] = useState<Job[]>(INITIAL_JOBS);
@@ -133,6 +134,11 @@ const App: React.FC = () => {
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Internationalization Helper
+  const t = TRANSLATIONS[language];
+  const pricingPlans = getPricingPlans(language);
+  const features = getFeatures(language);
 
   // Click outside to close notification dropdown
   useEffect(() => {
@@ -333,8 +339,6 @@ const App: React.FC = () => {
   };
 
   const handleLogin = (email: string) => {
-    // In a real app, verify credentials.
-    // For mock, we just update the profile email and log in.
     setProfile(prev => ({ ...prev, email }));
     setIsLoginModalOpen(false);
     setUserRole('seeker');
@@ -347,7 +351,76 @@ const App: React.FC = () => {
     setIsNotificationOpen(false);
   };
 
+  const toggleLanguage = () => {
+    setLanguage(prev => prev === 'en' ? 'id' : 'en');
+  };
+
   // --- Render Helpers ---
+
+  // Common Navbar Component
+  const Navbar = () => (
+    <nav className="fixed w-full z-40 bg-white/80 backdrop-blur-md border-b border-slate-100">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          <div className="flex items-center">
+            <span 
+              onClick={() => setCurrentView('landing')}
+              className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600 cursor-pointer"
+            >
+              RekrutIn.ai
+            </span>
+          </div>
+          
+          <div className="hidden md:flex items-center space-x-8">
+            <button onClick={() => setCurrentView('landing')} className="text-slate-600 hover:text-indigo-600 font-medium transition-colors">{t.NAV_FEATURES}</button>
+            <button onClick={() => setCurrentView('landing')} className="text-slate-600 hover:text-indigo-600 font-medium transition-colors">{t.NAV_HOW_IT_WORKS}</button>
+            <button onClick={() => setCurrentView('pricing')} className={`font-medium transition-colors ${currentView === 'pricing' ? 'text-indigo-600 font-bold' : 'text-slate-600 hover:text-indigo-600'}`}>{t.NAV_PRICING}</button>
+            
+            <div className="flex items-center space-x-3 border-l pl-6 border-slate-200">
+                {/* Language Toggle */}
+               <button 
+                  onClick={toggleLanguage}
+                  className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg hover:bg-slate-100 transition-colors mr-2 text-sm font-semibold text-slate-700"
+               >
+                  <span className="text-lg">{language === 'en' ? '🇺🇸' : '🇮🇩'}</span>
+                  <span>{language === 'en' ? 'EN' : 'ID'}</span>
+               </button>
+
+               <button 
+                onClick={() => {
+                  setUserRole('employer');
+                  setCurrentView('dashboard');
+                }}
+                className="text-slate-600 hover:text-slate-900 font-semibold px-3 py-2 text-sm"
+              >
+                {t.NAV_EMPLOYERS}
+              </button>
+                
+                <button 
+                onClick={() => setIsLoginModalOpen(true)}
+                className="text-slate-600 hover:text-indigo-600 font-bold px-4 py-2 text-sm transition-colors"
+              >
+                {t.NAV_LOGIN}
+              </button>
+
+                <button 
+                onClick={() => setIsSignupModalOpen(true)}
+                className="bg-indigo-600 text-white px-5 py-2.5 rounded-full font-bold hover:bg-indigo-700 transition-all shadow-lg hover:shadow-indigo-500/20 text-sm"
+              >
+                {t.NAV_SIGNUP}
+              </button>
+            </div>
+          </div>
+
+          <div className="md:hidden">
+            <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="text-slate-600">
+              {isMobileMenuOpen ? <X /> : <Menu />}
+            </button>
+          </div>
+        </div>
+      </div>
+    </nav>
+  );
 
   // Helper function for the landing page scrolling row
   const renderScrollingJobRow = (job: Job) => {
@@ -400,56 +473,7 @@ const App: React.FC = () => {
 
   const renderLanding = () => (
     <div className="min-h-screen bg-slate-50 font-sans overflow-x-hidden">
-      {/* Navbar */}
-      <nav className="fixed w-full z-40 bg-white/80 backdrop-blur-md border-b border-slate-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <span className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600 cursor-pointer">
-                RekrutIn.ai
-              </span>
-            </div>
-            
-            <div className="hidden md:flex items-center space-x-8">
-              <a href="#features" className="text-slate-600 hover:text-indigo-600 font-medium transition-colors">Features</a>
-              <a href="#how-it-works" className="text-slate-600 hover:text-indigo-600 font-medium transition-colors">How It Works</a>
-              <a href="#pricing" className="text-slate-600 hover:text-indigo-600 font-medium transition-colors">Pricing</a>
-              
-              <div className="flex items-center space-x-3 border-l pl-6 border-slate-200">
-                 <button 
-                  onClick={() => {
-                    setUserRole('employer');
-                    setCurrentView('dashboard');
-                  }}
-                  className="text-slate-600 hover:text-slate-900 font-semibold px-3 py-2 text-sm"
-                >
-                  For Employers
-                </button>
-                 
-                 <button 
-                  onClick={() => setIsLoginModalOpen(true)}
-                  className="text-slate-600 hover:text-indigo-600 font-bold px-4 py-2 text-sm transition-colors"
-                >
-                  Login
-                </button>
-
-                 <button 
-                  onClick={() => setIsSignupModalOpen(true)}
-                  className="bg-indigo-600 text-white px-5 py-2.5 rounded-full font-bold hover:bg-indigo-700 transition-all shadow-lg hover:shadow-indigo-500/20 text-sm"
-                >
-                  Sign Up
-                </button>
-              </div>
-            </div>
-
-            <div className="md:hidden">
-              <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="text-slate-600">
-                {isMobileMenuOpen ? <X /> : <Menu />}
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <Navbar />
 
       {/* Hero Section - AI Search Style */}
       <section className="pt-32 pb-24 px-4 sm:px-6 lg:px-8 text-center relative overflow-hidden">
@@ -461,16 +485,16 @@ const App: React.FC = () => {
         <div className="max-w-4xl mx-auto relative z-10">
           <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-sm font-semibold mb-8 shadow-sm">
             <Sparkles size={14} className="mr-2 text-indigo-500" />
-            New: AI Copilot for your job hunt
+            {t.HERO_TAG}
           </div>
           
           <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-slate-900 mb-6 leading-tight">
-            Land Your Next Job <br/>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">Smarter, Not Harder.</span>
+            {t.HERO_TITLE_1} <br/>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">{t.HERO_TITLE_2}</span>
           </h1>
           
           <p className="text-lg md:text-xl text-slate-600 mb-10 max-w-2xl mx-auto">
-            Your personal AI recruiter. Track applications, analyze your CV, and find matching roles across the web in seconds.
+            {t.HERO_DESC}
           </p>
 
           {/* AI Search Bar Interface */}
@@ -482,7 +506,7 @@ const App: React.FC = () => {
               </div>
               <input 
                 type="text" 
-                placeholder="Ask RekrutIn AI: Find me remote Product Design jobs in Jakarta..." 
+                placeholder={t.SEARCH_PLACEHOLDER} 
                 className="w-full p-4 text-lg bg-transparent border-none outline-none text-slate-800 placeholder:text-slate-400"
               />
               <button 
@@ -492,7 +516,7 @@ const App: React.FC = () => {
                 }}
                 className="hidden sm:flex items-center px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-md"
               >
-                Search <ArrowRight size={18} className="ml-2" />
+                {t.SEARCH_BUTTON} <ArrowRight size={18} className="ml-2" />
               </button>
               <button 
                  onClick={() => {
@@ -508,7 +532,7 @@ const App: React.FC = () => {
 
           {/* Trending Tags */}
           <div className="mt-6 flex flex-wrap justify-center gap-2 text-sm mb-10">
-            <span className="text-slate-500 font-medium mr-2">Trending:</span>
+            <span className="text-slate-500 font-medium mr-2">{t.TRENDING}</span>
             {TRENDING_SEARCHES.map((tag, i) => (
               <button 
                 key={i} 
@@ -529,25 +553,25 @@ const App: React.FC = () => {
                 <p className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-indigo-600 to-purple-600 group-hover:scale-110 transition-transform duration-300 origin-center inline-block">
                   <CountUp end={250} suffix="k+" />
                 </p>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1 group-hover:text-indigo-600 transition-colors">Active Jobs</p>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1 group-hover:text-indigo-600 transition-colors">{t.STATS_JOBS}</p>
              </div>
              <div className="p-4 rounded-2xl bg-white/60 border border-indigo-50 backdrop-blur-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 group cursor-default">
                 <p className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-indigo-600 to-purple-600 group-hover:scale-110 transition-transform duration-300 origin-center inline-block">
                   <CountUp end={10} suffix="k+" />
                 </p>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1 group-hover:text-indigo-600 transition-colors">Companies</p>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1 group-hover:text-indigo-600 transition-colors">{t.STATS_COMPANIES}</p>
              </div>
              <div className="p-4 rounded-2xl bg-white/60 border border-indigo-50 backdrop-blur-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 group cursor-default">
                 <p className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-indigo-600 to-purple-600 group-hover:scale-110 transition-transform duration-300 origin-center inline-block">
                   <CountUp end={85} suffix="%" />
                 </p>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1 group-hover:text-indigo-600 transition-colors">Hired Faster</p>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1 group-hover:text-indigo-600 transition-colors">{t.STATS_FASTER}</p>
              </div>
              <div className="p-4 rounded-2xl bg-white/60 border border-indigo-50 backdrop-blur-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 group cursor-default">
                 <p className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-indigo-600 to-purple-600 group-hover:scale-110 transition-transform duration-300 origin-center inline-block">
                   <CountUp end={1.2} suffix="M+" decimals={1} />
                 </p>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1 group-hover:text-indigo-600 transition-colors">Applications</p>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1 group-hover:text-indigo-600 transition-colors">{t.STATS_APPS}</p>
              </div>
           </div>
 
@@ -594,7 +618,7 @@ const App: React.FC = () => {
               </div>
               <div className="p-4 md:p-8 bg-slate-50/50">
                  <div className="mb-6 relative z-10">
-                   <h3 className="text-lg font-bold text-slate-800 mb-2">Live Application Tracker</h3>
+                   <h3 className="text-lg font-bold text-slate-800 mb-2">{t.PRODUCT_PREVIEW_TITLE}</h3>
                    <SeekerAnalytics jobs={INITIAL_JOBS} />
                  </div>
                  
@@ -619,7 +643,7 @@ const App: React.FC = () => {
                   className="px-8 py-3 bg-slate-900 text-white rounded-full font-bold shadow-lg hover:scale-105 transition-transform hover:shadow-xl flex items-center gap-2"
                 >
                   <Sparkles size={18} className="text-yellow-300" />
-                  Try AI Dashboard Free
+                  {t.PRODUCT_CTA}
                 </button>
               </div>
             </div>
@@ -631,11 +655,11 @@ const App: React.FC = () => {
       <section id="features" className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-extrabold text-slate-900">Everything You Need to Get Hired</h2>
-            <p className="mt-4 text-slate-500 max-w-2xl mx-auto">Stop using spreadsheets. Start using an AI-powered command center for your career.</p>
+            <h2 className="text-3xl font-extrabold text-slate-900">{t.FEATURES_TITLE}</h2>
+            <p className="mt-4 text-slate-500 max-w-2xl mx-auto">{t.FEATURES_DESC}</p>
           </div>
           <div className="grid md:grid-cols-3 gap-10">
-            {FEATURES.map((feature, idx) => (
+            {features.map((feature, idx) => (
               <div key={idx} className="bg-slate-50 p-8 rounded-3xl border border-slate-100 hover:shadow-xl transition-shadow duration-300">
                 <div className="w-14 h-14 bg-white rounded-2xl shadow-sm flex items-center justify-center text-indigo-600 mb-6 border border-slate-100">
                   {feature.icon === 'BarChart' && <BarChart3 size={28} />}
@@ -650,52 +674,13 @@ const App: React.FC = () => {
         </div>
       </section>
 
-      {/* Pricing */}
-      <section id="pricing" className="py-20 bg-slate-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-slate-900">Simple, Transparent Pricing</h2>
-            <p className="mt-4 text-slate-500">Invest in your career for less than the cost of a coffee.</p>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
-            {PRICING_PLANS.map((plan, idx) => (
-              <div key={idx} className={`p-6 rounded-3xl border ${plan.highlight ? 'border-indigo-600 shadow-xl ring-4 ring-indigo-50 bg-white' : 'border-slate-200 bg-white'} flex flex-col transition-transform hover:-translate-y-1 duration-300`}>
-                <div className="flex justify-between items-center mb-2">
-                   <h3 className="text-xl font-bold text-slate-900">{plan.name}</h3>
-                   {plan.highlight && <span className="bg-indigo-100 text-indigo-700 text-xs font-bold px-2 py-0.5 rounded-full">Popular</span>}
-                </div>
-                <div className="mt-2 mb-6">
-                  <span className="text-3xl font-extrabold text-slate-900">{plan.price}</span>
-                  <span className="text-slate-500 text-sm">/mo</span>
-                  <p className="text-xs text-slate-500 mt-1">{plan.description}</p>
-                </div>
-                <ul className="space-y-3 mb-8 flex-1">
-                  {plan.features.map((feat, i) => (
-                    <li key={i} className="flex items-start text-xs text-slate-700">
-                      <CheckCircle size={14} className="text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                      {feat}
-                    </li>
-                  ))}
-                </ul>
-                <button 
-                  onClick={() => setIsSignupModalOpen(true)}
-                  className={`w-full py-3 rounded-xl font-bold text-sm shadow-sm transition-all ${plan.highlight ? 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-indigo-500/25' : 'bg-white text-slate-900 border border-slate-200 hover:bg-slate-50'}`}
-                >
-                  {plan.cta}
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Footer */}
       <footer className="bg-white border-t border-slate-200 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
            <span className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">
               RekrutIn.ai
            </span>
-           <p className="text-slate-500 text-sm mt-4">© 2025 RekrutIn.ai — Designed with 💡 in Indonesia</p>
+           <p className="text-slate-500 text-sm mt-4">{t.FOOTER_DESC}</p>
            <div className="flex justify-center gap-6 mt-6">
              <a href="#" className="text-slate-400 hover:text-indigo-600"><Linkedin size={20} /></a>
              <a href="#" className="text-slate-400 hover:text-indigo-600"><Github size={20} /></a>
@@ -709,6 +694,73 @@ const App: React.FC = () => {
         onComplete={handleSignupComplete}
       />
       
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        onLogin={handleLogin}
+        onSwitchToSignup={() => {
+          setIsLoginModalOpen(false);
+          setIsSignupModalOpen(true);
+        }}
+      />
+    </div>
+  );
+
+  const renderPricingPage = () => (
+    <div className="min-h-screen bg-slate-50 font-sans">
+      <Navbar />
+      <div className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="text-center mb-16">
+          <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-6">{t.PRICING_TITLE}</h1>
+          <p className="text-xl text-slate-600 max-w-2xl mx-auto">{t.PRICING_DESC}</p>
+        </div>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {pricingPlans.map((plan, idx) => (
+              <div key={idx} className={`p-8 rounded-3xl border ${plan.highlight ? 'border-indigo-600 shadow-2xl ring-4 ring-indigo-50 bg-white relative' : 'border-slate-200 bg-white shadow-lg'} flex flex-col transition-transform hover:-translate-y-2 duration-300`}>
+                {plan.highlight && (
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                    <span className="bg-indigo-600 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg">
+                      {t.PRICING_POPULAR}
+                    </span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center mb-2">
+                   <h3 className="text-2xl font-bold text-slate-900">{plan.name}</h3>
+                </div>
+                <div className="mt-4 mb-8">
+                  <span className="text-4xl font-extrabold text-slate-900">{plan.price}</span>
+                  <span className="text-slate-500 font-medium ml-1">{t.PRICING_MONTH}</span>
+                  <p className="text-sm text-slate-500 mt-2">{plan.description}</p>
+                </div>
+                <ul className="space-y-4 mb-8 flex-1">
+                  {plan.features.map((feat, i) => (
+                    <li key={i} className="flex items-start text-sm text-slate-700">
+                      <CheckCircle size={16} className="text-green-500 mr-3 flex-shrink-0 mt-0.5" />
+                      {feat}
+                    </li>
+                  ))}
+                </ul>
+                <button 
+                  onClick={() => setIsSignupModalOpen(true)}
+                  className={`w-full py-4 rounded-xl font-bold shadow-md transition-all ${plan.highlight ? 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-indigo-500/25' : 'bg-slate-50 text-slate-900 border border-slate-200 hover:bg-slate-100'}`}
+                >
+                  {plan.cta}
+                </button>
+              </div>
+            ))}
+        </div>
+      </div>
+      <footer className="bg-white border-t border-slate-200 py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+           <p className="text-slate-500 text-sm">{t.FOOTER_DESC}</p>
+        </div>
+      </footer>
+      <SignupModal
+        isOpen={isSignupModalOpen}
+        onClose={() => setIsSignupModalOpen(false)}
+        onComplete={handleSignupComplete}
+      />
       <LoginModal
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
@@ -863,7 +915,7 @@ const App: React.FC = () => {
                  }`}
                >
                  <Rocket size={18} className={`mr-3 ${activeTab === 'tracker' ? 'text-indigo-600' : 'text-slate-400 group-hover:text-indigo-500'}`} />
-                 🚀 My Pipeline
+                 {t.JOB_TRACKER}
                </button>
                
                <button
@@ -875,7 +927,7 @@ const App: React.FC = () => {
                  }`}
                >
                  <Files size={18} className={`mr-3 ${activeTab === 'resumes' ? 'text-indigo-600' : 'text-slate-400 group-hover:text-indigo-500'}`} />
-                 📄 Resume Vault
+                 {t.RESUME_MANAGER}
                </button>
                
                <button
@@ -887,7 +939,7 @@ const App: React.FC = () => {
                  }`}
                >
                  <Radar size={18} className={`mr-3 ${activeTab === 'alerts' ? 'text-indigo-600' : 'text-slate-400 group-hover:text-indigo-500'}`} />
-                 📡 Job Radar
+                 {t.JOB_ALERTS}
                </button>
 
                <div className="mt-6 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 pl-2">Career Tools</div>
@@ -901,7 +953,7 @@ const App: React.FC = () => {
                  }`}
                >
                  <UserCircle size={18} className={`mr-3 ${activeTab === 'profile' ? 'text-indigo-600' : 'text-slate-400 group-hover:text-indigo-500'}`} />
-                 💎 My Brand
+                 {t.MY_PROFILE}
                </button>
                
                <button
@@ -913,7 +965,7 @@ const App: React.FC = () => {
                  }`}
                >
                  <Bot size={18} className={`mr-3 ${activeTab === 'agent' ? 'text-indigo-600' : 'text-slate-400 group-hover:text-indigo-500'}`} />
-                 🤖 AI Co-Pilot
+                 {t.AI_AGENT}
                </button>
                
                <button
@@ -925,7 +977,7 @@ const App: React.FC = () => {
                  }`}
                >
                  <Zap size={18} className={`mr-3 ${activeTab === 'billing' ? 'text-indigo-600' : 'text-slate-400 group-hover:text-indigo-500'}`} />
-                 💳 Upgrade Plan
+                 {t.UPGRADE_PLAN}
                </button>
              </nav>
 
@@ -1099,17 +1151,17 @@ const App: React.FC = () => {
               {activeTab === 'billing' && (
                 <div className="max-w-7xl mx-auto">
                   <div className="mb-8">
-                    <h2 className="text-2xl font-bold text-slate-900">Subscription Plans</h2>
-                    <p className="text-slate-500">Choose the best plan to accelerate your job search.</p>
+                    <h2 className="text-2xl font-bold text-slate-900">{t.PRICING_TITLE}</h2>
+                    <p className="text-slate-500">{t.PRICING_DESC}</p>
                   </div>
                   <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {PRICING_PLANS.map((plan, idx) => (
+                    {pricingPlans.map((plan, idx) => (
                       <div key={idx} className={`p-6 rounded-2xl border ${plan.highlight ? 'border-indigo-600 shadow-lg ring-1 ring-indigo-600 bg-white' : 'border-slate-200 bg-white shadow-sm'} flex flex-col transition-all hover:shadow-md`}>
                         <div className="mb-4">
                           <h3 className="text-lg font-bold text-slate-900">{plan.name}</h3>
                           <div className="mt-2 flex items-baseline text-slate-900">
                             <span className="text-3xl font-extrabold tracking-tight">{plan.price}</span>
-                            <span className="ml-1 text-sm font-medium text-slate-500">/mo</span>
+                            <span className="ml-1 text-sm font-medium text-slate-500">{t.PRICING_MONTH}</span>
                           </div>
                           {plan.description && <p className="mt-2 text-xs text-slate-500">{plan.description}</p>}
                         </div>
@@ -1257,7 +1309,11 @@ const App: React.FC = () => {
     </div>
   );
 
-  return currentView === 'landing' ? renderLanding() : renderDashboard();
+  switch (currentView) {
+    case 'pricing': return renderPricingPage();
+    case 'dashboard': return renderDashboard();
+    default: return renderLanding();
+  }
 };
 
 export default App;
