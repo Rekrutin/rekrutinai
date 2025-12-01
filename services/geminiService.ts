@@ -105,6 +105,43 @@ export const analyzeResumeATS = async (resumeText: string): Promise<{ score: num
   }
 };
 
+export const generateCoverLetter = async (job: Job, profile: UserProfile): Promise<string> => {
+  if (!ai) {
+    return `Dear Hiring Manager at ${job.company},\n\nI am writing to express my interest in the ${job.title} position. (Simulated AI Cover Letter - API Key Missing)`;
+  }
+
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: `
+        Write a professional, engaging cover letter for the following candidate and job.
+        
+        CANDIDATE:
+        Name: ${profile.name}
+        Current Title: ${profile.title}
+        Skills: ${profile.skills.join(", ")}
+        Summary: ${profile.summary}
+        
+        JOB:
+        Role: ${job.title}
+        Company: ${job.company}
+        Description: ${job.description || "Not provided"}
+        
+        REQUIREMENTS:
+        - Professional but modern tone.
+        - Highlight how the candidate's skills match the job.
+        - Keep it under 300 words.
+        - Use placeholders like [Phone Number] if contact info is missing.
+      `
+    });
+
+    return response.text || "Failed to generate cover letter.";
+  } catch (error) {
+    console.error("Cover Letter Gen Error", error);
+    throw error;
+  }
+};
+
 export const chatWithCareerAgent = async (
   history: ChatMessage[],
   newMessage: string,
@@ -115,7 +152,6 @@ export const chatWithCareerAgent = async (
   }
 
   // 1. Construct the System Context
-  // We feed the AI the user's data so it can "see" what the user sees.
   const profileContext = `
     USER PROFILE:
     Name: ${context.profile.name}
@@ -150,26 +186,22 @@ export const chatWithCareerAgent = async (
   `;
 
   try {
-    // 2. Map local ChatMessage history to Gemini Content format
-    // Map 'assistant' role to 'model' for the API
     const contents = history.map(msg => ({
       role: msg.role === 'assistant' ? 'model' : 'user',
       parts: [{ text: msg.content }]
     }));
 
-    // Add the new message
     contents.push({
       role: 'user',
       parts: [{ text: newMessage }]
     });
 
-    // 3. Generate Response with System Instruction
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: contents,
       config: {
         systemInstruction: systemInstruction,
-        temperature: 0.7, // Balance between creativity and focus
+        temperature: 0.7, 
       }
     });
 

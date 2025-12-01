@@ -46,6 +46,7 @@ export interface Job {
   followUpDate?: string; 
   contacts?: JobContact[];
   notes?: string; 
+  coverLetter?: string; // New field for storing generated cover letter
   timeline?: JobTimelineEvent[];
 }
 
@@ -168,6 +169,13 @@ export interface SystemLog {
   user?: string;
   timestamp: string;
   severity: 'INFO' | 'WARN' | 'ERROR' | 'SUCCESS';
+}
+
+export interface RevenueMetrics {
+  mrr: number;
+  totalRevenue: number;
+  paidUsers: number;
+  arppu: number;
 }
 
 export interface PricingPlan {

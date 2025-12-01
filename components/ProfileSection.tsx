@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { UserProfile } from '../types';
 import { Save, User, Briefcase, FileText, Hash } from 'lucide-react';
@@ -12,7 +13,11 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({ profile, onUpdat
   const [isSaved, setIsSaved] = useState(false);
 
   useEffect(() => {
-    setFormData(profile);
+    // Ensure we have a valid object structure even if props are partial
+    setFormData({
+      ...profile,
+      skills: profile.skills || []
+    });
   }, [profile]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -54,7 +59,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({ profile, onUpdat
               <input
                 type="text"
                 name="name"
-                value={formData.name}
+                value={formData.name || ''}
                 onChange={handleChange}
                 className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
                 placeholder="e.g. John Doe"
@@ -67,7 +72,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({ profile, onUpdat
               <input
                 type="text"
                 name="title"
-                value={formData.title}
+                value={formData.title || ''}
                 onChange={handleChange}
                 className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
                 placeholder="e.g. Senior Product Designer"
@@ -81,7 +86,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({ profile, onUpdat
             </label>
             <textarea
               name="summary"
-              value={formData.summary}
+              value={formData.summary || ''}
               onChange={handleChange}
               rows={4}
               className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none resize-none"
@@ -95,13 +100,13 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({ profile, onUpdat
             </label>
             <input
               type="text"
-              value={formData.skills.join(', ')}
+              value={formData.skills?.join(', ') || ''}
               onChange={handleSkillsChange}
               className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
               placeholder="e.g. React, Figma, Project Management, SEO"
             />
             <div className="mt-2 flex flex-wrap gap-2">
-              {formData.skills.filter(s => s).map((skill, idx) => (
+              {(formData.skills || []).filter(s => s).map((skill, idx) => (
                 <span key={idx} className="bg-indigo-50 text-indigo-700 text-xs font-medium px-2.5 py-0.5 rounded-full">
                   {skill}
                 </span>

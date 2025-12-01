@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
-import { Job, JobContact, JobStatus } from '../types';
-import { X, Calendar, MapPin, Building2, ExternalLink, Mail, Linkedin, Plus, MessageSquare, Clock, CheckCircle, BrainCircuit, User, Bell } from 'lucide-react';
+import { Job, JobContact, JobStatus, UserProfile } from '../types';
+import { X, Clock, MapPin, Building2, ExternalLink, Mail, Linkedin, Plus, MessageSquare, CheckCircle, BrainCircuit, User, Bell, PenTool, Copy, RefreshCw, Wand2, Sparkles } from 'lucide-react';
+import { generateCoverLetter } from '../services/geminiService';
 
 interface JobDetailDrawerProps {
   job: Job | null;
@@ -11,8 +12,10 @@ interface JobDetailDrawerProps {
 }
 
 export const JobDetailDrawer: React.FC<JobDetailDrawerProps> = ({ job, isOpen, onClose, onUpdateJob }) => {
-  const [activeTab, setActiveTab] = useState<'details' | 'notes' | 'contacts'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'letter' | 'notes' | 'contacts'>('details');
   const [noteContent, setNoteContent] = useState('');
+  const [letterContent, setLetterContent] = useState('');
+  const [isGeneratingLetter, setIsGeneratingLetter] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -20,6 +23,7 @@ export const JobDetailDrawer: React.FC<JobDetailDrawerProps> = ({ job, isOpen, o
       setIsVisible(true);
       document.body.style.overflow = 'hidden';
       setNoteContent(job.notes || '');
+      setLetterContent(job.coverLetter || '');
     } else {
       const timer = setTimeout(() => setIsVisible(false), 300);
       document.body.style.overflow = 'unset';
@@ -32,6 +36,32 @@ export const JobDetailDrawer: React.FC<JobDetailDrawerProps> = ({ job, isOpen, o
 
   const handleSaveNote = () => {
     onUpdateJob(job.id, { notes: noteContent });
+  };
+
+  const handleSaveLetter = () => {
+    onUpdateJob(job.id, { coverLetter: letterContent });
+  };
+
+  const handleGenerateLetter = async () => {
+    setIsGeneratingLetter(true);
+    try {
+      // Create a minimal profile object from localStorage for context
+      const session = localStorage.getItem('rekrutin_session');
+      const profile: UserProfile = session ? JSON.parse(session).profile : { name: 'User', skills: [], title: 'Candidate', email: '', summary: '', plan: 'Free', atsScansUsed: 0 };
+      
+      const letter = await generateCoverLetter(job, profile);
+      setLetterContent(letter);
+      onUpdateJob(job.id, { coverLetter: letter });
+    } catch (error) {
+      console.error("Failed to generate letter", error);
+    } finally {
+      setIsGeneratingLetter(false);
+    }
+  };
+
+  const handleCopyLetter = () => {
+    navigator.clipboard.writeText(letterContent);
+    alert("Cover letter copied to clipboard!");
   };
 
   const getStatusColor = (status: JobStatus) => {
@@ -97,28 +127,34 @@ export const JobDetailDrawer: React.FC<JobDetailDrawerProps> = ({ job, isOpen, o
         </div>
 
         {/* Action Bar */}
-        <div className="px-6 py-3 border-b border-slate-100 flex items-center gap-4 bg-white">
+        <div className="px-6 py-3 border-b border-slate-100 flex items-center gap-4 bg-white overflow-x-auto scrollbar-hide">
           <button 
              onClick={() => setActiveTab('details')}
-             className={`pb-2 text-sm font-bold border-b-2 transition-colors ${activeTab === 'details' ? 'text-indigo-600 border-indigo-600' : 'text-slate-500 border-transparent hover:text-slate-700'}`}
+             className={`pb-2 text-sm font-bold border-b-2 whitespace-nowrap transition-colors ${activeTab === 'details' ? 'text-indigo-600 border-indigo-600' : 'text-slate-500 border-transparent hover:text-slate-700'}`}
           >
             Overview & AI
           </button>
           <button 
+             onClick={() => setActiveTab('letter')}
+             className={`pb-2 text-sm font-bold border-b-2 whitespace-nowrap transition-colors flex items-center gap-1.5 ${activeTab === 'letter' ? 'text-indigo-600 border-indigo-600' : 'text-slate-500 border-transparent hover:text-slate-700'}`}
+          >
+            <PenTool size={14} /> Cover Letter
+          </button>
+          <button 
              onClick={() => setActiveTab('contacts')}
-             className={`pb-2 text-sm font-bold border-b-2 transition-colors ${activeTab === 'contacts' ? 'text-indigo-600 border-indigo-600' : 'text-slate-500 border-transparent hover:text-slate-700'}`}
+             className={`pb-2 text-sm font-bold border-b-2 whitespace-nowrap transition-colors ${activeTab === 'contacts' ? 'text-indigo-600 border-indigo-600' : 'text-slate-500 border-transparent hover:text-slate-700'}`}
           >
             Contacts
           </button>
           <button 
              onClick={() => setActiveTab('notes')}
-             className={`pb-2 text-sm font-bold border-b-2 transition-colors ${activeTab === 'notes' ? 'text-indigo-600 border-indigo-600' : 'text-slate-500 border-transparent hover:text-slate-700'}`}
+             className={`pb-2 text-sm font-bold border-b-2 whitespace-nowrap transition-colors ${activeTab === 'notes' ? 'text-indigo-600 border-indigo-600' : 'text-slate-500 border-transparent hover:text-slate-700'}`}
           >
             Notes
           </button>
           <div className="flex-1"></div>
           {job.url && (
-            <a href={job.url} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-indigo-600 transition-colors">
+            <a href={job.url} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-indigo-600 transition-colors whitespace-nowrap">
               Job Post <ExternalLink size={14} />
             </a>
           )}
@@ -207,6 +243,66 @@ export const JobDetailDrawer: React.FC<JobDetailDrawerProps> = ({ job, isOpen, o
                  <p className="text-sm text-slate-600 whitespace-pre-wrap leading-relaxed">
                    {job.description || "No description added."}
                  </p>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'letter' && (
+            <div className="h-full flex flex-col animate-fade-in">
+              <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-5 flex-1 flex flex-col shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                   <div className="flex items-center gap-2 text-indigo-900 font-bold text-sm">
+                      <Wand2 size={16} className="text-indigo-600" /> AI Cover Letter
+                   </div>
+                   <div className="flex gap-2">
+                      <button 
+                        onClick={handleCopyLetter}
+                        className="text-xs font-bold text-indigo-600 bg-white px-2 py-1 rounded border border-indigo-200 hover:bg-indigo-50 transition-colors flex items-center gap-1"
+                        disabled={!letterContent}
+                      >
+                        <Copy size={12} /> Copy
+                      </button>
+                      <button 
+                        onClick={handleGenerateLetter}
+                        disabled={isGeneratingLetter}
+                        className="text-xs font-bold text-white bg-indigo-600 px-3 py-1 rounded border border-indigo-600 hover:bg-indigo-700 transition-colors flex items-center gap-1 shadow-sm"
+                      >
+                        {isGeneratingLetter ? <RefreshCw size={12} className="animate-spin" /> : <Sparkles size={12} className="text-yellow-300" />}
+                        {letterContent ? 'Regenerate' : 'Generate with AI'}
+                      </button>
+                   </div>
+                </div>
+                
+                {letterContent ? (
+                  <textarea 
+                    className="flex-1 w-full bg-white border border-indigo-100 rounded-lg p-4 outline-none resize-none text-slate-700 text-sm leading-relaxed focus:ring-2 focus:ring-indigo-200"
+                    placeholder="Your cover letter will appear here..."
+                    value={letterContent}
+                    onChange={(e) => setLetterContent(e.target.value)}
+                    onBlur={handleSaveLetter}
+                  ></textarea>
+                ) : (
+                  <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-white/50 rounded-lg border border-dashed border-indigo-200">
+                     <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mb-3">
+                        <PenTool size={24} className="text-indigo-500" />
+                     </div>
+                     <h4 className="text-slate-800 font-bold mb-1">No Cover Letter Yet</h4>
+                     <p className="text-xs text-slate-500 max-w-xs mb-4">
+                       Let our AI write a tailored cover letter based on your profile and this job description.
+                     </p>
+                     <button 
+                        onClick={handleGenerateLetter}
+                        className="text-xs font-bold text-indigo-600 bg-indigo-50 px-4 py-2 rounded-lg border border-indigo-200 hover:bg-indigo-100 transition-colors"
+                     >
+                        Create One Now
+                     </button>
+                  </div>
+                )}
+                
+                <div className="text-right mt-2 text-xs text-indigo-400 font-medium flex items-center justify-end gap-1">
+                  {isGeneratingLetter && <span className="animate-pulse">Writing your letter...</span>}
+                  {!isGeneratingLetter && letterContent && <span>Auto-saves on edit</span>}
+                </div>
               </div>
             </div>
           )}

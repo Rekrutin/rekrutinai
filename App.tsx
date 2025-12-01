@@ -121,7 +121,13 @@ const App: React.FC = () => {
     if (savedSession) {
       try {
         const sessionData = JSON.parse(savedSession);
-        setProfile(sessionData.profile);
+        
+        // Safety check for profile data
+        if (sessionData.profile) {
+          if (!sessionData.profile.skills) sessionData.profile.skills = [];
+          setProfile(sessionData.profile);
+        }
+        
         setUserRole(sessionData.role || 'seeker');
         
         // Handle redirect based on role
@@ -136,6 +142,17 @@ const App: React.FC = () => {
       }
     }
   }, []);
+
+  // Persist Profile Changes during session
+  useEffect(() => {
+    if (profile.email) {
+      const currentSession = {
+        profile,
+        role: userRole
+      };
+      localStorage.setItem('rekrutin_session', JSON.stringify(currentSession));
+    }
+  }, [profile, userRole]);
 
   // Click outside to close notification dropdown
   useEffect(() => {
@@ -524,11 +541,6 @@ const App: React.FC = () => {
   const toggleLanguage = () => {
     setLanguage(prev => prev === 'en' ? 'id' : 'en');
   };
-
-  // ... (Navbar, Render functions, Helper functions same as previous) ...
-  // [I will omit repeating the entire render logic for brevity, just highlighting the switch update]
-  // But since this is a complete file replacement, I must include everything.
-  // Re-pasting standard render functions to ensure full file integrity.
 
   const Navbar = () => (
     <nav className="fixed w-full z-40 bg-white/80 backdrop-blur-md border-b border-slate-100">
