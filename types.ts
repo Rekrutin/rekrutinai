@@ -149,7 +149,7 @@ export interface Notification {
 
 export type PlanType = 'Free' | 'Pro' | 'Career+' | 'Elite';
 export type UserRole = 'seeker' | 'employer' | 'admin';
-export type DashboardTab = 'tracker' | 'resumes' | 'profile' | 'agent' | 'alerts' | 'billing';
+export type DashboardTab = 'tracker' | 'resumes' | 'profile' | 'agent' | 'alerts' | 'billing' | 'extension';
 export type EmployerTab = 'overview' | 'jobs' | 'candidates';
 export type AdminView = 'overview' | 'revenue' | 'users' | 'resumes' | 'apps' | 'employers' | 'jobs' | 'logs' | 'settings';
 export type OnboardingStep = 'idle' | 'upload' | 'scanning' | 'review' | 'credentials' | 'complete';
@@ -227,4 +227,23 @@ export interface ExternalJobMatch {
   postedAt: string;
   description: string;
   aiFitScore: number;
+}
+
+// --- EXTENSION TYPES ---
+export interface ExtensionJobPayload {
+  token: string;
+  job_title: string;
+  company_name: string;
+  location: string;
+  description: string;
+  url: string;
+  platform: string;
+}
+
+export interface ExtensionApiResponse {
+  success: boolean;
+  message: string;
+  job?: Job;
+  quota_remaining?: number;
+  is_pro?: boolean;
 }

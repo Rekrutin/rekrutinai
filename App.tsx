@@ -4,7 +4,7 @@ import {
   Menu, X, CheckCircle, BarChart3, Bot, Calendar, ArrowRight, 
   Linkedin, Github, Plus, LayoutDashboard, LogOut, ChevronDown, 
   Briefcase, Users, Search, List as ListIcon, Kanban, FileText, UserCircle, Sparkles, Bell, CreditCard,
-  MapPin, TrendingUp, Rocket, Files, Zap, Target, Radar, Building2, ExternalLink, Trash2, BrainCircuit
+  MapPin, TrendingUp, Rocket, Files, Zap, Target, Radar, Building2, ExternalLink, Trash2, BrainCircuit, Chrome
 } from 'lucide-react';
 import { Job, JobStatus, JobAnalysis, UserRole, EmployerJob, DashboardTab, UserProfile, Resume, JobAlert, Notification, EmployerTab, CandidateApplication, ExternalJobMatch, Language, PlanType } from './types';
 import { INITIAL_JOBS, getFeatures, getPricingPlans, INITIAL_EMPLOYER_JOBS, TRENDING_SEARCHES, INITIAL_APPLICATIONS, INITIAL_EXTERNAL_MATCHES, TRANSLATIONS, MAX_FREE_ATS_SCANS } from './constants';
@@ -30,6 +30,7 @@ import { CountUp } from './components/CountUp';
 import { JobDetailDrawer } from './components/JobDetailDrawer';
 import { AdminDashboard } from './components/AdminDashboard'; 
 import { AssessmentTracker } from './components/AssessmentTracker';
+import { ExtensionPage } from './components/ExtensionPage';
 import { useSubscription } from './hooks/useSubscription';
 import { createCheckoutSession } from './services/paymentService';
 
@@ -571,6 +572,18 @@ const App: React.FC = () => {
 
   const toggleLanguage = () => {
     setLanguage(prev => prev === 'en' ? 'id' : 'en');
+  };
+
+  const handleExtensionJobAdded = (job: Job) => {
+    setJobs(prev => [job, ...prev]);
+    setNotifications(prev => [{
+      id: Date.now().toString(),
+      title: 'Extension Sync Success 🔗',
+      message: `Successfully captured "${job.title}" from ${job.company}.`,
+      timestamp: new Date().toISOString(),
+      read: false,
+      type: 'system'
+    }, ...prev]);
   };
 
   // ... (Navbar, renderScrollingJobRow, renderLanding, renderPricingPage remain the same except for wiring up buttons) ...
@@ -1135,6 +1148,18 @@ const App: React.FC = () => {
                </button>
                
                <button
+                 onClick={() => setActiveTab('extension')}
+                 className={`w-full flex items-center px-3 py-2.5 text-sm font-bold rounded-xl transition-all group ${
+                   activeTab === 'extension' 
+                   ? 'bg-gradient-to-r from-indigo-50 to-white text-indigo-700 shadow-sm border border-indigo-100' 
+                   : 'text-slate-600 hover:bg-slate-50 hover:pl-4'
+                 }`}
+               >
+                 <Chrome size={18} className={`mr-3 ${activeTab === 'extension' ? 'text-indigo-600' : 'text-slate-400 group-hover:text-indigo-500'}`} />
+                 Chrome Extension
+               </button>
+
+               <button
                  onClick={() => setActiveTab('billing')}
                  className={`w-full flex items-center px-3 py-2.5 text-sm font-bold rounded-xl transition-all group ${
                    activeTab === 'billing' 
@@ -1337,6 +1362,14 @@ const App: React.FC = () => {
                    <SeekerAnalytics jobs={jobs} isPro={subscription.isPro} />
                    <AIAgentSection jobs={jobs} profile={profile} />
                 </div>
+              )}
+
+              {activeTab === 'extension' && (
+                <ExtensionPage 
+                  profile={profile} 
+                  jobs={jobs}
+                  onJobAdded={handleExtensionJobAdded}
+                />
               )}
 
               {activeTab === 'billing' && (
