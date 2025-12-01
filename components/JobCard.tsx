@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Job, JobStatus } from '../types';
-import { Briefcase, MapPin, BrainCircuit, GripVertical, ChevronRight, ChevronLeft, Trash2, Bell } from 'lucide-react';
+import { Briefcase, MapPin, BrainCircuit, GripVertical, ChevronRight, ChevronLeft, Trash2, Bell, Clock } from 'lucide-react';
 
 interface JobCardProps {
   job: Job;
@@ -42,6 +42,36 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onMove, onAnalyze, onDele
     }
   }
 
+  // Assessment Urgency Logic
+  let assessmentBadge = null;
+  if (job.assessment && job.assessment.required && job.assessment.status !== 'Completed' && job.status !== JobStatus.REJECTED) {
+    let colorClass = 'bg-green-50 text-green-700 border-green-100';
+    let text = 'Assessment';
+    
+    if (job.assessment.deadline) {
+        const now = new Date().getTime();
+        const deadline = new Date(job.assessment.deadline).getTime();
+        const hoursLeft = (deadline - now) / (1000 * 60 * 60);
+        
+        if (hoursLeft < 0) {
+            colorClass = 'bg-red-100 text-red-700 border-red-200';
+            text = 'Overdue';
+        } else if (hoursLeft <= 48) {
+            colorClass = 'bg-red-50 text-red-600 border-red-100';
+            text = 'Due Soon';
+        } else if (hoursLeft <= 96) {
+            colorClass = 'bg-yellow-50 text-yellow-700 border-yellow-100';
+            text = 'Upcoming';
+        }
+    }
+    
+    assessmentBadge = (
+        <div className={`flex items-center text-[10px] font-bold px-2 py-0.5 rounded border ${colorClass} mt-2 w-fit`}>
+            <Clock size={10} className="mr-1" /> {text}
+        </div>
+    );
+  }
+
   return (
     <div className={`bg-white p-4 rounded-xl shadow-sm border-l-4 ${scoreColor} mb-3 hover:shadow-md transition-shadow group relative`}>
       <div className="cursor-pointer" onClick={() => onClick && onClick(job)}>
@@ -58,7 +88,10 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onMove, onAnalyze, onDele
                 <span>{job.location}</span>
               </div>
             )}
-            {job.followUpDate && (
+            
+            {assessmentBadge}
+
+            {job.followUpDate && !assessmentBadge && (
               <div className="flex items-center text-xs text-amber-600 mt-2 bg-amber-50 px-2 py-1 rounded w-fit border border-amber-100">
                 <Bell size={10} className="mr-1" />
                 {new Date(job.followUpDate).toLocaleDateString()}

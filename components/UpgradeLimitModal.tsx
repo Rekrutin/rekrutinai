@@ -7,9 +7,10 @@ interface UpgradeLimitModalProps {
   onClose: () => void;
   onUpgrade: () => void;
   featureName: string;
+  message?: string;
 }
 
-export const UpgradeLimitModal: React.FC<UpgradeLimitModalProps> = ({ isOpen, onClose, onUpgrade, featureName }) => {
+export const UpgradeLimitModal: React.FC<UpgradeLimitModalProps> = ({ isOpen, onClose, onUpgrade, featureName, message }) => {
   if (!isOpen) return null;
 
   return (
@@ -27,24 +28,24 @@ export const UpgradeLimitModal: React.FC<UpgradeLimitModalProps> = ({ isOpen, on
             <Lock size={32} className="text-white" />
           </div>
           
-          <h2 className="text-2xl font-extrabold text-slate-900 mb-2">Unlock Unlimited Power</h2>
+          <h2 className="text-2xl font-extrabold text-slate-900 mb-2">Unlock {featureName}</h2>
           <p className="text-slate-500 mb-6">
-            You've reached the free limit for <span className="font-bold text-slate-700">{featureName}</span>. Upgrade to Pro to continue without limits.
+            {message || `You've reached the free limit for ${featureName}. Upgrade to Pro to continue without limits.`}
           </p>
 
           <div className="bg-indigo-50 rounded-xl p-5 text-left space-y-3 mb-8 border border-indigo-100">
             <h3 className="text-sm font-bold text-indigo-900 uppercase tracking-wide mb-2">Pro Plan Benefits</h3>
             <div className="flex items-center text-sm text-slate-700">
               <CheckCircle size={16} className="text-indigo-600 mr-2 flex-shrink-0" />
-              <span>Unlimited ATS Resume Scans</span>
+              <span>Unlimited Job Tracking & ATS Scans</span>
             </div>
             <div className="flex items-center text-sm text-slate-700">
                <CheckCircle size={16} className="text-indigo-600 mr-2 flex-shrink-0" />
-               <span>Advanced AI Career Coaching</span>
+               <span>AI Success Probability & Analytics</span>
             </div>
             <div className="flex items-center text-sm text-slate-700">
                <CheckCircle size={16} className="text-indigo-600 mr-2 flex-shrink-0" />
-               <span>Priority Job Alerts</span>
+               <span>Browser Extension Access</span>
             </div>
           </div>
 

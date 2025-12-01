@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Job, JobStatus } from '../types';
-import { BrainCircuit, ExternalLink, Trash2, Calendar, MapPin, Building2, Plus, Bell } from 'lucide-react';
+import { BrainCircuit, ExternalLink, Trash2, Calendar, MapPin, Building2, Plus, Bell, Clock } from 'lucide-react';
 
 interface JobListViewProps {
   jobs: Job[];
@@ -50,6 +50,29 @@ export const JobListView: React.FC<JobListViewProps> = ({ jobs, onStatusChange, 
     return 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100';
   };
 
+  const getAssessmentIndicator = (job: Job) => {
+    if (job.assessment && job.assessment.required && job.assessment.status !== 'Completed' && job.status !== JobStatus.REJECTED) {
+        let colorClass = 'text-green-600 bg-green-50 border-green-200';
+        
+        if (job.assessment.deadline) {
+            const now = new Date().getTime();
+            const deadline = new Date(job.assessment.deadline).getTime();
+            const hoursLeft = (deadline - now) / (1000 * 60 * 60);
+            
+            if (hoursLeft < 0) colorClass = 'text-red-600 bg-red-50 border-red-200';
+            else if (hoursLeft <= 48) colorClass = 'text-red-500 bg-red-50 border-red-100';
+            else if (hoursLeft <= 96) colorClass = 'text-yellow-600 bg-yellow-50 border-yellow-100';
+        }
+
+        return (
+            <span className={`flex items-center px-1.5 py-0.5 rounded border text-[10px] font-bold ${colorClass} ml-2`}>
+                <Clock size={10} className="mr-1" /> Test
+            </span>
+        );
+    }
+    return null;
+  };
+
   return (
     <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden animate-fade-in">
       <div className="overflow-x-auto">
@@ -72,7 +95,10 @@ export const JobListView: React.FC<JobListViewProps> = ({ jobs, onStatusChange, 
               >
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex flex-col">
-                    <span className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{job.title}</span>
+                    <div className="flex items-center">
+                        <span className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{job.title}</span>
+                        {getAssessmentIndicator(job)}
+                    </div>
                     <div className="flex items-center text-xs text-slate-500 mt-1">
                       <Building2 size={12} className="mr-1" />
                       <span className="mr-3">{job.company}</span>

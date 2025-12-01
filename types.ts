@@ -32,6 +32,18 @@ export interface JobTimelineEvent {
   date: string;
 }
 
+export type AssessmentType = 'Online Game' | 'Coding Test' | 'Video Interview' | 'Personality Test' | 'Technical Assessment' | 'Other';
+export type AssessmentStatus = 'Pending' | 'In Progress' | 'Completed' | 'Missed';
+
+export interface JobAssessment {
+  required: boolean;
+  type: AssessmentType;
+  deadline?: string; // ISO date string
+  status: AssessmentStatus;
+  platform?: string; // e.g. HireVue, HackerRank
+  link?: string;
+}
+
 export interface Job {
   id: string;
   title: string;
@@ -46,8 +58,9 @@ export interface Job {
   followUpDate?: string; 
   contacts?: JobContact[];
   notes?: string; 
-  coverLetter?: string; // New field for storing generated cover letter
+  coverLetter?: string; 
   timeline?: JobTimelineEvent[];
+  assessment?: JobAssessment;
 }
 
 export interface EmployerJob {
@@ -75,6 +88,16 @@ export interface CandidateApplication {
   skills: string[];
 }
 
+export interface Subscription {
+  id: string;
+  userId: string;
+  plan: PlanType;
+  status: 'active' | 'cancelled' | 'expired' | 'trial';
+  startedAt: string;
+  currentPeriodEnd: string;
+  provider?: string; // e.g., 'midtrans', 'stripe'
+}
+
 export interface UserProfile {
   name: string;
   title: string;
@@ -85,6 +108,9 @@ export interface UserProfile {
   plan: PlanType;
   atsScansUsed: number;
   companyName?: string;
+  subscription?: Subscription;
+  betaAccess?: boolean;
+  extensionToken?: string; // For Chrome Extension
 }
 
 export interface Resume {

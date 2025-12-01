@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../constants';
 
@@ -42,6 +43,22 @@ export const supabase = (SUPABASE_URL && SUPABASE_ANON_KEY)
  *   description text not null,
  *   employer_id uuid default auth.uid()
  * );
+ * 
+ * -- Table for Subscriptions
+ * create table subscriptions (
+ *   id uuid default gen_random_uuid() primary key,
+ *   user_id uuid references auth.users not null,
+ *   plan text not null,
+ *   status text not null,
+ *   started_at timestamp with time zone default now(),
+ *   current_period_end timestamp with time zone,
+ *   created_at timestamp with time zone default now()
+ * );
+ * 
+ * -- Add profile columns
+ * alter table profiles add column current_plan text default 'Free';
+ * alter table profiles add column is_pro boolean default false;
+ * alter table profiles add column beta_access boolean default false;
  * 
  * 3. Set up Row Level Security (RLS) if you want to secure user data.
  * 4. Get your Project URL and Anon Key from Project Settings > API.

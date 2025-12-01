@@ -2,6 +2,7 @@
 import React, { useState, useCallback } from 'react';
 import { Upload, FileText, CheckCircle, Sparkles, X, ArrowRight, Loader2, Lock, Mail, Eye, EyeOff, User, Briefcase, Hash } from 'lucide-react';
 import { UserProfile, Resume } from '../types';
+import { parseResumeFromFilename } from '../services/geminiService';
 
 interface SignupModalProps {
   isOpen: boolean;
@@ -31,33 +32,32 @@ export const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose, onCom
     setIsDragging(false);
   };
 
-  const processFile = (uploadedFile: File) => {
+  const processFile = async (uploadedFile: File) => {
     setFile(uploadedFile);
     setStep('scanning');
 
-    // SMART SIMULATION: Extract data from filename
-    // e.g., "Muhammad_Fauzan_Frontend.pdf" -> Name: Muhammad Fauzan, Title: Frontend
-    const filenameBase = uploadedFile.name.replace(/\.[^/.]+$/, ""); // Remove extension
-    const nameParts = filenameBase.split(/[_-]/); // Split by _ or -
-    
-    // Guessing logic
-    const guessedName = nameParts.slice(0, 2).join(' ') || 'Guest User';
-    const guessedTitle = nameParts.length > 2 ? nameParts.slice(2).join(' ') : 'Software Engineer';
-
-    setTimeout(() => {
-      const mockProfile: UserProfile = {
-        name: guessedName, 
-        email: 'guest@example.com',
-        title: guessedTitle,
-        summary: `Experienced ${guessedTitle} with a proven track record in building scalable solutions. Passionate about technology and continuous learning.`,
-        skills: ['React', 'TypeScript', 'Node.js', 'System Design', 'Agile'], // Default strong stack
+    try {
+      // Use AI to generate a realistic profile based on the filename
+      const profile = await parseResumeFromFilename(uploadedFile.name);
+      
+      setScannedData(profile);
+      // Pre-fill email if AI generated one, but allow user to change it
+      setEmail(profile.email || '');
+      setStep('review');
+    } catch (error) {
+      console.error("Parsing failed", error);
+      // Fallback
+      setScannedData({
+        name: 'Guest User',
+        title: 'Candidate',
+        email: '',
+        summary: 'Manual entry required.',
+        skills: [],
         plan: 'Free',
         atsScansUsed: 0
-      };
-      setScannedData(mockProfile);
-      setEmail(''); // Reset email for manual entry
+      });
       setStep('review');
-    }, 2500);
+    }
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -92,6 +92,7 @@ export const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose, onCom
         email: email
       };
       
+      // Generate enriched content that matches the AI-parsed profile
       const enrichedResumeContent = `
 NAME: ${finalProfile.name}
 EMAIL: ${email}
@@ -104,13 +105,14 @@ SKILLS
 ${finalProfile.skills.join(' • ')}
 
 EXPERIENCE
-${finalProfile.title} | Tech Company | 2021 - Present
-- Delivered key projects using ${finalProfile.skills[0] || 'Modern Tech'}.
-- Optimized performance and scalability.
+${finalProfile.title} | ${finalProfile.skills[0] ? 'Tech Company' : 'Previous Employer'} | 2021 - Present
+- Leveraged ${finalProfile.skills[0] || 'industry expertise'} to drive key initiatives.
+- Demonstrated success in ${finalProfile.title} responsibilities.
+- Collaborated with cross-functional teams to achieve ${finalProfile.skills[1] || 'goals'}.
 
 EDUCATION
-Bachelor of Science
-University of Technology | 2017 - 2021
+Bachelor's Degree
+University of Excellence | 2017 - 2021
 `;
 
       const newResume: Resume = {
@@ -183,13 +185,10 @@ University of Technology | 2017 - 2021
                   <FileText size={32} className="text-indigo-600 animate-pulse" />
                </div>
             </div>
-            <h3 className="text-xl font-bold text-slate-900 mb-2">Analyzing your Resume...</h3>
+            <h3 className="text-xl font-bold text-slate-900 mb-2">AI is Analyzing your Resume...</h3>
             <div className="h-6 overflow-hidden relative max-w-xs mx-auto">
                <div className="absolute w-full text-sm text-indigo-500 font-medium animate-float">
-                  Extracting Skills...
-               </div>
-               <div className="absolute w-full text-sm text-indigo-500 font-medium animate-float" style={{ animationDelay: '1s', opacity: 0 }}>
-                  Identifying Experience...
+                  Identifying Skills & Experience...
                </div>
             </div>
           </div>
@@ -232,18 +231,22 @@ University of Technology | 2017 - 2021
                  />
                </div>
 
-               {/* Skills Tag Input (Simulated as text for now) */}
+               {/* Skills Tag Input */}
                <div>
                  <label className="text-xs font-bold text-slate-400 uppercase mb-1 flex items-center gap-1">
                    <Hash size={12} /> Top Skills Found
                  </label>
                  <div className="flex flex-wrap gap-2">
-                   {scannedData.skills.map((skill, i) => (
-                     <span key={i} className="px-2 py-1 bg-white border border-slate-200 rounded text-xs font-medium text-indigo-600 shadow-sm">
-                       {skill}
-                     </span>
-                   ))}
-                   <span className="px-2 py-1 border border-dashed border-slate-300 rounded text-xs text-slate-400">
+                   {scannedData.skills && scannedData.skills.length > 0 ? (
+                     scannedData.skills.map((skill, i) => (
+                       <span key={i} className="px-2 py-1 bg-white border border-slate-200 rounded text-xs font-medium text-indigo-600 shadow-sm">
+                         {skill}
+                       </span>
+                     ))
+                   ) : (
+                     <span className="text-xs text-slate-400 italic">No specific skills found. Add in profile later.</span>
+                   )}
+                   <span className="px-2 py-1 border border-dashed border-slate-300 rounded text-xs text-slate-400 cursor-default">
                      + Edit in Profile
                    </span>
                  </div>

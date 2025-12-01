@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { UserProfile } from '../types';
-import { Save, User, Briefcase, FileText, Hash } from 'lucide-react';
+import { Save, User, Briefcase, FileText, Hash, Zap, Key } from 'lucide-react';
 
 interface ProfileSectionProps {
   profile: UserProfile;
@@ -32,6 +32,13 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({ profile, onUpdat
     setIsSaved(false);
   };
 
+  const handleGenerateToken = () => {
+    const newToken = 'rk_live_' + Math.random().toString(36).substr(2, 16);
+    const updated = { ...formData, extensionToken: newToken };
+    setFormData(updated);
+    onUpdate(updated);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onUpdate(formData);
@@ -40,7 +47,47 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({ profile, onUpdat
   };
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="max-w-3xl mx-auto space-y-6">
+      {/* Pro Features Section */}
+      {profile.plan !== 'Free' && (
+        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl shadow-lg border border-indigo-500 overflow-hidden text-white">
+           <div className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                 <div className="p-2 bg-white/20 rounded-lg">
+                    <Zap size={20} className="text-yellow-300" />
+                 </div>
+                 <div>
+                    <h3 className="font-bold text-lg">Pro Features Active</h3>
+                    <p className="text-indigo-100 text-xs">Manage your premium access tokens.</p>
+                 </div>
+              </div>
+              
+              <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm border border-white/10">
+                 <label className="text-xs font-bold text-indigo-100 uppercase mb-2 block flex items-center gap-2">
+                    <Key size={12} /> Chrome Extension API Token
+                 </label>
+                 <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      readOnly 
+                      value={formData.extensionToken || 'No token generated'} 
+                      className="flex-1 bg-black/20 border border-white/20 rounded-lg px-3 py-2 text-sm font-mono text-white outline-none"
+                    />
+                    <button 
+                      onClick={handleGenerateToken}
+                      className="px-3 py-2 bg-white text-indigo-600 rounded-lg text-xs font-bold hover:bg-indigo-50 transition-colors"
+                    >
+                      {formData.extensionToken ? 'Regenerate' : 'Generate'}
+                    </button>
+                 </div>
+                 <p className="text-[10px] text-indigo-200 mt-2">
+                    Paste this token into the RekrutIn Chrome Extension to auto-save jobs from LinkedIn.
+                 </p>
+              </div>
+           </div>
+        </div>
+      )}
+
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="p-6 border-b border-slate-100 flex justify-between items-center">
           <div>

@@ -67,6 +67,53 @@ export const analyzeJobFit = async (resumeText: string, jobDescription: string):
   }
 };
 
+export const calculateSuccessProbability = async (resumeSummary: string, jobDescription: string): Promise<{ probability: number; explanation: string }> => {
+  if (!ai) {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({
+          probability: Math.floor(Math.random() * (95 - 60) + 60),
+          explanation: "Simulated: Your experience aligns well with the core requirements."
+        });
+      }, 1000);
+    });
+  }
+
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: `
+        Estimate the probability (0-100) of a candidate getting an interview for this job.
+        
+        Candidate Summary: "${resumeSummary}"
+        Job Description: "${jobDescription}"
+        
+        Return JSON with:
+        - probability (integer 0-100)
+        - explanation (string, max 20 words)
+      `,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            probability: { type: Type.INTEGER },
+            explanation: { type: Type.STRING }
+          },
+          required: ["probability", "explanation"]
+        }
+      }
+    });
+
+    const text = response.text;
+    if (!text) throw new Error("No response");
+    return JSON.parse(text);
+  } catch (error) {
+    console.error("Success Probability Error", error);
+    return { probability: 70, explanation: "Could not calculate due to API error." };
+  }
+};
+
 export const analyzeResumeATS = async (resumeText: string): Promise<{ score: number; feedback: string[] }> => {
   if (!ai) {
     return { score: 65, feedback: ["Simulated: Use standard headings", "Simulated: Quantify achievements"] };
@@ -209,5 +256,83 @@ export const chatWithCareerAgent = async (
   } catch (error) {
     console.error("Chat Agent Error", error);
     return "Sorry, I encountered an error communicating with the AI service.";
+  }
+};
+
+export const parseResumeFromFilename = async (filename: string): Promise<UserProfile> => {
+  if (!ai) {
+    // Fallback if no API key
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const namePart = filename.split('.')[0].replace(/[_-]/g, ' ');
+        resolve({
+          name: namePart.split(' ').slice(0, 2).join(' ') || 'Guest User',
+          title: 'Software Engineer', // default
+          email: 'guest@example.com',
+          summary: 'Simulated profile based on file upload.',
+          skills: ['React', 'TypeScript', 'Node.js'],
+          plan: 'Free',
+          atsScansUsed: 0
+        });
+      }, 1500);
+    });
+  }
+
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: `
+        You are a smart resume parser AI. 
+        A user uploaded a resume file named: "${filename}".
+        
+        Your task is to infer a realistic candidate profile based strictly on the clues in the filename.
+        
+        Instructions:
+        1. Name: Extract potential name from filename (e.g., "alex_smith_cv" -> "Alex Smith"). If generic, generate a realistic professional name.
+        2. Job Title: Extract role from filename (e.g., "frontend_dev" -> "Frontend Developer"). If generic, assume a "Software Engineer" or similar tech role.
+        3. Skills: Infer 5-7 hard skills that match the Job Title.
+        4. Summary: Write a professional 2-sentence summary matching the Title and Skills.
+        5. Email: Generate a realistic email based on the Name (e.g., alex.smith@example.com).
+
+        Return JSON with keys: name, title, email, summary, skills (array of strings).
+      `,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            name: { type: Type.STRING },
+            title: { type: Type.STRING },
+            email: { type: Type.STRING },
+            summary: { type: Type.STRING },
+            skills: { type: Type.ARRAY, items: { type: Type.STRING } }
+          },
+          required: ["name", "title", "email", "summary", "skills"]
+        }
+      }
+    });
+
+    const text = response.text;
+    if (!text) throw new Error("No response");
+    
+    const data = JSON.parse(text);
+    
+    return {
+      ...data,
+      plan: 'Free',
+      atsScansUsed: 0
+    };
+  } catch (error) {
+    console.error("Resume Filename Parse Error", error);
+    // Return safe fallback
+    return {
+        name: 'Guest User',
+        title: 'Candidate',
+        email: 'user@example.com',
+        summary: 'Could not analyze file. Please update your profile manually.',
+        skills: ['Update Skills'],
+        plan: 'Free',
+        atsScansUsed: 0
+    };
   }
 };
