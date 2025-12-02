@@ -36,17 +36,6 @@ import { HowItWorksPage } from './components/HowItWorksPage';
 import { useSubscription } from './hooks/useSubscription';
 import { createCheckoutSession } from './services/paymentService';
 
-// Mock simple HashRouter to avoid dependencies
-const HashRouter = ({ 
-  children, 
-  route 
-}: { 
-  children: (currentRoute: string, navigate: (path: string) => void) => React.ReactNode; 
-  route: string 
-}) => {
-  return <>{children(route, () => {})}</>;
-};
-
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<'landing' | 'features' | 'how-it-works' | 'pricing' | 'dashboard' | 'admin'>('landing');
   const [userRole, setUserRole] = useState<UserRole>('seeker');

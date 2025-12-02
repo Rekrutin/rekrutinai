@@ -2,7 +2,7 @@
 import React from 'react';
 import { 
   Rocket, BrainCircuit, Chrome, FileText, CheckCircle, Zap, 
-  BarChart3, LayoutDashboard, Target, Users, ArrowRight 
+  BarChart3, Target, Users, ArrowRight 
 } from 'lucide-react';
 
 interface FeaturesPageProps {
@@ -252,7 +252,7 @@ export const FeaturesPage: React.FC<FeaturesPageProps> = ({ onSignUp }) => {
                <Target size={32} className="text-yellow-300 mb-4" />
                <h3 className="text-xl font-bold mb-2">Precision Targeting</h3>
                <p className="text-indigo-100">
-                 Focus only on jobs where your fit score is >80%. Save time and increase response rates.
+                 Focus only on jobs where your fit score is &gt;80%. Save time and increase response rates.
                </p>
             </div>
             <div className="bg-slate-50 p-8 rounded-3xl border border-slate-200 hover:shadow-lg transition-shadow">
