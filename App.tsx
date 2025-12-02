@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Menu, X, CheckCircle, BarChart3, Bot, Calendar, ArrowRight, 

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { 
   Rocket, BrainCircuit, Chrome, FileText, CheckCircle, Zap, 
