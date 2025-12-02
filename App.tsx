@@ -55,18 +55,24 @@ const App: React.FC = () => {
   const [isEmployerSignupModalOpen, setIsEmployerSignupModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   
-  // Initialize registered users from localStorage to persist accounts across refreshes
-  const [registeredUsers, setRegisteredUsers] = useState<string[]>(() => {
+  // USER DATABASE PERSISTENCE
+  // We store full UserProfile objects now, not just emails.
+  const [userDatabase, setUserDatabase] = useState<UserProfile[]>(() => {
     try {
-      const saved = localStorage.getItem('rekrutin_users');
+      const saved = localStorage.getItem('rekrutin_db');
       return saved ? JSON.parse(saved) : [];
     } catch (e) { return []; }
   });
 
+  // Save User Database whenever it changes
+  useEffect(() => {
+    localStorage.setItem('rekrutin_db', JSON.stringify(userDatabase));
+  }, [userDatabase]);
+
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
   const [upgradeFeatureName, setUpgradeFeatureName] = useState('Premium Feature');
 
-  // New Features State
+  // Current User Profile
   const [profile, setProfile] = useState<UserProfile>({
     name: 'Guest User',
     title: 'Explorer',
@@ -109,49 +115,18 @@ const App: React.FC = () => {
   const pricingPlans = getPricingPlans(language);
   const features = getFeatures(language);
 
-  // Persistence Effects
+  // DATA PERSISTENCE PER USER
+  // Automatically save current user's data (Jobs, Resumes, Alerts) to their own storage key
   useEffect(() => {
-    localStorage.setItem('rekrutin_users', JSON.stringify(registeredUsers));
-  }, [registeredUsers]);
-
-  // Check for active session on mount
-  useEffect(() => {
-    const savedSession = localStorage.getItem('rekrutin_session');
-    if (savedSession) {
-      try {
-        const sessionData = JSON.parse(savedSession);
-        
-        // Safety check for profile data
-        if (sessionData.profile) {
-          if (!sessionData.profile.skills) sessionData.profile.skills = [];
-          setProfile(sessionData.profile);
-        }
-        
-        setUserRole(sessionData.role || 'seeker');
-        
-        // Handle redirect based on role
-        if (sessionData.role === 'admin') {
-          setCurrentView('admin');
-        } else {
-          setCurrentView('dashboard');
-        }
-        
-      } catch (e) {
-        console.error("Failed to restore session", e);
-      }
-    }
-  }, []);
-
-  // Persist Profile Changes during session
-  useEffect(() => {
-    if (profile.email) {
-      const currentSession = {
-        profile,
-        role: userRole
+    if (profile.email && userRole === 'seeker') {
+      const userData = {
+        jobs,
+        resumes,
+        jobAlerts
       };
-      localStorage.setItem('rekrutin_session', JSON.stringify(currentSession));
+      localStorage.setItem(`rekrutin_data_${profile.email}`, JSON.stringify(userData));
     }
-  }, [profile, userRole]);
+  }, [jobs, resumes, jobAlerts, profile.email, userRole]);
 
   // Click outside to close notification dropdown
   useEffect(() => {
@@ -164,14 +139,12 @@ const App: React.FC = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Supabase Fetch (Simulated)
+  // Supabase Fetch (Simulated) - Only if using Supabase
   useEffect(() => {
     const fetchJobs = async () => {
-      if (supabase) {
-        if (userRole === 'seeker') {
-          const { data, error } = await supabase.from('jobs').select('*');
-          if (!error && data) setJobs(data as unknown as Job[]);
-        }
+      if (supabase && userRole === 'seeker') {
+        const { data, error } = await supabase.from('jobs').select('*');
+        if (!error && data) setJobs(data as unknown as Job[]);
       }
     };
     fetchJobs();
@@ -440,11 +413,7 @@ const App: React.FC = () => {
     setApplications([]);
     
     // 3. Register in persistent DB
-    setRegisteredUsers(prev => {
-      const updated = [...prev, newProfile.email];
-      localStorage.setItem('rekrutin_users', JSON.stringify(updated));
-      return updated;
-    });
+    setUserDatabase(prev => [...prev, newProfile]);
 
     // 4. Close Signup and FORCE OPEN POST JOB MODAL (Rule 1)
     setIsEmployerSignupModalOpen(false);
@@ -458,11 +427,7 @@ const App: React.FC = () => {
   };
 
   const handleAdminDeleteUser = (email: string) => {
-    setRegisteredUsers(prev => {
-      const updated = prev.filter(u => u !== email);
-      localStorage.setItem('rekrutin_users', JSON.stringify(updated));
-      return updated;
-    });
+    setUserDatabase(prev => prev.filter(u => u.email !== email));
   };
 
   const handleAdminDeleteResume = (id: string) => {
@@ -498,19 +463,14 @@ const App: React.FC = () => {
       plan: 'Free',
       atsScansUsed: 1 
     };
+    
+    // Update Local State
     setProfile(completeProfile);
     setJobs([]); 
     setResumes([analyzedResume]);
     
-    // Update Persistent Users
-    setRegisteredUsers(prev => {
-      const updated = [...prev, newProfile.email];
-      localStorage.setItem('rekrutin_users', JSON.stringify(updated));
-      return updated;
-    });
-
-    // Save Session
-    localStorage.setItem('rekrutin_session', JSON.stringify({ profile: completeProfile, role: 'seeker' }));
+    // SAVE USER TO DATABASE (Persistent)
+    setUserDatabase(prev => [...prev, completeProfile]);
 
     setIsSignupModalOpen(false);
     setUserRole('seeker');
@@ -533,21 +493,39 @@ const App: React.FC = () => {
       setUserRole('admin');
       setCurrentView('admin');
       setIsLoginModalOpen(false);
-      localStorage.setItem('rekrutin_session', JSON.stringify({ profile: { name: 'Admin', email }, role: 'admin' }));
       return;
     }
 
-    // STANDARD USER CHECK
-    if (registeredUsers.includes(email)) {
-      const newProfile = { ...profile, email };
-      setProfile(newProfile);
-      setIsLoginModalOpen(false);
-      setUserRole('seeker');
-      setCurrentView('dashboard');
-      setActiveTab('tracker');
+    // STANDARD USER CHECK - Lookup in userDatabase
+    const foundUser = userDatabase.find(u => u.email === email);
+
+    if (foundUser) {
+      // 1. Restore Profile
+      setProfile(foundUser);
       
-      // Persist Session
-      localStorage.setItem('rekrutin_session', JSON.stringify({ profile: newProfile, role: 'seeker' }));
+      // 2. Restore User Data (Jobs, Resumes) from storage
+      try {
+        const savedData = localStorage.getItem(`rekrutin_data_${email}`);
+        if (savedData) {
+          const parsed = JSON.parse(savedData);
+          setJobs(parsed.jobs || []);
+          setResumes(parsed.resumes || []);
+          setJobAlerts(parsed.alerts || []);
+        } else {
+          // Fallback if no data stored yet
+          setJobs([]);
+          setResumes([]);
+          setJobAlerts([]);
+        }
+      } catch (e) {
+        console.error("Error loading user data", e);
+      }
+
+      setIsLoginModalOpen(false);
+      setUserRole(foundUser.companyName ? 'employer' : 'seeker');
+      setCurrentView('dashboard');
+      if (!foundUser.companyName) setActiveTab('tracker');
+      
     } else {
       alert("Account not found. Please Sign Up.");
       setIsLoginModalOpen(false);
@@ -558,7 +536,13 @@ const App: React.FC = () => {
     setCurrentView('landing');
     setIsNotificationOpen(false);
     setIsMandatoryJobPost(false);
-    localStorage.removeItem('rekrutin_session');
+    // We do NOT clear localStorage 'rekrutin_db' so accounts persist.
+    // We just reset the current session state.
+    setProfile({
+      name: 'Guest', title: '', email: '', summary: '', skills: [], plan: 'Free', atsScansUsed: 0
+    });
+    setJobs([]);
+    setResumes([]);
   };
 
   const toggleLanguage = () => {
@@ -1632,7 +1616,7 @@ const App: React.FC = () => {
       return (
         <AdminDashboard 
           onLogout={handleLogout}
-          liveUsers={registeredUsers}
+          liveUsers={userDatabase.map(u => u.email)}
           employerJobs={employerJobs}
           applications={applications}
           seekerJobs={jobs}
