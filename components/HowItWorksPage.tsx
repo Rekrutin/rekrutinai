@@ -2,7 +2,7 @@
 import React from 'react';
 import { 
   Rocket, BrainCircuit, Chrome, Target, CheckCircle, 
-  ArrowRight, Search, Layout, MessageSquare, Zap 
+  ArrowRight, Layout, MessageSquare, Zap 
 } from 'lucide-react';
 
 interface HowItWorksPageProps {
@@ -89,7 +89,7 @@ export const HowItWorksPage: React.FC<HowItWorksPageProps> = ({ onSignUp }) => {
                 </div>
                 
                 {/* Extension Popup Animation */}
-                <div className="absolute top-2 right-2 w-48 bg-white border border-slate-200 shadow-xl rounded-lg p-3 animate-[float_4s_infinite]">
+                <div className="absolute top-2 right-2 w-48 bg-white border border-slate-200 shadow-xl rounded-lg p-3 animate-float" style={{ animationDuration: '4s' }}>
                    <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-50">
                       <div className="w-4 h-4 bg-indigo-600 rounded"></div>
                       <span className="text-xs font-bold text-slate-800">RekrutIn</span>

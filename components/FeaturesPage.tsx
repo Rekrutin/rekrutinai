@@ -179,12 +179,12 @@ export const FeaturesPage: React.FC<FeaturesPageProps> = ({ onSignUp }) => {
 
                 {/* Popups */}
                 <div className="absolute right-2 top-20 z-30">
-                   <div className="bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg animate-[float_3s_infinite] flex items-center gap-1">
+                   <div className="bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg animate-float flex items-center gap-1" style={{ animationDuration: '3s' }}>
                       <CheckCircle size={10} /> "React" Found
                    </div>
                 </div>
                 <div className="absolute left-2 bottom-12 z-30">
-                   <div className="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg animate-[float_4s_infinite] flex items-center gap-1">
+                   <div className="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg animate-float flex items-center gap-1" style={{ animationDuration: '4s' }}>
                       <Zap size={10} /> Missing: "TypeScript"
                    </div>
                 </div>
