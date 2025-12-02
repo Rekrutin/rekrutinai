@@ -27,6 +27,8 @@
               'float': 'float 6s ease-in-out infinite',
               'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
               'scroll-vertical': 'scrollVertical 60s linear infinite',
+              'scan': 'scan 3s ease-in-out infinite',
+              'drift': 'drift 8s ease-in-out infinite',
             },
             keyframes: {
               float: {
@@ -36,6 +38,17 @@
               scrollVertical: {
                 '0%': { transform: 'translateY(0)' },
                 '100%': { transform: 'translateY(-50%)' },
+              },
+              scan: {
+                '0%, 100%': { top: '0%' },
+                '50%': { top: '100%' },
+              },
+              drift: {
+                '0%': { transform: 'translateX(0) translateY(0)' },
+                '25%': { transform: 'translateX(10px) translateY(-10px)' },
+                '50%': { transform: 'translateX(0) translateY(-5px)' },
+                '75%': { transform: 'translateX(-10px) translateY(-10px)' },
+                '100%': { transform: 'translateX(0) translateY(0)' },
               }
             }
           },

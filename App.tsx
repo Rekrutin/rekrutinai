@@ -31,6 +31,8 @@ import { JobDetailDrawer } from './components/JobDetailDrawer';
 import { AdminDashboard } from './components/AdminDashboard'; 
 import { AssessmentTracker } from './components/AssessmentTracker';
 import { ExtensionPage } from './components/ExtensionPage';
+import { FeaturesPage } from './components/FeaturesPage';
+import { HowItWorksPage } from './components/HowItWorksPage';
 import { useSubscription } from './hooks/useSubscription';
 import { createCheckoutSession } from './services/paymentService';
 
@@ -46,7 +48,7 @@ const HashRouter = ({
 };
 
 const App: React.FC = () => {
-  const [currentView, setCurrentView] = useState<'landing' | 'pricing' | 'dashboard' | 'admin'>('landing');
+  const [currentView, setCurrentView] = useState<'landing' | 'features' | 'how-it-works' | 'pricing' | 'dashboard' | 'admin'>('landing');
   const [userRole, setUserRole] = useState<UserRole>('seeker');
   const [language, setLanguage] = useState<Language>('en');
   
@@ -601,8 +603,8 @@ const App: React.FC = () => {
           </div>
           
           <div className="hidden md:flex items-center space-x-8">
-            <button onClick={() => setCurrentView('landing')} className="text-slate-600 hover:text-indigo-600 font-medium transition-colors">{t.NAV_FEATURES}</button>
-            <button onClick={() => setCurrentView('landing')} className="text-slate-600 hover:text-indigo-600 font-medium transition-colors">{t.NAV_HOW_IT_WORKS}</button>
+            <button onClick={() => setCurrentView('features')} className={`font-medium transition-colors ${currentView === 'features' ? 'text-indigo-600 font-bold' : 'text-slate-600 hover:text-indigo-600'}`}>{t.NAV_FEATURES}</button>
+            <button onClick={() => setCurrentView('how-it-works')} className={`font-medium transition-colors ${currentView === 'how-it-works' ? 'text-indigo-600 font-bold' : 'text-slate-600 hover:text-indigo-600'}`}>{t.NAV_HOW_IT_WORKS}</button>
             <button onClick={() => setCurrentView('pricing')} className={`font-medium transition-colors ${currentView === 'pricing' ? 'text-indigo-600 font-bold' : 'text-slate-600 hover:text-indigo-600'}`}>{t.NAV_PRICING}</button>
             
             <div className="flex items-center space-x-3 border-l pl-6 border-slate-200">
@@ -883,6 +885,68 @@ const App: React.FC = () => {
         onComplete={handleEmployerSignupComplete}
       />
       
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        onLogin={handleLogin}
+        onSwitchToSignup={() => {
+          setIsLoginModalOpen(false);
+          setIsSignupModalOpen(true);
+        }}
+      />
+    </div>
+  );
+
+  const renderFeaturesPage = () => (
+    <div className="min-h-screen bg-slate-50 font-sans">
+      <Navbar />
+      <FeaturesPage onSignUp={() => setIsSignupModalOpen(true)} />
+      <footer className="bg-white border-t border-slate-200 py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+           <p className="text-slate-500 text-sm">{t.FOOTER_DESC}</p>
+        </div>
+      </footer>
+      <SignupModal
+        isOpen={isSignupModalOpen}
+        onClose={() => setIsSignupModalOpen(false)}
+        onComplete={handleSignupComplete}
+      />
+      <EmployerSignupModal
+        isOpen={isEmployerSignupModalOpen}
+        onClose={() => setIsEmployerSignupModalOpen(false)}
+        onComplete={handleEmployerSignupComplete}
+      />
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        onLogin={handleLogin}
+        onSwitchToSignup={() => {
+          setIsLoginModalOpen(false);
+          setIsSignupModalOpen(true);
+        }}
+      />
+    </div>
+  );
+
+  const renderHowItWorksPage = () => (
+    <div className="min-h-screen bg-slate-50 font-sans">
+      <Navbar />
+      <HowItWorksPage onSignUp={() => setIsSignupModalOpen(true)} />
+      <footer className="bg-white border-t border-slate-200 py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+           <p className="text-slate-500 text-sm">{t.FOOTER_DESC}</p>
+        </div>
+      </footer>
+      <SignupModal
+        isOpen={isSignupModalOpen}
+        onClose={() => setIsSignupModalOpen(false)}
+        onComplete={handleSignupComplete}
+      />
+      <EmployerSignupModal
+        isOpen={isEmployerSignupModalOpen}
+        onClose={() => setIsEmployerSignupModalOpen(false)}
+        onComplete={handleEmployerSignupComplete}
+      />
       <LoginModal
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
@@ -1592,6 +1656,8 @@ const App: React.FC = () => {
         />
       );
     case 'pricing': return renderPricingPage();
+    case 'features': return renderFeaturesPage();
+    case 'how-it-works': return renderHowItWorksPage();
     case 'dashboard': return renderDashboard();
     default: return renderLanding();
   }
