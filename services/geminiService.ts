@@ -8,6 +8,22 @@ import { getEnv } from "../constants";
 const apiKey = getEnv('API_KEY');
 const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
+// Helper to convert File to Base64 for Gemini API
+async function fileToGenerativePart(file: File) {
+  const base64EncodedDataPromise = new Promise<string>((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (typeof reader.result === 'string') {
+        resolve(reader.result.split(',')[1]);
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+  return {
+    inlineData: { data: await base64EncodedDataPromise, mimeType: file.type },
+  };
+}
+
 export const analyzeJobFit = async (resumeText: string, jobDescription: string): Promise<JobAnalysis> => {
   if (!ai) {
     console.warn("Gemini API Key missing. Returning mock analysis.");
@@ -259,18 +275,18 @@ export const chatWithCareerAgent = async (
   }
 };
 
-export const parseResumeFromFilename = async (filename: string): Promise<UserProfile> => {
+export const parseResumeFile = async (file: File): Promise<UserProfile> => {
   if (!ai) {
     // Fallback if no API key
     return new Promise((resolve) => {
       setTimeout(() => {
-        const namePart = filename.split('.')[0].replace(/[_-]/g, ' ');
+        const namePart = file.name.split('.')[0].replace(/[_-]/g, ' ');
         resolve({
           name: namePart.split(' ').slice(0, 2).join(' ') || 'Guest User',
-          title: 'Software Engineer', // default
-          email: 'guest@example.com',
-          summary: 'Simulated profile based on file upload.',
-          skills: ['React', 'TypeScript', 'Node.js'],
+          title: 'Candidate', // No more dummy titles
+          email: '',
+          summary: 'Please add your API key to get real AI analysis.',
+          skills: [],
           plan: 'Free',
           atsScansUsed: 0
         });
@@ -279,23 +295,19 @@ export const parseResumeFromFilename = async (filename: string): Promise<UserPro
   }
 
   try {
+    const filePart = await fileToGenerativePart(file);
+    
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
-      contents: `
-        You are a smart resume parser AI. 
-        A user uploaded a resume file named: "${filename}".
-        
-        Your task is to infer a realistic candidate profile based strictly on the clues in the filename.
-        
-        Instructions:
-        1. Name: Extract potential name from filename (e.g., "alex_smith_cv" -> "Alex Smith"). If generic, generate a realistic professional name.
-        2. Job Title: Extract role from filename (e.g., "frontend_dev" -> "Frontend Developer"). If generic, assume a "Software Engineer" or similar tech role.
-        3. Skills: Infer 5-7 hard skills that match the Job Title.
-        4. Summary: Write a professional 2-sentence summary matching the Title and Skills.
-        5. Email: Generate a realistic email based on the Name (e.g., alex.smith@example.com).
-
-        Return JSON with keys: name, title, email, summary, skills (array of strings).
-      `,
+      contents: [
+        { 
+            role: "user", 
+            parts: [
+                filePart, 
+                { text: "Extract the candidate's full profile from this resume document. Return valid JSON with keys: name, title (current role), email, summary (professional summary), and skills (array of strings). Do not hallucinate. If a field is missing, return an empty string or empty array." }
+            ] 
+        }
+      ],
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -323,14 +335,14 @@ export const parseResumeFromFilename = async (filename: string): Promise<UserPro
       atsScansUsed: 0
     };
   } catch (error) {
-    console.error("Resume Filename Parse Error", error);
+    console.error("Resume File Parse Error", error);
     // Return safe fallback
     return {
-        name: 'Guest User',
-        title: 'Candidate',
-        email: 'user@example.com',
+        name: '',
+        title: '',
+        email: '',
         summary: 'Could not analyze file. Please update your profile manually.',
-        skills: ['Update Skills'],
+        skills: [],
         plan: 'Free',
         atsScansUsed: 0
     };

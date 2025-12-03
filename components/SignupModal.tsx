@@ -2,7 +2,7 @@
 import React, { useState, useCallback } from 'react';
 import { Upload, FileText, CheckCircle, Sparkles, X, ArrowRight, Loader2, Lock, Mail, Eye, EyeOff, User, Briefcase, Hash } from 'lucide-react';
 import { UserProfile, Resume } from '../types';
-import { parseResumeFromFilename } from '../services/geminiService';
+import { parseResumeFile } from '../services/geminiService';
 
 interface SignupModalProps {
   isOpen: boolean;
@@ -37,8 +37,8 @@ export const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose, onCom
     setStep('scanning');
 
     try {
-      // Use AI to generate a realistic profile based on the filename
-      const profile = await parseResumeFromFilename(uploadedFile.name);
+      // Use AI to extract REAL profile from file content
+      const profile = await parseResumeFile(uploadedFile);
       
       setScannedData(profile);
       // Pre-fill email if AI generated one, but allow user to change it
@@ -48,8 +48,8 @@ export const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose, onCom
       console.error("Parsing failed", error);
       // Fallback
       setScannedData({
-        name: 'Guest User',
-        title: 'Candidate',
+        name: '',
+        title: '',
         email: '',
         summary: 'Manual entry required.',
         skills: [],
@@ -105,14 +105,8 @@ SKILLS
 ${finalProfile.skills.join(' • ')}
 
 EXPERIENCE
-${finalProfile.title} | ${finalProfile.skills[0] ? 'Tech Company' : 'Previous Employer'} | 2021 - Present
-- Leveraged ${finalProfile.skills[0] || 'industry expertise'} to drive key initiatives.
-- Demonstrated success in ${finalProfile.title} responsibilities.
-- Collaborated with cross-functional teams to achieve ${finalProfile.skills[1] || 'goals'}.
-
-EDUCATION
-Bachelor's Degree
-University of Excellence | 2017 - 2021
+${finalProfile.title} | ${finalProfile.skills[0] ? 'Experience' : 'Previous Employer'}
+- Leveraged ${finalProfile.skills[0] || 'skills'} to drive results.
 `;
 
       const newResume: Resume = {
@@ -158,7 +152,7 @@ University of Excellence | 2017 - 2021
                 type="file" 
                 className="hidden" 
                 id="resume-upload" 
-                accept=".pdf,.doc,.docx"
+                accept=".pdf,.doc,.docx,image/*"
                 onChange={handleFileSelect}
               />
               <label htmlFor="resume-upload" className="cursor-pointer flex flex-col items-center">
@@ -168,7 +162,7 @@ University of Excellence | 2017 - 2021
                   <Upload size={28} />
                 </div>
                 <p className="font-bold text-slate-700 text-lg">Click to Upload or Drag & Drop</p>
-                <p className="text-sm text-slate-400 mt-2">PDF, DOCX up to 10MB</p>
+                <p className="text-sm text-slate-400 mt-2">PDF, DOCX, Images up to 10MB</p>
               </label>
             </div>
             
@@ -188,7 +182,7 @@ University of Excellence | 2017 - 2021
             <h3 className="text-xl font-bold text-slate-900 mb-2">AI is Analyzing your Resume...</h3>
             <div className="h-6 overflow-hidden relative max-w-xs mx-auto">
                <div className="absolute w-full text-sm text-indigo-500 font-medium animate-float">
-                  Identifying Skills & Experience...
+                  Extracting Skills & Experience...
                </div>
             </div>
           </div>
@@ -215,6 +209,7 @@ University of Excellence | 2017 - 2021
                     value={scannedData.name}
                     onChange={(e) => handleUpdateScannedData('name', e.target.value)}
                     className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none"
+                    placeholder="Enter full name"
                  />
                </div>
 
@@ -228,6 +223,7 @@ University of Excellence | 2017 - 2021
                     value={scannedData.title}
                     onChange={(e) => handleUpdateScannedData('title', e.target.value)}
                     className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none"
+                    placeholder="e.g. Software Engineer"
                  />
                </div>
 
