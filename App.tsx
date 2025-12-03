@@ -568,7 +568,7 @@ const App: React.FC = () => {
           <div className="flex items-center">
             <span 
               onClick={() => setCurrentView('landing')}
-              className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600 cursor-pointer"
+              className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600 cursor-pointer truncate"
             >
               RekrutIn.ai
             </span>
@@ -611,13 +611,71 @@ const App: React.FC = () => {
             </div>
           </div>
 
-          <div className="md:hidden">
-            <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="text-slate-600">
-              {isMobileMenuOpen ? <X /> : <Menu />}
+          <div className="md:hidden flex items-center gap-2">
+            <button 
+              onClick={() => setIsLoginModalOpen(true)}
+              className="text-slate-600 font-bold text-xs px-2 py-1 hover:text-indigo-600"
+            >
+              {t.NAV_LOGIN}
+            </button>
+            <button 
+              onClick={() => setIsSignupModalOpen(true)}
+              className="bg-indigo-600 text-white px-3 py-1.5 rounded-full font-bold text-xs shadow-sm hover:bg-indigo-700 transition-colors"
+            >
+              {t.NAV_SIGNUP}
+            </button>
+            <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="text-slate-600 p-1.5 ml-1">
+              {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
             </button>
           </div>
         </div>
       </div>
+
+      {/* Mobile Menu */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden absolute top-16 left-0 w-full bg-white border-b border-slate-200 shadow-xl z-50 animate-fade-in">
+          <div className="px-4 py-6 space-y-4">
+            <button 
+              onClick={() => { setCurrentView('features'); setIsMobileMenuOpen(false); }} 
+              className="block w-full text-left text-slate-600 font-medium py-2 hover:bg-slate-50 rounded-lg px-2"
+            >
+              {t.NAV_FEATURES}
+            </button>
+            <button 
+              onClick={() => { setCurrentView('how-it-works'); setIsMobileMenuOpen(false); }} 
+              className="block w-full text-left text-slate-600 font-medium py-2 hover:bg-slate-50 rounded-lg px-2"
+            >
+              {t.NAV_HOW_IT_WORKS}
+            </button>
+            <button 
+              onClick={() => { setCurrentView('pricing'); setIsMobileMenuOpen(false); }} 
+              className="block w-full text-left text-slate-600 font-medium py-2 hover:bg-slate-50 rounded-lg px-2"
+            >
+              {t.NAV_PRICING}
+            </button>
+            
+            <div className="border-t border-slate-100 pt-4 flex items-center justify-between px-2">
+               <span className="text-slate-500 font-medium text-sm">Language / Bahasa</span>
+               <button 
+                  onClick={toggleLanguage}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 border border-slate-200 transition-colors text-sm font-bold text-slate-700"
+               >
+                  <span className="text-lg">{language === 'en' ? '🇺🇸' : '🇮🇩'}</span>
+                  <span>{language === 'en' ? 'EN' : 'ID'}</span>
+               </button>
+            </div>
+            
+            <div className="border-t border-slate-100 pt-4 px-2">
+                <button 
+                onClick={() => setIsEmployerSignupModalOpen(true)}
+                className="text-slate-500 hover:text-slate-800 font-semibold text-sm w-full text-left py-2"
+              >
+                {t.NAV_EMPLOYERS}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </nav>
   );
 
