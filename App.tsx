@@ -568,7 +568,7 @@ const App: React.FC = () => {
           <div className="flex items-center">
             <span 
               onClick={() => setCurrentView('landing')}
-              className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600 cursor-pointer truncate"
+              className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600 cursor-pointer"
             >
               RekrutIn.ai
             </span>
@@ -928,745 +928,441 @@ const App: React.FC = () => {
   );
 
   const renderFeaturesPage = () => (
-    <div className="min-h-screen bg-slate-50 font-sans">
+    <div className="min-h-screen bg-white">
       <Navbar />
       <FeaturesPage onSignUp={() => setIsSignupModalOpen(true)} />
-      <footer className="bg-white border-t border-slate-200 py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-           <p className="text-slate-500 text-sm">{t.FOOTER_DESC}</p>
-        </div>
-      </footer>
-      <SignupModal
-        isOpen={isSignupModalOpen}
-        onClose={() => setIsSignupModalOpen(false)}
-        onComplete={handleSignupComplete}
-      />
-      <EmployerSignupModal
-        isOpen={isEmployerSignupModalOpen}
-        onClose={() => setIsEmployerSignupModalOpen(false)}
-        onComplete={handleEmployerSignupComplete}
-      />
-      <LoginModal
-        isOpen={isLoginModalOpen}
-        onClose={() => setIsLoginModalOpen(false)}
-        onLogin={handleLogin}
-        onSwitchToSignup={() => {
-          setIsLoginModalOpen(false);
-          setIsSignupModalOpen(true);
-        }}
-      />
     </div>
   );
 
   const renderHowItWorksPage = () => (
-    <div className="min-h-screen bg-slate-50 font-sans">
+    <div className="min-h-screen bg-white">
       <Navbar />
       <HowItWorksPage onSignUp={() => setIsSignupModalOpen(true)} />
-      <footer className="bg-white border-t border-slate-200 py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-           <p className="text-slate-500 text-sm">{t.FOOTER_DESC}</p>
-        </div>
-      </footer>
-      <SignupModal
-        isOpen={isSignupModalOpen}
-        onClose={() => setIsSignupModalOpen(false)}
-        onComplete={handleSignupComplete}
-      />
-      <EmployerSignupModal
-        isOpen={isEmployerSignupModalOpen}
-        onClose={() => setIsEmployerSignupModalOpen(false)}
-        onComplete={handleEmployerSignupComplete}
-      />
-      <LoginModal
-        isOpen={isLoginModalOpen}
-        onClose={() => setIsLoginModalOpen(false)}
-        onLogin={handleLogin}
-        onSwitchToSignup={() => {
-          setIsLoginModalOpen(false);
-          setIsSignupModalOpen(true);
-        }}
-      />
     </div>
   );
 
   const renderPricingPage = () => (
     <div className="min-h-screen bg-slate-50 font-sans">
       <Navbar />
-      <div className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <div className="text-center mb-16">
-          <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-6">{t.PRICING_TITLE}</h1>
-          <p className="text-xl text-slate-600 max-w-2xl mx-auto">{t.PRICING_DESC}</p>
-        </div>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {pricingPlans.map((plan, idx) => (
-              <div key={idx} className={`p-8 rounded-3xl border ${plan.highlight ? 'border-indigo-600 shadow-2xl ring-4 ring-indigo-50 bg-white relative' : 'border-slate-200 bg-white shadow-lg'} flex flex-col transition-transform hover:-translate-y-2 duration-300`}>
-                {plan.highlight && (
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                    <span className="bg-indigo-600 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg">
-                      {t.PRICING_POPULAR}
-                    </span>
-                  </div>
-                )}
-                <div className="flex justify-between items-center mb-2">
-                   <h3 className="text-2xl font-bold text-slate-900">{plan.name}</h3>
+      <div className="pt-32 pb-20 px-4 text-center">
+        <h1 className="text-4xl font-extrabold text-slate-900 mb-4">{t.PRICING_TITLE}</h1>
+        <p className="text-xl text-slate-500 max-w-2xl mx-auto mb-16">{t.PRICING_DESC}</p>
+        
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {pricingPlans.map((plan, idx) => (
+            <div key={idx} className={`relative bg-white rounded-2xl shadow-sm border p-8 flex flex-col ${plan.highlight ? 'border-indigo-500 shadow-xl scale-105 z-10' : 'border-slate-200 hover:border-indigo-200 transition-colors'}`}>
+              {plan.highlight && (
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-indigo-600 text-white px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wide">
+                  {t.PRICING_POPULAR}
                 </div>
-                <div className="mt-4 mb-8">
-                  <span className="text-4xl font-extrabold text-slate-900">{plan.price}</span>
-                  <span className="text-slate-500 font-medium ml-1">{t.PRICING_MONTH}</span>
-                  <p className="text-sm text-slate-500 mt-2">{plan.description}</p>
-                </div>
-                <ul className="space-y-4 mb-8 flex-1">
-                  {plan.features.map((feat, i) => (
-                    <li key={i} className="flex items-start text-sm text-slate-700">
-                      <CheckCircle size={16} className="text-green-500 mr-3 flex-shrink-0 mt-0.5" />
-                      {feat}
-                    </li>
-                  ))}
-                </ul>
-                <button 
-                  onClick={() => setIsSignupModalOpen(true)}
-                  className={`w-full py-4 rounded-xl font-bold shadow-md transition-all ${plan.highlight ? 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-indigo-500/25' : 'bg-slate-50 text-slate-900 border border-slate-200 hover:bg-slate-100'}`}
-                >
-                  {plan.cta}
-                </button>
+              )}
+              <h3 className="text-xl font-bold text-slate-900 mb-2">{plan.name}</h3>
+              <div className="flex items-baseline mb-6">
+                <span className="text-4xl font-extrabold text-slate-900">{plan.price}</span>
+                {plan.price !== 'Free' && <span className="text-slate-500 ml-1">{t.PRICING_MONTH}</span>}
               </div>
-            ))}
+              <p className="text-sm text-slate-500 mb-6 min-h-[40px]">{plan.description}</p>
+              
+              <ul className="space-y-4 mb-8 flex-1">
+                {plan.features.map((feat, i) => (
+                  <li key={i} className="flex items-start text-sm text-slate-700">
+                    <CheckCircle size={16} className="text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                    <span>{feat}</span>
+                  </li>
+                ))}
+              </ul>
+              
+              <button 
+                onClick={() => setIsSignupModalOpen(true)}
+                className={`w-full py-3 rounded-xl font-bold transition-colors ${
+                  plan.highlight 
+                    ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-200' 
+                    : 'bg-slate-100 text-slate-800 hover:bg-slate-200'
+                }`}
+              >
+                {plan.cta}
+              </button>
+            </div>
+          ))}
         </div>
       </div>
-      <footer className="bg-white border-t border-slate-200 py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-           <p className="text-slate-500 text-sm">{t.FOOTER_DESC}</p>
-        </div>
-      </footer>
-      <SignupModal
-        isOpen={isSignupModalOpen}
-        onClose={() => setIsSignupModalOpen(false)}
-        onComplete={handleSignupComplete}
-      />
-      <EmployerSignupModal
-        isOpen={isEmployerSignupModalOpen}
-        onClose={() => setIsEmployerSignupModalOpen(false)}
-        onComplete={handleEmployerSignupComplete}
-      />
-      <LoginModal
-        isOpen={isLoginModalOpen}
-        onClose={() => setIsLoginModalOpen(false)}
-        onLogin={handleLogin}
-        onSwitchToSignup={() => {
-          setIsLoginModalOpen(false);
-          setIsSignupModalOpen(true);
-        }}
-      />
     </div>
   );
 
-  const renderDashboard = () => (
-    <div className="h-screen bg-slate-100 flex flex-col font-sans overflow-hidden">
-      {/* Dashboard Header */}
-      <header className="bg-white border-b border-slate-200 z-30 shadow-sm flex-shrink-0">
-        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex justify-between items-center">
-          <div className="flex items-center cursor-pointer" onClick={() => setCurrentView('landing')}>
-            <span className="text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600 mr-8 hidden md:block">
-              RekrutIn.ai
-            </span>
-          </div>
-
-          <div className="flex items-center space-x-3">
-             {/* ... Notification Bell ... */}
-             {userRole === 'seeker' && (
-               <div className="relative" ref={notificationRef}>
-                 <button 
-                   onClick={() => setIsNotificationOpen(!isNotificationOpen)}
-                   className="p-2 text-slate-400 hover:text-indigo-600 transition-colors relative"
-                 >
-                   <Bell size={20} />
-                   {notifications.filter(n => !n.read).length > 0 && (
-                     <span className="absolute top-1 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
-                   )}
-                 </button>
-                 {/* ... notification dropdown ... */}
-                 {isNotificationOpen && (
-                   <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-slate-200 z-50 animate-fade-in overflow-hidden">
-                     {/* ... notifications content ... */}
-                     <div className="p-3 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                       <h3 className="font-semibold text-sm text-slate-800">Notifications</h3>
-                       {notifications.length > 0 && (
-                         <button onClick={handleClearNotifications} className="text-xs text-indigo-600 hover:text-indigo-800">Clear all</button>
-                       )}
+  const renderDashboard = () => {
+    if (userRole === 'employer') {
+        return (
+            <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+                {/* Employer Navbar */}
+                <header className="bg-white border-b border-slate-200 h-16 px-6 flex items-center justify-between sticky top-0 z-30">
+                     <div className="flex items-center gap-2">
+                        <span className="text-xl font-extrabold text-slate-900">RekrutIn<span className="text-indigo-600">.Employer</span></span>
+                        <span className="bg-indigo-50 text-indigo-700 text-xs font-bold px-2 py-0.5 rounded border border-indigo-100">BETA</span>
                      </div>
-                     <div className="max-h-80 overflow-y-auto">
-                       {notifications.length === 0 ? (
-                         <div className="p-6 text-center text-slate-400 text-sm">
-                           No new notifications
-                         </div>
-                       ) : (
-                         notifications.map(notification => (
-                           <div 
-                             key={notification.id} 
-                             onClick={() => {
-                               handleMarkNotificationRead(notification.id);
-                               if(notification.type === 'alert') setActiveTab('alerts');
-                               setIsNotificationOpen(false);
-                             }}
-                             className={`p-4 border-b border-slate-50 hover:bg-slate-50 cursor-pointer transition-colors ${!notification.read ? 'bg-indigo-50/50' : ''}`}
+                     <div className="flex items-center gap-6">
+                        <nav className="hidden md:flex items-center gap-1">
+                           <button 
+                             onClick={() => setEmployerTab('overview')}
+                             className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${employerTab === 'overview' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
                            >
-                             <div className="flex gap-3">
-                               <div className="flex-shrink-0 mt-1">
-                                  <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
-                               </div>
-                               <div>
-                                  <h4 className={`text-sm ${!notification.read ? 'font-bold text-slate-900' : 'font-medium text-slate-700'}`}>{notification.title}</h4>
-                                  <p className="text-xs text-slate-500 mt-1">{notification.message}</p>
-                                  <span className="text-[10px] text-slate-400 mt-2 block">{new Date(notification.timestamp).toLocaleTimeString()}</span>
-                               </div>
-                             </div>
-                           </div>
-                         ))
-                       )}
+                             Overview
+                           </button>
+                           <button 
+                             onClick={() => setEmployerTab('jobs')}
+                             className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${employerTab === 'jobs' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
+                           >
+                             Job Postings
+                           </button>
+                           <button 
+                             onClick={() => setEmployerTab('candidates')}
+                             className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${employerTab === 'candidates' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
+                           >
+                             Candidates
+                           </button>
+                        </nav>
+                        <button 
+                           onClick={() => setIsPostJobModalOpen(true)}
+                           className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-indigo-700 transition-colors flex items-center gap-2"
+                        >
+                           <Plus size={16} /> Post Job
+                        </button>
+                        <div className="h-8 w-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 font-bold cursor-pointer" onClick={handleLogout} title="Logout">
+                           {profile.companyName ? profile.companyName.charAt(0) : 'E'}
+                        </div>
                      </div>
+                </header>
+
+                <main className="flex-1 max-w-7xl w-full mx-auto px-6 py-8">
+                    {employerTab === 'overview' || employerTab === 'jobs' ? (
+                       <EmployerDashboardSummary 
+                          jobs={employerJobs} 
+                          applications={applications} 
+                          onNavigate={setEmployerTab}
+                       />
+                    ) : (
+                       <EmployerCandidatesView 
+                          jobs={employerJobs} 
+                          candidates={applications} 
+                          selectedJobId={selectedJobId} 
+                          onSelectJob={setSelectedJobId}
+                          onUpdateStatus={handleUpdateCandidateStatus}
+                       />
+                    )}
+                </main>
+
+                <PostJobModal 
+                   isOpen={isPostJobModalOpen}
+                   onClose={() => setIsPostJobModalOpen(false)}
+                   onPost={handlePostJob}
+                   isMandatory={isMandatoryJobPost}
+                />
+            </div>
+        );
+    }
+
+    // Seeker Dashboard
+    return (
+        <div className="min-h-screen bg-slate-50 flex font-sans">
+             {/* Sidebar */}
+             <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col fixed h-full z-20">
+                <div className="p-6 border-b border-slate-100">
+                   <span className="text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">
+                     RekrutIn.ai
+                   </span>
+                </div>
+                <div className="p-4 space-y-1 flex-1 overflow-y-auto">
+                   <div className="mb-6 px-3">
+                      <div className="flex items-center gap-3 mb-2">
+                         <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold border border-slate-200">
+                            {profile.name.charAt(0)}
+                         </div>
+                         <div className="overflow-hidden">
+                            <p className="text-sm font-bold text-slate-900 truncate">{profile.name}</p>
+                            <p className="text-xs text-slate-500 truncate">{profile.title}</p>
+                         </div>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs bg-slate-50 p-2 rounded-lg border border-slate-100">
+                          <span className={`w-2 h-2 rounded-full ${subscription.isPro ? 'bg-indigo-500' : 'bg-slate-400'}`}></span>
+                          <span className="font-semibold text-slate-600">{subscription.plan} Plan</span>
+                          {!subscription.isPro && (
+                             <button onClick={() => setIsUpgradeModalOpen(true)} className="ml-auto text-indigo-600 font-bold hover:underline">Upgrade</button>
+                          )}
+                      </div>
                    </div>
+
+                   <button 
+                     onClick={() => setActiveTab('tracker')}
+                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === 'tracker' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'}`}
+                   >
+                     <LayoutDashboard size={18} /> {t.JOB_TRACKER}
+                   </button>
+                   <button 
+                     onClick={() => setActiveTab('resumes')}
+                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === 'resumes' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'}`}
+                   >
+                     <FileText size={18} /> {t.RESUME_MANAGER}
+                   </button>
+                   <button 
+                     onClick={() => setActiveTab('alerts')}
+                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === 'alerts' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'}`}
+                   >
+                     <Bell size={18} /> {t.JOB_ALERTS}
+                   </button>
+                   <button 
+                     onClick={() => setActiveTab('agent')}
+                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === 'agent' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'}`}
+                   >
+                     <Sparkles size={18} /> {t.AI_AGENT}
+                   </button>
+                   <button 
+                     onClick={() => setActiveTab('extension')}
+                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === 'extension' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'}`}
+                   >
+                     <Chrome size={18} /> Extension
+                   </button>
+                   <button 
+                     onClick={() => setActiveTab('profile')}
+                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === 'profile' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'}`}
+                   >
+                     <UserCircle size={18} /> {t.MY_PROFILE}
+                   </button>
+                </div>
+                <div className="p-4 border-t border-slate-200">
+                    <button onClick={handleLogout} className="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-red-600 transition-colors w-full px-3 py-2 rounded-lg hover:bg-red-50">
+                        <LogOut size={18} /> Sign Out
+                    </button>
+                </div>
+             </aside>
+
+             {/* Main Content Area */}
+             <main className="flex-1 md:ml-64 p-4 md:p-8 overflow-y-auto">
+                 {/* Top Bar Mobile */}
+                 <div className="md:hidden flex items-center justify-between mb-6">
+                    <span className="text-lg font-extrabold text-indigo-600">RekrutIn</span>
+                    <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-slate-600">
+                       <Menu size={24} />
+                    </button>
+                 </div>
+                 {/* Mobile Menu Overlay */}
+                 {isMobileMenuOpen && (
+                    <div className="md:hidden fixed inset-0 z-40 bg-white p-4">
+                        <div className="flex justify-end mb-4">
+                           <button onClick={() => setIsMobileMenuOpen(false)}><X size={24} /></button>
+                        </div>
+                        <nav className="space-y-2">
+                           <button onClick={() => {setActiveTab('tracker'); setIsMobileMenuOpen(false)}} className="block w-full text-left py-3 px-4 rounded-lg bg-slate-50 font-bold">Tracker</button>
+                           <button onClick={() => {setActiveTab('resumes'); setIsMobileMenuOpen(false)}} className="block w-full text-left py-3 px-4 rounded-lg bg-slate-50 font-bold">Resumes</button>
+                           <button onClick={() => {setActiveTab('alerts'); setIsMobileMenuOpen(false)}} className="block w-full text-left py-3 px-4 rounded-lg bg-slate-50 font-bold">Alerts</button>
+                           <button onClick={() => {setActiveTab('agent'); setIsMobileMenuOpen(false)}} className="block w-full text-left py-3 px-4 rounded-lg bg-slate-50 font-bold">AI Agent</button>
+                           <button onClick={handleLogout} className="block w-full text-left py-3 px-4 rounded-lg bg-red-50 text-red-600 font-bold mt-8">Sign Out</button>
+                        </nav>
+                    </div>
                  )}
-               </div>
+
+                 {/* Notifications Bell */}
+                 <div className="flex justify-end mb-6 relative" ref={notificationRef}>
+                    <button 
+                      onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+                      className="relative p-2 text-slate-400 hover:text-indigo-600 hover:bg-white rounded-full transition-all"
+                    >
+                       <Bell size={20} />
+                       {notifications.some(n => !n.read) && (
+                          <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+                       )}
+                    </button>
+                    
+                    {isNotificationOpen && (
+                       <div className="absolute top-10 right-0 w-80 bg-white rounded-xl shadow-xl border border-slate-100 z-30 animate-fade-in overflow-hidden">
+                          <div className="p-3 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                             <h4 className="font-bold text-xs text-slate-700 uppercase">Notifications</h4>
+                             {notifications.length > 0 && (
+                                <button onClick={handleClearNotifications} className="text-xs text-indigo-600 hover:underline">Clear all</button>
+                             )}
+                          </div>
+                          <div className="max-h-64 overflow-y-auto">
+                             {notifications.length === 0 ? (
+                                <div className="p-8 text-center text-slate-400 text-sm">No new notifications</div>
+                             ) : (
+                                notifications.map(notif => (
+                                   <div 
+                                      key={notif.id} 
+                                      className={`p-3 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer ${notif.read ? 'opacity-60' : 'bg-indigo-50/30'}`}
+                                      onClick={() => handleMarkNotificationRead(notif.id)}
+                                   >
+                                      <p className="text-sm font-bold text-slate-800 mb-0.5">{notif.title}</p>
+                                      <p className="text-xs text-slate-600 leading-snug">{notif.message}</p>
+                                      <p className="text-[10px] text-slate-400 mt-1">{new Date(notif.timestamp).toLocaleTimeString()}</p>
+                                   </div>
+                                ))
+                             )}
+                          </div>
+                       </div>
+                    )}
+                 </div>
+
+                 {/* Tab Content */}
+                 <div className="max-w-5xl mx-auto">
+                    {activeTab === 'tracker' && (
+                       <div className="space-y-6">
+                          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                             <div>
+                                <h1 className="text-2xl font-bold text-slate-900">Job Application Tracker</h1>
+                                <p className="text-slate-500 text-sm">Manage your pipeline and track every opportunity.</p>
+                             </div>
+                             <div className="flex items-center gap-3">
+                                <div className="bg-white border border-slate-200 rounded-lg p-1 flex">
+                                   <button 
+                                      onClick={() => setViewMode('list')}
+                                      className={`p-1.5 rounded ${viewMode === 'list' ? 'bg-slate-100 text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
+                                   >
+                                      <ListIcon size={18} />
+                                   </button>
+                                   <button 
+                                      onClick={() => setViewMode('board')}
+                                      className={`p-1.5 rounded ${viewMode === 'board' ? 'bg-slate-100 text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
+                                   >
+                                      <Kanban size={18} />
+                                   </button>
+                                </div>
+                                <button 
+                                   onClick={() => setIsAddModalOpen(true)}
+                                   className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-sm hover:bg-indigo-700 transition-colors flex items-center gap-2"
+                                >
+                                   <Plus size={18} /> Add Job
+                                </button>
+                             </div>
+                          </div>
+
+                          {/* Analytics Summary */}
+                          <SeekerAnalytics jobs={jobs} isPro={subscription.isPro} />
+
+                          {/* Search */}
+                          <div className="relative">
+                             <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                             <input 
+                                type="text" 
+                                placeholder="Search your jobs..." 
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+                             />
+                          </div>
+
+                          {/* Assessment Tracker Widget */}
+                          <AssessmentTracker 
+                             jobs={jobs} 
+                             onMarkComplete={handleMarkAssessmentComplete} 
+                             onOpenJob={setSelectedJob} 
+                          />
+
+                          {/* Job List / Board */}
+                          {viewMode === 'list' ? (
+                             <JobListView 
+                                jobs={filteredJobs} 
+                                onStatusChange={handleStatusChange}
+                                onAnalyze={(job) => { setAnalyzingJob(job); }}
+                                onDelete={handleDeleteJob}
+                                onAddJob={() => setIsAddModalOpen(true)}
+                                onJobClick={setSelectedJob}
+                             />
+                          ) : (
+                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {filteredJobs.map(job => (
+                                   <JobCard 
+                                      key={job.id} 
+                                      job={job} 
+                                      onMove={handleMoveJob}
+                                      onAnalyze={(job) => { setAnalyzingJob(job); }}
+                                      onDelete={handleDeleteJob}
+                                      onClick={setSelectedJob}
+                                   />
+                                ))}
+                             </div>
+                          )}
+                       </div>
+                    )}
+
+                    {activeTab === 'resumes' && (
+                       <ResumeSection 
+                          resumes={resumes}
+                          onAddResume={handleAddResume}
+                          onDeleteResume={handleDeleteResume}
+                          onUpdateResume={handleUpdateResume}
+                          onAnalyzeResume={handleAnalyzeResume}
+                          plan={profile.plan}
+                          scansUsed={profile.atsScansUsed}
+                       />
+                    )}
+
+                    {activeTab === 'profile' && (
+                       <ProfileSection profile={profile} onUpdate={(p) => { setProfile(p); }} />
+                    )}
+
+                    {activeTab === 'agent' && (
+                       <div className="max-w-4xl mx-auto">
+                          <h1 className="text-2xl font-bold text-slate-900 mb-2">AI Career Agent</h1>
+                          <p className="text-slate-500 mb-6 text-sm">Your personal career coach, powered by Gemini 2.5.</p>
+                          <AIAgentSection jobs={jobs} profile={profile} />
+                       </div>
+                    )}
+
+                    {activeTab === 'alerts' && (
+                        <JobAlertsSection 
+                           alerts={jobAlerts} 
+                           matchedJobs={matchedJobs}
+                           onAddAlert={handleAddAlert}
+                           onDeleteAlert={handleDeleteAlert}
+                        />
+                    )}
+
+                    {activeTab === 'extension' && (
+                        <ExtensionPage 
+                           profile={profile}
+                           jobs={jobs}
+                           onJobAdded={handleExtensionJobAdded}
+                        />
+                    )}
+                 </div>
+             </main>
+
+             {/* Modals & Drawers */}
+             <AddJobModal 
+                isOpen={isAddModalOpen}
+                onClose={() => setIsAddModalOpen(false)}
+                onAdd={handleAddJob}
+             />
+
+             {analyzingJob && (
+                <AIAnalyzerModal 
+                   job={analyzingJob}
+                   isOpen={!!analyzingJob}
+                   onClose={() => setAnalyzingJob(null)}
+                   onAnalysisComplete={handleAnalysisComplete}
+                />
              )}
 
-            {userRole === 'seeker' ? (
-              <button 
-                onClick={() => setIsAddModalOpen(true)}
-                className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors shadow-sm"
-              >
-                <Plus size={16} className="mr-2" /> Track Job
-              </button>
-            ) : (
-              <button 
-                onClick={() => setIsPostJobModalOpen(true)}
-                className="flex items-center px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors shadow-sm"
-              >
-                <Plus size={16} className="mr-2" /> Post Job
-              </button>
-            )}
-            
-            <button onClick={handleLogout} className="text-slate-400 hover:text-slate-600 ml-4">
-              <LogOut size={18} />
-            </button>
-          </div>
+             <JobDetailDrawer 
+                job={selectedJob}
+                isOpen={!!selectedJob}
+                onClose={() => setSelectedJob(null)}
+                onUpdateJob={handleUpdateJobDetails}
+                isPro={subscription.isPro}
+                onUpgrade={() => {
+                   setSelectedJob(null);
+                   setIsUpgradeModalOpen(true);
+                   setUpgradeFeatureName('AI Success Probability');
+                }}
+             />
+
+             <UpgradeLimitModal 
+                isOpen={isUpgradeModalOpen}
+                onClose={() => setIsUpgradeModalOpen(false)}
+                onUpgrade={() => handlePaymentAndUpgrade('Pro')}
+                featureName={upgradeFeatureName}
+             />
         </div>
-      </header>
-
-      {/* Main Content with Sidebar Layout */}
-      <div className="flex-1 flex max-w-[1440px] mx-auto w-full overflow-hidden">
-        
-        {/* Job Seeker Sidebar */}
-        {userRole === 'seeker' && (
-          <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col h-full">
-             {/* User Profile Widget */}
-             <div className="p-6 border-b border-slate-50 flex-shrink-0">
-               <div className="flex items-center gap-3">
-                 <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold shadow-md">
-                   {profile.name.charAt(0)}
-                 </div>
-                 <div>
-                   <p className="text-sm font-bold text-slate-800 truncate w-32">{profile.name}</p>
-                   {profile.plan !== 'Free' ? (
-                     <p className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-full inline-block uppercase">{profile.plan} Member</p>
-                   ) : (
-                     <p className="text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded-full inline-block">Free Plan</p>
-                   )}
-                 </div>
-               </div>
-             </div>
-
-             <nav className="space-y-2 px-4 py-6 flex-1 overflow-y-auto scrollbar-hide">
-                <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 pl-2">My Workspace</div>
-               
-               <button
-                 onClick={() => setActiveTab('tracker')}
-                 className={`w-full flex items-center px-3 py-2.5 text-sm font-bold rounded-xl transition-all group ${
-                   activeTab === 'tracker' 
-                   ? 'bg-gradient-to-r from-indigo-50 to-white text-indigo-700 shadow-sm border border-indigo-100' 
-                   : 'text-slate-600 hover:bg-slate-50 hover:pl-4'
-                 }`}
-               >
-                 <Rocket size={18} className={`mr-3 ${activeTab === 'tracker' ? 'text-indigo-600' : 'text-slate-400 group-hover:text-indigo-500'}`} />
-                 {t.JOB_TRACKER}
-               </button>
-               
-               <button
-                 onClick={() => setActiveTab('resumes')}
-                 className={`w-full flex items-center px-3 py-2.5 text-sm font-bold rounded-xl transition-all group ${
-                   activeTab === 'resumes' 
-                   ? 'bg-gradient-to-r from-indigo-50 to-white text-indigo-700 shadow-sm border border-indigo-100' 
-                   : 'text-slate-600 hover:bg-slate-50 hover:pl-4'
-                 }`}
-               >
-                 <Files size={18} className={`mr-3 ${activeTab === 'resumes' ? 'text-indigo-600' : 'text-slate-400 group-hover:text-indigo-500'}`} />
-                 {t.RESUME_MANAGER}
-               </button>
-               
-               <button
-                 onClick={() => setActiveTab('alerts')}
-                 className={`w-full flex items-center px-3 py-2.5 text-sm font-bold rounded-xl transition-all group ${
-                   activeTab === 'alerts' 
-                   ? 'bg-gradient-to-r from-indigo-50 to-white text-indigo-700 shadow-sm border border-indigo-100' 
-                   : 'text-slate-600 hover:bg-slate-50 hover:pl-4'
-                 }`}
-               >
-                 <Radar size={18} className={`mr-3 ${activeTab === 'alerts' ? 'text-indigo-600' : 'text-slate-400 group-hover:text-indigo-500'}`} />
-                 {t.JOB_ALERTS}
-               </button>
-
-               <div className="mt-6 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 pl-2">Career Tools</div>
-
-               <button
-                 onClick={() => setActiveTab('profile')}
-                 className={`w-full flex items-center px-3 py-2.5 text-sm font-bold rounded-xl transition-all group ${
-                   activeTab === 'profile' 
-                   ? 'bg-gradient-to-r from-indigo-50 to-white text-indigo-700 shadow-sm border border-indigo-100' 
-                   : 'text-slate-600 hover:bg-slate-50 hover:pl-4'
-                 }`}
-               >
-                 <UserCircle size={18} className={`mr-3 ${activeTab === 'profile' ? 'text-indigo-600' : 'text-slate-400 group-hover:text-indigo-500'}`} />
-                 {t.MY_PROFILE}
-               </button>
-               
-               <button
-                 onClick={() => setActiveTab('agent')}
-                 className={`w-full flex items-center px-3 py-2.5 text-sm font-bold rounded-xl transition-all group ${
-                   activeTab === 'agent' 
-                   ? 'bg-gradient-to-r from-indigo-50 to-white text-indigo-700 shadow-sm border border-indigo-100' 
-                   : 'text-slate-600 hover:bg-slate-50 hover:pl-4'
-                 }`}
-               >
-                 <Bot size={18} className={`mr-3 ${activeTab === 'agent' ? 'text-indigo-600' : 'text-slate-400 group-hover:text-indigo-500'}`} />
-                 {t.AI_AGENT}
-               </button>
-               
-               <button
-                 onClick={() => setActiveTab('extension')}
-                 className={`w-full flex items-center px-3 py-2.5 text-sm font-bold rounded-xl transition-all group ${
-                   activeTab === 'extension' 
-                   ? 'bg-gradient-to-r from-indigo-50 to-white text-indigo-700 shadow-sm border border-indigo-100' 
-                   : 'text-slate-600 hover:bg-slate-50 hover:pl-4'
-                 }`}
-               >
-                 <Chrome size={18} className={`mr-3 ${activeTab === 'extension' ? 'text-indigo-600' : 'text-slate-400 group-hover:text-indigo-500'}`} />
-                 Chrome Extension
-               </button>
-
-               <button
-                 onClick={() => setActiveTab('billing')}
-                 className={`w-full flex items-center px-3 py-2.5 text-sm font-bold rounded-xl transition-all group ${
-                   activeTab === 'billing' 
-                   ? 'bg-gradient-to-r from-indigo-50 to-white text-indigo-700 shadow-sm border border-indigo-100' 
-                   : 'text-slate-600 hover:bg-slate-50 hover:pl-4'
-                 }`}
-               >
-                 <Zap size={18} className={`mr-3 ${activeTab === 'billing' ? 'text-indigo-600' : 'text-slate-400 group-hover:text-indigo-500'}`} />
-                 {t.UPGRADE_PLAN}
-               </button>
-             </nav>
-
-             <div className="p-4 border-t border-slate-50 flex-shrink-0">
-               <button
-                 onClick={handleLogout}
-                 className="w-full flex items-center px-3 py-2.5 text-sm font-bold rounded-xl transition-all text-slate-500 hover:bg-red-50 hover:text-red-600 group"
-               >
-                 <LogOut size={18} className="mr-3 group-hover:text-red-500" />
-                 Logout
-               </button>
-             </div>
-          </aside>
-        )}
-
-        {/* Employer Sidebar - Kept as is */}
-        {userRole === 'employer' && (
-          <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col pt-6 pb-6 overflow-y-auto">
-             <div className="px-6 mb-6">
-                <p className="text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full w-fit">RECRUITER HUB</p>
-                <p className="text-sm font-bold text-slate-800 mt-2 truncate">{profile.companyName || 'My Company'}</p>
-             </div>
-             <nav className="space-y-2 px-4">
-               <button
-                 onClick={() => setEmployerTab('overview')}
-                 className={`w-full flex items-center px-3 py-2.5 text-sm font-bold rounded-xl transition-all group ${
-                   employerTab === 'overview' 
-                   ? 'bg-gradient-to-r from-slate-100 to-white text-slate-900 shadow-sm border border-slate-200' 
-                   : 'text-slate-600 hover:bg-slate-50 hover:pl-4'
-                 }`}
-               >
-                 <LayoutDashboard size={18} className={`mr-3 ${employerTab === 'overview' ? 'text-slate-800' : 'text-slate-400 group-hover:text-slate-600'}`} />
-                 📊 Dashboard
-               </button>
-               <button
-                 onClick={() => setEmployerTab('jobs')}
-                 className={`w-full flex items-center px-3 py-2.5 text-sm font-bold rounded-xl transition-all group ${
-                   employerTab === 'jobs' 
-                   ? 'bg-gradient-to-r from-slate-100 to-white text-slate-900 shadow-sm border border-slate-200' 
-                   : 'text-slate-600 hover:bg-slate-50 hover:pl-4'
-                 }`}
-               >
-                 <Briefcase size={18} className={`mr-3 ${employerTab === 'jobs' ? 'text-slate-800' : 'text-slate-400 group-hover:text-slate-600'}`} />
-                 📢 Active Missions
-               </button>
-               <button
-                 onClick={() => setEmployerTab('candidates')}
-                 className={`w-full flex items-center px-3 py-2.5 text-sm font-bold rounded-xl transition-all group ${
-                   employerTab === 'candidates' 
-                   ? 'bg-gradient-to-r from-slate-100 to-white text-slate-900 shadow-sm border border-slate-200' 
-                   : 'text-slate-600 hover:bg-slate-50 hover:pl-4'
-                 }`}
-               >
-                 <Target size={18} className={`mr-3 ${employerTab === 'candidates' ? 'text-slate-800' : 'text-slate-400 group-hover:text-slate-600'}`} />
-                 🎯 Talent Pool
-               </button>
-             </nav>
-          </aside>
-        )}
-
-        {/* Content Area */}
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50/50 p-6 scrollbar-hide">
-          {userRole === 'seeker' ? (
-             // --- SEEKER VIEW ---
-             <>
-              {activeTab === 'tracker' && (
-                <div className="max-w-7xl mx-auto">
-                   <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
-                     <h2 className="text-xl font-bold text-slate-800">Mission Overview</h2>
-                     <div className="flex items-center space-x-4 mt-4 md:mt-0">
-                        {/* Search Bar */}
-                        <div className="relative group w-64">
-                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <Search className="h-4 w-4 text-slate-400" />
-                          </div>
-                          <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="block w-full pl-10 pr-3 py-2 border border-slate-200 rounded-lg bg-white text-sm focus:ring-1 focus:ring-indigo-500 outline-none transition-shadow focus:shadow-sm"
-                            placeholder="Search applications..."
-                          />
-                        </div>
-                        {/* View Toggles */}
-                        <div className="flex bg-slate-100 rounded-lg p-0.5 border border-slate-200">
-                          <button
-                            onClick={() => setViewMode('board')}
-                            className={`p-1.5 rounded-md transition-all ${viewMode === 'board' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
-                          >
-                            <Kanban size={16} />
-                          </button>
-                          <button
-                            onClick={() => setViewMode('list')}
-                            className={`p-1.5 rounded-md transition-all ${viewMode === 'list' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
-                          >
-                            <ListIcon size={16} />
-                          </button>
-                        </div>
-                     </div>
-                   </div>
-
-                   <SeekerAnalytics jobs={jobs} isPro={subscription.isPro} />
-                   
-                   {/* Assessment Tracker - High Visibility */}
-                   <AssessmentTracker 
-                      jobs={jobs}
-                      onMarkComplete={handleMarkAssessmentComplete}
-                      onOpenJob={(j) => setSelectedJob(j)}
-                   />
-
-                   {viewMode === 'board' ? (
-                      jobs.length === 0 ? (
-                        <JobListView 
-                          jobs={jobs} 
-                          onStatusChange={handleStatusChange}
-                          onAnalyze={(j) => setAnalyzingJob(j)}
-                          onDelete={handleDeleteJob}
-                          onAddJob={() => setIsAddModalOpen(true)}
-                          onJobClick={(j) => setSelectedJob(j)}
-                        />
-                      ) : (
-                        <div className="flex overflow-x-auto pb-4 space-x-6">
-                           {Object.values(JobStatus).map((status) => {
-                             const statusJobs = filteredJobs.filter(j => j.status === status);
-                             return (
-                               <div key={status} className="w-80 flex-shrink-0">
-                                 <div className="mb-3 px-1 flex justify-between items-center">
-                                   <h3 className="text-sm font-bold text-slate-700 uppercase">{status}</h3>
-                                   <span className="bg-slate-200 text-slate-600 text-xs px-2 py-0.5 rounded-full font-bold">{statusJobs.length}</span>
-                                 </div>
-                                 <div className="space-y-3">
-                                    {statusJobs.map(job => (
-                                      <JobCard 
-                                        key={job.id} 
-                                        job={job} 
-                                        onMove={handleMoveJob}
-                                        onAnalyze={(j) => setAnalyzingJob(j)}
-                                        onDelete={handleDeleteJob}
-                                        onClick={(j) => setSelectedJob(j)}
-                                      />
-                                    ))}
-                                 </div>
-                               </div>
-                             );
-                           })}
-                        </div>
-                      )
-                   ) : (
-                     <JobListView 
-                        jobs={filteredJobs} 
-                        onStatusChange={handleStatusChange}
-                        onAnalyze={(j) => setAnalyzingJob(j)}
-                        onDelete={handleDeleteJob}
-                        onAddJob={() => setIsAddModalOpen(true)}
-                        onJobClick={(j) => setSelectedJob(j)}
-                     />
-                   )}
-                </div>
-              )}
-
-              {activeTab === 'resumes' && (
-                <ResumeSection 
-                  resumes={resumes} 
-                  onAddResume={handleAddResume}
-                  onDeleteResume={handleDeleteResume}
-                  onUpdateResume={handleUpdateResume}
-                  onAnalyzeResume={handleAnalyzeResume}
-                  plan={profile.plan}
-                  scansUsed={profile.atsScansUsed}
-                />
-              )}
-              
-              {activeTab === 'alerts' && (
-                <JobAlertsSection 
-                  alerts={jobAlerts}
-                  matchedJobs={matchedJobs}
-                  onAddAlert={handleAddAlert}
-                  onDeleteAlert={handleDeleteAlert}
-                />
-              )}
-
-              {activeTab === 'profile' && (
-                <ProfileSection 
-                  profile={profile} 
-                  onUpdate={setProfile}
-                />
-              )}
-
-              {activeTab === 'agent' && (
-                <div className="max-w-4xl mx-auto space-y-4">
-                   <SeekerAnalytics jobs={jobs} isPro={subscription.isPro} />
-                   <AIAgentSection jobs={jobs} profile={profile} />
-                </div>
-              )}
-
-              {activeTab === 'extension' && (
-                <ExtensionPage 
-                  profile={profile} 
-                  jobs={jobs}
-                  onJobAdded={handleExtensionJobAdded}
-                />
-              )}
-
-              {activeTab === 'billing' && (
-                <div className="max-w-7xl mx-auto">
-                  <div className="mb-8">
-                    <h2 className="text-2xl font-bold text-slate-900">{t.PRICING_TITLE}</h2>
-                    <p className="text-slate-500">{t.PRICING_DESC}</p>
-                  </div>
-                  <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {pricingPlans.map((plan, idx) => (
-                      <div key={idx} className={`p-6 rounded-2xl border ${plan.highlight ? 'border-indigo-600 shadow-lg ring-1 ring-indigo-600 bg-white' : 'border-slate-200 bg-white shadow-sm'} flex flex-col transition-all hover:shadow-md`}>
-                        {/* ... (Existing Pricing Card Content) ... */}
-                        <div className="mb-4">
-                          <h3 className="text-lg font-bold text-slate-900">{plan.name}</h3>
-                          <div className="mt-2 flex items-baseline text-slate-900">
-                            <span className="text-3xl font-extrabold tracking-tight">{plan.price}</span>
-                            <span className="ml-1 text-sm font-medium text-slate-500">{t.PRICING_MONTH}</span>
-                          </div>
-                          {plan.description && <p className="mt-2 text-xs text-slate-500">{plan.description}</p>}
-                        </div>
-                        <ul className="space-y-3 mb-6 flex-1">
-                          {plan.features.map((feat, i) => (
-                            <li key={i} className="flex items-start text-xs text-slate-600">
-                              <CheckCircle size={14} className="text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                              {feat}
-                            </li>
-                          ))}
-                        </ul>
-                        <button 
-                          onClick={() => {
-                            if (plan.name !== 'Free' && plan.name !== 'Gratis') {
-                                handlePaymentAndUpgrade(plan.name as PlanType);
-                            }
-                          }}
-                          disabled={plan.name === profile.plan}
-                          className={`w-full py-2 rounded-lg font-bold text-sm transition-colors ${
-                            plan.name === profile.plan 
-                            ? 'bg-green-100 text-green-700 cursor-default'
-                            : plan.highlight 
-                                ? 'bg-indigo-600 text-white hover:bg-indigo-700' 
-                                : 'bg-slate-50 text-slate-900 hover:bg-slate-100 border border-slate-200'
-                          }`}
-                        >
-                          {plan.name === profile.plan ? 'Current Plan' : plan.cta}
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </>
-          ) : (
-            // --- EMPLOYER VIEW ---
-            <div className="max-w-7xl mx-auto w-full h-full">
-              {employerTab === 'overview' && (
-                <EmployerDashboardSummary 
-                  jobs={employerJobs}
-                  applications={applications}
-                  onNavigate={setEmployerTab}
-                />
-              )}
-
-              {employerTab === 'jobs' && (
-                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden animate-fade-in">
-                   <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-                     <div>
-                        <h2 className="text-xl font-bold text-slate-900">Your Job Postings</h2>
-                     </div>
-                     <div className="flex items-center gap-3">
-                        <div className="px-4 py-2 bg-slate-50 rounded-lg text-center">
-                            <span className="block text-xl font-bold text-slate-900">{employerJobs.length}</span>
-                            <span className="text-xs text-slate-500 font-medium">Active</span>
-                        </div>
-                     </div>
-                   </div>
-                   
-                   {employerJobs.length === 0 ? (
-                     <div className="p-20 text-center">
-                       <h3 className="text-lg font-medium text-slate-900">No jobs posted yet</h3>
-                       <button 
-                        onClick={() => setIsPostJobModalOpen(true)}
-                        className="mt-4 px-4 py-2 bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-800"
-                      >
-                        Create Job Posting
-                      </button>
-                     </div>
-                   ) : (
-                     <div className="divide-y divide-slate-100">
-                       {employerJobs.map((job) => (
-                         <div key={job.id} className="p-6 hover:bg-slate-50 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-3 mb-1">
-                                <h3 className="text-lg font-bold text-slate-900">{job.title}</h3>
-                                <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${
-                                  job.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-600'
-                                }`}>
-                                  {job.status}
-                                </span>
-                              </div>
-                              <div className="flex flex-wrap gap-4 text-sm text-slate-500 mt-2">
-                                 <span className="flex items-center gap-1"><Briefcase size={14} /> {job.type}</span>
-                                 <span className="flex items-center gap-1"><MapPin size={14} /> {job.location}</span>
-                                 <span className="flex items-center gap-1"><Users size={14} /> {applications.filter(a => a.jobId === job.id).length} Applicants</span>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                               <button 
-                                 onClick={() => handleViewApplicants(job.id)}
-                                 className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors shadow-sm"
-                               >
-                                 View Applicants
-                               </button>
-                            </div>
-                         </div>
-                       ))}
-                     </div>
-                   )}
-                </div>
-              )}
-
-              {employerTab === 'candidates' && (
-                <EmployerCandidatesView 
-                  jobs={employerJobs}
-                  candidates={applications}
-                  selectedJobId={selectedJobId}
-                  onSelectJob={setSelectedJobId}
-                  onUpdateStatus={handleUpdateCandidateStatus}
-                />
-              )}
-            </div>
-          )}
-        </main>
-      </div>
-
-      {/* Modals */}
-      <AddJobModal 
-        isOpen={isAddModalOpen} 
-        onClose={() => setIsAddModalOpen(false)} 
-        onAdd={handleAddJob}
-      />
-      
-      <PostJobModal
-        isOpen={isPostJobModalOpen}
-        onClose={() => setIsPostJobModalOpen(false)}
-        onPost={handlePostJob}
-        isMandatory={isMandatoryJobPost}
-      />
-      
-      {analyzingJob && (
-        <AIAnalyzerModal
-          job={analyzingJob}
-          isOpen={!!analyzingJob}
-          onClose={() => setAnalyzingJob(null)}
-          onAnalysisComplete={handleAnalysisComplete}
-        />
-      )}
-
-      {/* Job Detail Drawer (CRM) */}
-      <JobDetailDrawer
-        job={selectedJob}
-        isOpen={!!selectedJob}
-        onClose={() => setSelectedJob(null)}
-        onUpdateJob={handleUpdateJobDetails}
-        isPro={subscription.isPro}
-        onUpgrade={() => {
-            setUpgradeFeatureName('AI Success Probability');
-            setIsUpgradeModalOpen(true);
-        }}
-      />
-
-      {/* Signup Modal - Onboarding */}
-      <SignupModal
-        isOpen={isSignupModalOpen}
-        onClose={() => setIsSignupModalOpen(false)}
-        onComplete={handleSignupComplete}
-      />
-
-      <EmployerSignupModal
-        isOpen={isEmployerSignupModalOpen}
-        onClose={() => setIsEmployerSignupModalOpen(false)}
-        onComplete={handleEmployerSignupComplete}
-      />
-      
-      {/* Login Modal */}
-      <LoginModal
-        isOpen={isLoginModalOpen}
-        onClose={() => setIsLoginModalOpen(false)}
-        onLogin={handleLogin}
-        onSwitchToSignup={() => {
-          setIsLoginModalOpen(false);
-          setIsSignupModalOpen(true);
-        }}
-      />
-      
-      {/* Upgrade Limit Modal */}
-      <UpgradeLimitModal
-        isOpen={isUpgradeModalOpen}
-        onClose={() => setIsUpgradeModalOpen(false)}
-        onUpgrade={() => handlePaymentAndUpgrade('Pro')}
-        featureName={upgradeFeatureName}
-      />
-    </div>
-  );
+    );
+  };
 
   switch (currentView) {
     case 'admin':
