@@ -12,55 +12,93 @@ export const supabase = (SUPABASE_URL && SUPABASE_ANON_KEY)
 /**
  * --- CMS / DATABASE SETUP INSTRUCTIONS ---
  * 
- * To use Supabase as your CMS/Backend for RekrutIn.ai:
+ * To use Supabase as your Backend for RekrutIn.ai:
  * 
  * 1. Create a new Supabase Project.
  * 2. Go to the SQL Editor and run the following script to create the tables:
  * 
- * -- Table for Job Seekers (Tracker)
+ * -- 1. PROFILES
+ * create table profiles (
+ *   id uuid references auth.users not null primary key,
+ *   email text not null,
+ *   name text,
+ *   title text,
+ *   summary text,
+ *   skills text[], -- Array of strings
+ *   plan text default 'Free',
+ *   ats_scans_used int default 0,
+ *   company_name text,
+ *   extension_token text,
+ *   beta_access boolean default false,
+ *   created_at timestamp with time zone default timezone('utc'::text, now()) not null
+ * );
+ * 
+ * -- 2. JOBS (Seeker Tracker)
  * create table jobs (
  *   id uuid default gen_random_uuid() primary key,
- *   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+ *   user_id uuid references auth.users not null,
  *   title text not null,
  *   company text not null,
  *   location text,
- *   status text not null,
+ *   status text not null, -- 'Saved', 'Applied', 'Interview', 'Offer', 'Rejected'
  *   description text,
- *   ai_analysis jsonb,
- *   user_id uuid default auth.uid()
+ *   url text,
+ *   salary_range text,
+ *   ai_analysis jsonb, -- Stores fitScore, analysis, improvements
+ *   assessment jsonb, -- Stores assessment details
+ *   timeline jsonb, -- Stores status history
+ *   notes text,
+ *   cover_letter text,
+ *   follow_up_date timestamp with time zone,
+ *   created_at timestamp with time zone default timezone('utc'::text, now()) not null
  * );
  * 
- * -- Table for Employers (Job Posting)
+ * -- 3. RESUMES
+ * create table resumes (
+ *   id uuid default gen_random_uuid() primary key,
+ *   user_id uuid references auth.users not null,
+ *   name text not null,
+ *   content text, -- Storing text content for ATS analysis
+ *   ats_score int,
+ *   ats_analysis text[],
+ *   upload_date timestamp with time zone default timezone('utc'::text, now()) not null
+ * );
+ * 
+ * -- 4. JOB ALERTS
+ * create table job_alerts (
+ *   id uuid default gen_random_uuid() primary key,
+ *   user_id uuid references auth.users not null,
+ *   keywords text not null,
+ *   location text,
+ *   frequency text default 'Instant',
+ *   created_at timestamp with time zone default timezone('utc'::text, now()) not null
+ * );
+ * 
+ * -- 5. EMPLOYER JOBS
  * create table employer_jobs (
  *   id uuid default gen_random_uuid() primary key,
- *   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+ *   employer_id uuid references auth.users not null,
  *   title text not null,
  *   location text not null,
  *   type text not null,
  *   salary_range text,
- *   applicants_count int default 0,
- *   status text default 'Active',
  *   description text not null,
- *   employer_id uuid default auth.uid()
+ *   status text default 'Active',
+ *   applicants_count int default 0,
+ *   created_at timestamp with time zone default timezone('utc'::text, now()) not null
  * );
  * 
- * -- Table for Subscriptions
- * create table subscriptions (
+ * -- 6. APPLICATIONS (For Employers)
+ * create table applications (
  *   id uuid default gen_random_uuid() primary key,
- *   user_id uuid references auth.users not null,
- *   plan text not null,
- *   status text not null,
- *   started_at timestamp with time zone default now(),
- *   current_period_end timestamp with time zone,
- *   created_at timestamp with time zone default now()
+ *   job_id uuid references employer_jobs(id) not null,
+ *   candidate_name text not null,
+ *   candidate_email text not null,
+ *   status text default 'New',
+ *   ai_fit_score int,
+ *   applied_date timestamp with time zone default timezone('utc'::text, now()) not null
  * );
  * 
- * -- Add profile columns
- * alter table profiles add column current_plan text default 'Free';
- * alter table profiles add column is_pro boolean default false;
- * alter table profiles add column beta_access boolean default false;
- * 
- * 3. Set up Row Level Security (RLS) if you want to secure user data.
- * 4. Get your Project URL and Anon Key from Project Settings > API.
- * 5. Add them to your environment variables or constants.ts.
+ * 3. Set up Row Level Security (RLS) policies to ensure users can only access their own data.
+ *    Example: create policy "Users can select their own profile" on profiles for select using (auth.uid() = id);
  */

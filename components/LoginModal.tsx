@@ -5,7 +5,7 @@ import { Mail, Lock, X, Eye, EyeOff, LogIn, CheckSquare, Square } from 'lucide-r
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onLogin: (email: string) => void;
+  onLogin: (email: string, password?: string) => void;
   onSwitchToSignup: () => void;
 }
 
@@ -41,11 +41,10 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
         localStorage.removeItem('rekrutin_remember_email');
       }
 
-      // Simulate API call
+      // Simulate API call delay for UX
       setTimeout(() => {
-        onLogin(email);
+        onLogin(email, password);
         setIsLoading(false);
-        // Reset sensitive fields
         setPassword('');
       }, 1000);
     }

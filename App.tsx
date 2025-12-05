@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Menu, X, CheckCircle, BarChart3, Bot, Calendar, ArrowRight, 
@@ -54,8 +55,7 @@ const App: React.FC = () => {
   const [isEmployerSignupModalOpen, setIsEmployerSignupModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   
-  // USER DATABASE PERSISTENCE
-  // We store full UserProfile objects now, not just emails.
+  // USER DATABASE PERSISTENCE (Local Fallback)
   const [userDatabase, setUserDatabase] = useState<UserProfile[]>(() => {
     try {
       const saved = localStorage.getItem('rekrutin_db');
@@ -114,8 +114,7 @@ const App: React.FC = () => {
   const pricingPlans = getPricingPlans(language);
   const features = getFeatures(language);
 
-  // DATA PERSISTENCE PER USER
-  // Automatically save current user's data (Jobs, Resumes, Alerts) to their own storage key
+  // DATA PERSISTENCE PER USER (Local Fallback)
   useEffect(() => {
     if (profile.email && userRole === 'seeker') {
       const userData = {
@@ -194,8 +193,14 @@ const App: React.FC = () => {
       created_at: new Date().toISOString(),
       timeline: [{ status: newJobData.status, date: new Date().toISOString() }]
     };
+    
     setJobs(prev => [newJob, ...prev]);
-    if (supabase) await supabase.from('jobs').insert([newJob]);
+    
+    // PERSIST TO SUPABASE
+    if (supabase) {
+      const { error } = await supabase.from('jobs').insert([newJob]);
+      if (error) console.error("Failed to sync job to DB", error);
+    }
   };
 
   const handleDeleteJob = async (id: string) => {
@@ -222,7 +227,7 @@ const App: React.FC = () => {
       );
       setJobs(updatedJobs);
       if(selectedJob?.id === job.id) setSelectedJob(updatedJob);
-      if (supabase) await supabase.from('jobs').update({ status: newStatus }).eq('id', job.id);
+      if (supabase) await supabase.from('jobs').update({ status: newStatus, timeline: updatedJob.timeline }).eq('id', job.id);
     }
   };
 
@@ -239,7 +244,7 @@ const App: React.FC = () => {
     const updatedJobs = jobs.map(j => j.id === id ? updatedJob : j);
     setJobs(updatedJobs);
     if(selectedJob?.id === id) setSelectedJob(updatedJob);
-    if (supabase) await supabase.from('jobs').update({ status: newStatus }).eq('id', id);
+    if (supabase) await supabase.from('jobs').update({ status: newStatus, timeline: updatedJob.timeline }).eq('id', id);
   };
 
   const handleAnalysisComplete = async (jobId: string, analysis: JobAnalysis) => {
@@ -254,12 +259,16 @@ const App: React.FC = () => {
     if (supabase) await supabase.from('jobs').update({ ai_analysis: analysis }).eq('id', jobId);
   };
 
-  const handleUpdateJobDetails = (id: string, updates: Partial<Job>) => {
+  const handleUpdateJobDetails = async (id: string, updates: Partial<Job>) => {
     const updatedJobs = jobs.map(j => j.id === id ? { ...j, ...updates } : j);
     setJobs(updatedJobs);
     
     if(selectedJob?.id === id) {
       setSelectedJob(prev => prev ? { ...prev, ...updates } : null);
+    }
+    
+    if (supabase) {
+      await supabase.from('jobs').update(updates).eq('id', id);
     }
   };
 
@@ -274,10 +283,22 @@ const App: React.FC = () => {
   };
 
   // --- Resume Actions ---
-  const handleAddResume = (resume: Resume) => setResumes(prev => [resume, ...prev]);
-  const handleDeleteResume = (id: string) => setResumes(prev => prev.filter(r => r.id !== id));
-  const handleUpdateResume = (id: string, updates: Partial<Resume>) => {
+  const handleAddResume = async (resume: Resume) => {
+    setResumes(prev => [resume, ...prev]);
+    if (supabase) {
+      const { error } = await supabase.from('resumes').insert([resume]);
+      if(error) console.error("Failed to sync resume to DB", error);
+    }
+  };
+  
+  const handleDeleteResume = async (id: string) => {
+    setResumes(prev => prev.filter(r => r.id !== id));
+    if (supabase) await supabase.from('resumes').delete().eq('id', id);
+  };
+  
+  const handleUpdateResume = async (id: string, updates: Partial<Resume>) => {
     setResumes(prev => prev.map(r => r.id === id ? { ...r, ...updates } : r));
+    if (supabase) await supabase.from('resumes').update(updates).eq('id', id);
   };
 
   // Limit Check for ATS Analysis
@@ -289,11 +310,17 @@ const App: React.FC = () => {
     }
     try {
       const result = await analyzeResumeATS(resume.content);
-      handleUpdateResume(resume.id, {
+      await handleUpdateResume(resume.id, {
         atsScore: result.score,
         atsAnalysis: result.feedback
       });
-      setProfile(prev => ({ ...prev, atsScansUsed: prev.atsScansUsed + 1 }));
+      setProfile(prev => {
+        const updated = { ...prev, atsScansUsed: prev.atsScansUsed + 1 };
+        if (supabase) {
+           supabase.from('profiles').update({ ats_scans_used: updated.atsScansUsed }).eq('email', profile.email);
+        }
+        return updated;
+      });
     } catch (error) {
       console.error("Analysis failed", error);
     }
@@ -305,8 +332,13 @@ const App: React.FC = () => {
     // In a real app, window.location.href = session.checkoutUrl
     
     // 2. Simulate Success
-    setProfile(prev => ({ ...prev, plan }));
+    const updatedProfile = { ...profile, plan };
+    setProfile(updatedProfile);
     setIsUpgradeModalOpen(false);
+    
+    if (supabase) {
+      await supabase.from('profiles').update({ plan }).eq('email', profile.email);
+    }
     
     setNotifications(prev => [{
       id: Date.now().toString(),
@@ -444,7 +476,7 @@ const App: React.FC = () => {
   };
   
   // --- Auth & Signup Flow ---
-  const handleSignupComplete = async (newProfile: UserProfile, initialResume: Resume) => {
+  const handleSignupComplete = async (newProfile: UserProfile, initialResume: Resume, password?: string) => {
     let analyzedResume = { ...initialResume };
     try {
       const analysisResult = await analyzeResumeATS(initialResume.content);
@@ -468,7 +500,45 @@ const App: React.FC = () => {
     setJobs([]); 
     setResumes([analyzedResume]);
     
-    // SAVE USER TO DATABASE (Persistent)
+    // PERSIST TO SUPABASE
+    if (supabase && password) {
+      try {
+        // 1. Create Auth User
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: newProfile.email,
+          password: password,
+        });
+
+        if (authError) throw authError;
+
+        if (authData.user) {
+          // 2. Insert Profile
+          const { error: profileError } = await supabase.from('profiles').insert({
+            id: authData.user.id,
+            email: newProfile.email,
+            name: newProfile.name,
+            title: newProfile.title,
+            summary: newProfile.summary,
+            skills: newProfile.skills,
+            plan: 'Free',
+            ats_scans_used: 1
+          });
+          if (profileError) console.error("Profile insert error", profileError);
+
+          // 3. Insert Resume
+          const { error: resumeError } = await supabase.from('resumes').insert({
+            ...analyzedResume,
+            user_id: authData.user.id
+          });
+          if (resumeError) console.error("Resume insert error", resumeError);
+        }
+      } catch (err) {
+        console.error("Supabase Signup Error:", err);
+        // Fallback handled by local state updates below
+      }
+    }
+    
+    // Fallback: Local Database
     setUserDatabase(prev => [...prev, completeProfile]);
 
     setIsSignupModalOpen(false);
@@ -486,7 +556,7 @@ const App: React.FC = () => {
     }, ...prev]);
   };
 
-  const handleLogin = (email: string) => {
+  const handleLogin = async (email: string, password?: string) => {
     // ADMIN CHECK
     if (email === 'admin@rekrutin.ai') {
       setUserRole('admin');
@@ -495,38 +565,90 @@ const App: React.FC = () => {
       return;
     }
 
-    // STANDARD USER CHECK - Lookup in userDatabase
-    const foundUser = userDatabase.find(u => u.email === email);
+    let loginSuccess = false;
 
-    if (foundUser) {
-      // 1. Restore Profile
-      setProfile(foundUser);
-      
-      // 2. Restore User Data (Jobs, Resumes) from storage
+    // TRY SUPABASE LOGIN
+    if (supabase && password) {
       try {
-        const savedData = localStorage.getItem(`rekrutin_data_${email}`);
-        if (savedData) {
-          const parsed = JSON.parse(savedData);
-          setJobs(parsed.jobs || []);
-          setResumes(parsed.resumes || []);
-          setJobAlerts(parsed.alerts || []);
-        } else {
-          // Fallback if no data stored yet
-          setJobs([]);
-          setResumes([]);
-          setJobAlerts([]);
-        }
-      } catch (e) {
-        console.error("Error loading user data", e);
-      }
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
 
+        if (!error && data.user) {
+          loginSuccess = true;
+          
+          // Fetch Profile
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', data.user.id)
+            .single();
+            
+          if (profileData) {
+            // Map DB fields to State
+            setProfile({
+                name: profileData.name,
+                title: profileData.title,
+                email: profileData.email,
+                summary: profileData.summary,
+                skills: profileData.skills || [],
+                plan: profileData.plan as PlanType,
+                atsScansUsed: profileData.ats_scans_used || 0,
+                extensionToken: profileData.extension_token
+            });
+          }
+
+          // Fetch Jobs
+          const { data: jobsData } = await supabase
+            .from('jobs')
+            .select('*')
+            .eq('user_id', data.user.id);
+          if (jobsData) setJobs(jobsData as unknown as Job[]);
+
+          // Fetch Resumes
+          const { data: resumesData } = await supabase
+            .from('resumes')
+            .select('*')
+            .eq('user_id', data.user.id);
+          if (resumesData) setResumes(resumesData as Resume[]);
+        }
+      } catch (err) {
+        console.error("Supabase Login Error:", err);
+      }
+    }
+
+    // FALLBACK: LOCAL DB CHECK
+    if (!loginSuccess) {
+        const foundUser = userDatabase.find(u => u.email === email);
+        if (foundUser) {
+            loginSuccess = true;
+            setProfile(foundUser);
+            // Restore User Data (Jobs, Resumes) from storage
+            try {
+                const savedData = localStorage.getItem(`rekrutin_data_${email}`);
+                if (savedData) {
+                const parsed = JSON.parse(savedData);
+                setJobs(parsed.jobs || []);
+                setResumes(parsed.resumes || []);
+                setJobAlerts(parsed.alerts || []);
+                } else {
+                setJobs([]);
+                setResumes([]);
+                setJobAlerts([]);
+                }
+            } catch (e) { console.error("Error loading user data", e); }
+        }
+    }
+
+    if (loginSuccess) {
       setIsLoginModalOpen(false);
-      setUserRole(foundUser.companyName ? 'employer' : 'seeker');
+      // Determine Role
+      setUserRole('seeker'); // Default to seeker for now unless employer logic is robust
       setCurrentView('dashboard');
-      if (!foundUser.companyName) setActiveTab('tracker');
-      
+      setActiveTab('tracker');
     } else {
-      alert("Account not found. Please Sign Up.");
+      alert("Account not found or incorrect password.");
       setIsLoginModalOpen(false);
     }
   };
@@ -535,8 +657,8 @@ const App: React.FC = () => {
     setCurrentView('landing');
     setIsNotificationOpen(false);
     setIsMandatoryJobPost(false);
-    // We do NOT clear localStorage 'rekrutin_db' so accounts persist.
-    // We just reset the current session state.
+    if (supabase) supabase.auth.signOut();
+    
     setProfile({
       name: 'Guest', title: '', email: '', summary: '', skills: [], plan: 'Free', atsScansUsed: 0
     });
@@ -594,20 +716,6 @@ const App: React.FC = () => {
               >
                 {t.NAV_EMPLOYERS}
               </button>
-                
-                <button 
-                onClick={() => setIsLoginModalOpen(true)}
-                className="text-slate-600 hover:text-indigo-600 font-bold px-4 py-2 text-sm transition-colors"
-              >
-                {t.NAV_LOGIN}
-              </button>
-
-                <button 
-                onClick={() => setIsSignupModalOpen(true)}
-                className="bg-indigo-600 text-white px-5 py-2.5 rounded-full font-bold hover:bg-indigo-700 transition-all shadow-lg hover:shadow-indigo-500/20 text-sm"
-              >
-                {t.NAV_SIGNUP}
-              </button>
             </div>
           </div>
 
@@ -624,9 +732,25 @@ const App: React.FC = () => {
             >
               {t.NAV_SIGNUP}
             </button>
-            <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="text-slate-600 p-1.5 ml-1">
+            <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-slate-600">
               {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
             </button>
+          </div>
+          
+          <div className="hidden md:flex items-center gap-2">
+                <button 
+                onClick={() => setIsLoginModalOpen(true)}
+                className="text-slate-600 hover:text-indigo-600 font-bold px-4 py-2 text-sm transition-colors"
+              >
+                {t.NAV_LOGIN}
+              </button>
+
+                <button 
+                onClick={() => setIsSignupModalOpen(true)}
+                className="bg-indigo-600 text-white px-5 py-2.5 rounded-full font-bold hover:bg-indigo-700 transition-all shadow-lg hover:shadow-indigo-500/20 text-sm"
+              >
+                {t.NAV_SIGNUP}
+              </button>
           </div>
         </div>
       </div>
@@ -839,7 +963,7 @@ const App: React.FC = () => {
               <div className="p-4 md:p-8 bg-slate-50/50">
                  <div className="mb-6 relative z-10">
                    <h3 className="text-lg font-bold text-slate-800 mb-2">{t.PRODUCT_PREVIEW_TITLE}</h3>
-                   <SeekerAnalytics jobs={INITIAL_JOBS} isPro={true} />
+                   <SeekerAnalytics jobs={INITIAL_JOBS} isPro={true} showVelocity={false} />
                  </div>
                  
                  <div className="relative h-[450px] overflow-hidden -mx-2 px-2">
@@ -944,48 +1068,72 @@ const App: React.FC = () => {
   const renderPricingPage = () => (
     <div className="min-h-screen bg-slate-50 font-sans">
       <Navbar />
-      <div className="pt-32 pb-20 px-4 text-center">
-        <h1 className="text-4xl font-extrabold text-slate-900 mb-4">{t.PRICING_TITLE}</h1>
-        <p className="text-xl text-slate-500 max-w-2xl mx-auto mb-16">{t.PRICING_DESC}</p>
-        
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {pricingPlans.map((plan, idx) => (
-            <div key={idx} className={`relative bg-white rounded-2xl shadow-sm border p-8 flex flex-col ${plan.highlight ? 'border-indigo-500 shadow-xl scale-105 z-10' : 'border-slate-200 hover:border-indigo-200 transition-colors'}`}>
-              {plan.highlight && (
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-indigo-600 text-white px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wide">
-                  {t.PRICING_POPULAR}
+      <div className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="text-center mb-16">
+          <h1 className="text-4xl font-extrabold text-slate-900 mb-4">{t.PRICING_TITLE}</h1>
+          <p className="text-xl text-slate-500 max-w-2xl mx-auto mb-16">{t.PRICING_DESC}</p>
+        </div>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {pricingPlans.map((plan, idx) => (
+              <div key={idx} className={`p-8 rounded-3xl border ${plan.highlight ? 'border-indigo-600 shadow-2xl ring-4 ring-indigo-50 bg-white relative' : 'border-slate-200 bg-white shadow-lg'} flex flex-col transition-transform hover:-translate-y-2 duration-300`}>
+                {plan.highlight && (
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                    <span className="bg-indigo-600 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg">
+                      {t.PRICING_POPULAR}
+                    </span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center mb-2">
+                   <h3 className="text-2xl font-bold text-slate-900">{plan.name}</h3>
                 </div>
-              )}
-              <h3 className="text-xl font-bold text-slate-900 mb-2">{plan.name}</h3>
-              <div className="flex items-baseline mb-6">
-                <span className="text-4xl font-extrabold text-slate-900">{plan.price}</span>
-                {plan.price !== 'Free' && <span className="text-slate-500 ml-1">{t.PRICING_MONTH}</span>}
+                <div className="mt-4 mb-8">
+                  <span className="text-4xl font-extrabold text-slate-900">{plan.price}</span>
+                  <span className="text-slate-500 font-medium ml-1">{t.PRICING_MONTH}</span>
+                  <p className="text-sm text-slate-500 mt-2">{plan.description}</p>
+                </div>
+                <ul className="space-y-4 mb-8 flex-1">
+                  {plan.features.map((feat, i) => (
+                    <li key={i} className="flex items-start text-sm text-slate-700">
+                      <CheckCircle size={16} className="text-green-500 mr-3 flex-shrink-0 mt-0.5" />
+                      {feat}
+                    </li>
+                  ))}
+                </ul>
+                <button 
+                  onClick={() => setIsSignupModalOpen(true)}
+                  className={`w-full py-4 rounded-xl font-bold shadow-md transition-all ${plan.highlight ? 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-indigo-500/25' : 'bg-slate-50 text-slate-900 border border-slate-200 hover:bg-slate-100'}`}
+                >
+                  {plan.cta}
+                </button>
               </div>
-              <p className="text-sm text-slate-500 mb-6 min-h-[40px]">{plan.description}</p>
-              
-              <ul className="space-y-4 mb-8 flex-1">
-                {plan.features.map((feat, i) => (
-                  <li key={i} className="flex items-start text-sm text-slate-700">
-                    <CheckCircle size={16} className="text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                    <span>{feat}</span>
-                  </li>
-                ))}
-              </ul>
-              
-              <button 
-                onClick={() => setIsSignupModalOpen(true)}
-                className={`w-full py-3 rounded-xl font-bold transition-colors ${
-                  plan.highlight 
-                    ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-200' 
-                    : 'bg-slate-100 text-slate-800 hover:bg-slate-200'
-                }`}
-              >
-                {plan.cta}
-              </button>
-            </div>
-          ))}
+            ))}
         </div>
       </div>
+      <footer className="bg-white border-t border-slate-200 py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+           <p className="text-slate-500 text-sm">{t.FOOTER_DESC}</p>
+        </div>
+      </footer>
+      <SignupModal
+        isOpen={isSignupModalOpen}
+        onClose={() => setIsSignupModalOpen(false)}
+        onComplete={handleSignupComplete}
+      />
+      <EmployerSignupModal
+        isOpen={isEmployerSignupModalOpen}
+        onClose={() => setIsEmployerSignupModalOpen(false)}
+        onComplete={handleEmployerSignupComplete}
+      />
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        onLogin={handleLogin}
+        onSwitchToSignup={() => {
+          setIsLoginModalOpen(false);
+          setIsSignupModalOpen(true);
+        }}
+      />
     </div>
   );
 
@@ -1044,7 +1192,7 @@ const App: React.FC = () => {
                           jobs={employerJobs} 
                           candidates={applications} 
                           selectedJobId={selectedJobId} 
-                          onSelectJob={setSelectedJobId}
+                          onSelectJob={setSelectedJobId} 
                           onUpdateStatus={handleUpdateCandidateStatus}
                        />
                     )}
@@ -1139,13 +1287,27 @@ const App: React.FC = () => {
                  {/* Top Bar Mobile */}
                  <div className="md:hidden flex items-center justify-between mb-6">
                     <span className="text-lg font-extrabold text-indigo-600">RekrutIn</span>
-                    <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-slate-600">
-                       <Menu size={24} />
-                    </button>
+                    <div className="flex items-center gap-3">
+                        <button 
+                          onClick={() => setIsLoginModalOpen(true)}
+                          className="text-slate-600 font-bold text-xs px-2 py-1 hover:text-indigo-600"
+                        >
+                          {t.NAV_LOGIN}
+                        </button>
+                        <button 
+                          onClick={() => setIsSignupModalOpen(true)}
+                          className="bg-indigo-600 text-white px-3 py-1.5 rounded-full font-bold text-xs shadow-sm hover:bg-indigo-700 transition-colors"
+                        >
+                          {t.NAV_SIGNUP}
+                        </button>
+                        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-slate-600">
+                           <Menu size={24} />
+                        </button>
+                    </div>
                  </div>
                  {/* Mobile Menu Overlay */}
                  {isMobileMenuOpen && (
-                    <div className="md:hidden fixed inset-0 z-40 bg-white p-4">
+                    <div className="md:hidden fixed inset-0 z-40 bg-white p-4 animate-fade-in">
                         <div className="flex justify-end mb-4">
                            <button onClick={() => setIsMobileMenuOpen(false)}><X size={24} /></button>
                         </div>

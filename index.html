@@ -29,6 +29,7 @@
               'scroll-vertical': 'scrollVertical 60s linear infinite',
               'scan': 'scan 3s ease-in-out infinite',
               'drift': 'drift 8s ease-in-out infinite',
+              'draw-line': 'drawLine 2s ease-out forwards',
             },
             keyframes: {
               float: {
@@ -49,6 +50,10 @@
                 '50%': { transform: 'translateX(0) translateY(-5px)' },
                 '75%': { transform: 'translateX(-10px) translateY(-10px)' },
                 '100%': { transform: 'translateX(0) translateY(0)' },
+              },
+              drawLine: {
+                '0%': { strokeDashoffset: '1000' },
+                '100%': { strokeDashoffset: '0' },
               }
             }
           },

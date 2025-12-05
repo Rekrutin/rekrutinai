@@ -1,13 +1,13 @@
 
-import React, { useState, useCallback } from 'react';
-import { Upload, FileText, CheckCircle, Sparkles, X, ArrowRight, Loader2, Lock, Mail, Eye, EyeOff, User, Briefcase, Hash } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Upload, FileText, CheckCircle, Sparkles, X, ArrowRight, Loader2, Lock, Mail, Eye, EyeOff, User, Briefcase, Hash, RefreshCw, ChevronLeft } from 'lucide-react';
 import { UserProfile, Resume } from '../types';
 import { parseResumeFile } from '../services/geminiService';
 
 interface SignupModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onComplete: (profile: UserProfile, resume: Resume) => void;
+  onComplete: (profile: UserProfile, resume: Resume, password?: string) => void;
 }
 
 export const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose, onComplete }) => {
@@ -20,6 +20,20 @@ export const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose, onCom
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+
+  // Reset state when modal closes to prevent getting trapped in a step
+  useEffect(() => {
+    if (!isOpen) {
+      const timer = setTimeout(() => {
+        setStep('upload');
+        setFile(null);
+        setScannedData(null);
+        setEmail('');
+        setPassword('');
+      }, 300); // Wait for potential closing animation
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -84,6 +98,16 @@ export const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose, onCom
     setStep('credentials');
   };
 
+  const handleBackToReview = () => {
+    setStep('review');
+  };
+
+  const handleReupload = () => {
+    setStep('upload');
+    setFile(null);
+    setScannedData(null);
+  };
+
   const handleCreateAccount = (e: React.FormEvent) => {
     e.preventDefault();
     if (scannedData && file && email && password) {
@@ -116,7 +140,7 @@ ${finalProfile.title} | ${finalProfile.skills[0] ? 'Experience' : 'Previous Empl
         uploadDate: new Date().toISOString(),
       };
       
-      onComplete(finalProfile, newResume);
+      onComplete(finalProfile, newResume, password);
     }
   };
 
@@ -129,6 +153,16 @@ ${finalProfile.title} | ${finalProfile.skills[0] ? 'Experience' : 'Previous Empl
         >
           <X size={20} />
         </button>
+
+        {/* Back Button (Only for Review or Credentials steps) */}
+        {(step === 'review' || step === 'credentials') && (
+          <button 
+            onClick={step === 'credentials' ? handleBackToReview : handleReupload}
+            className="absolute top-4 left-4 p-2 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-50 transition-colors z-10 flex items-center gap-1 text-sm font-medium"
+          >
+            <ChevronLeft size={18} /> Back
+          </button>
+        )}
 
         {step === 'upload' && (
           <div className="p-8 md:p-10 text-center">
@@ -254,6 +288,13 @@ ${finalProfile.title} | ${finalProfile.skills[0] ? 'Experience' : 'Previous Empl
               className="w-full bg-indigo-600 text-white py-3.5 rounded-xl font-bold text-lg hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 flex items-center justify-center group"
             >
               Confirm & Continue <ArrowRight size={20} className="ml-2 group-hover:translate-x-1 transition-transform" />
+            </button>
+            
+            <button 
+              onClick={handleReupload}
+              className="w-full mt-3 py-3 text-slate-500 font-semibold hover:text-indigo-600 transition-colors flex items-center justify-center gap-2"
+            >
+              <RefreshCw size={16} /> Re-upload Resume
             </button>
           </div>
         )}

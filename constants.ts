@@ -203,56 +203,96 @@ export const getFeatures = (lang: Language) => {
 
 // --- DATA MOCKS ---
 
+// Helper to get past date
+const daysAgo = (days: number) => new Date(Date.now() - 86400000 * days).toISOString();
+const futureDate = (days: number) => new Date(Date.now() + 86400000 * days).toISOString();
+
 export const INITIAL_JOBS: Job[] = [
-  {
-    id: '1',
-    title: 'Senior Frontend Engineer',
-    company: 'TechFlow Inc.',
-    location: 'Remote, ID',
-    status: JobStatus.INTERVIEW,
-    created_at: new Date().toISOString(),
-    description: 'We are looking for a React expert with Tailwind experience...',
-    ai_analysis: {
-      fitScore: 85,
-      analysis: 'Strong match for technical skills, but lacks specific mention of GraphQL.',
-      improvements: ['Highlight GraphQL projects', 'Emphasize leadership experience']
-    },
-    contacts: [
-      { id: 'c1', name: 'Sarah Miller', role: 'Talent Acquisition', email: 'sarah@techflow.com' }
-    ],
-    notes: "Interview went well. Need to brush up on System Design for the next round.",
+  // OFFERS (2) - High Success
+  { 
+    id: 'j1', 
+    title: 'Senior Frontend Engineer', 
+    company: 'Ruangguru', 
+    location: 'Jakarta, ID', 
+    status: JobStatus.OFFER, 
+    created_at: daysAgo(20),
+    ai_analysis: { fitScore: 95, analysis: 'Perfect match for React stack.', improvements: [] },
     timeline: [
-      { status: JobStatus.SAVED, date: new Date(Date.now() - 86400000 * 5).toISOString() },
-      { status: JobStatus.APPLIED, date: new Date(Date.now() - 86400000 * 4).toISOString() },
-      { status: JobStatus.INTERVIEW, date: new Date(Date.now() - 86400000 * 1).toISOString() }
-    ],
-    assessment: {
-      required: true,
-      type: 'Technical Assessment',
-      deadline: new Date(Date.now() + 86400000 * 3).toISOString(), // 3 days left
-      status: 'Pending',
-      platform: 'HackerRank'
-    }
+        { status: JobStatus.APPLIED, date: daysAgo(20) },
+        { status: JobStatus.INTERVIEW, date: daysAgo(10) },
+        { status: JobStatus.OFFER, date: daysAgo(1) }
+    ]
   },
-  {
-    id: '2',
-    title: 'Product Designer',
-    company: 'Creative Studio',
-    location: 'Jakarta, ID',
-    status: JobStatus.APPLIED,
-    created_at: new Date(Date.now() - 86400000 * 1).toISOString(),
-    description: 'Looking for a UI/UX designer proficient in Figma.',
+  { 
+    id: 'j2', 
+    title: 'Product Manager', 
+    company: 'Mekari', 
+    location: 'Jakarta, ID', 
+    status: JobStatus.OFFER, 
+    created_at: daysAgo(18),
+    ai_analysis: { fitScore: 92, analysis: 'Strong domain expertise.', improvements: [] },
     timeline: [
-      { status: JobStatus.APPLIED, date: new Date().toISOString() }
-    ],
-    assessment: {
-      required: true,
-      type: 'Online Game',
-      deadline: new Date(Date.now() + 86400000 * 1.5).toISOString(), // 1.5 days left (Urgent)
-      status: 'In Progress',
-      platform: 'Pymetrics'
-    }
+        { status: JobStatus.APPLIED, date: daysAgo(18) },
+        { status: JobStatus.INTERVIEW, date: daysAgo(5) },
+        { status: JobStatus.OFFER, date: daysAgo(0) }
+    ]
   },
+
+  // INTERVIEWS (8) - Bringing Interview Rate to ~40% (10/25)
+  { 
+    id: 'j3', 
+    title: 'Software Engineer', 
+    company: 'GoTo Financial', 
+    location: 'Jakarta, ID', 
+    status: JobStatus.INTERVIEW, 
+    created_at: daysAgo(15), 
+    ai_analysis: { fitScore: 88, analysis: 'Solid technical background.', improvements: [] },
+    assessment: { required: true, type: 'Coding Test', status: 'Completed', deadline: daysAgo(10) }
+  },
+  { id: 'j4', title: 'UX Designer', company: 'Traveloka', location: 'Tangerang, ID', status: JobStatus.INTERVIEW, created_at: daysAgo(14) },
+  { id: 'j5', title: 'Backend Developer', company: 'Shopee', location: 'Singapore', status: JobStatus.INTERVIEW, created_at: daysAgo(12) },
+  { 
+    id: 'j6', 
+    title: 'Full Stack Dev', 
+    company: 'Grab', 
+    location: 'Jakarta, ID', 
+    status: JobStatus.INTERVIEW, 
+    created_at: daysAgo(10),
+    assessment: { required: true, type: 'Video Interview', status: 'Pending', deadline: futureDate(2), platform: 'HireVue' }
+  },
+  { id: 'j7', title: 'QA Engineer', company: 'Bukalapak', location: 'Remote', status: JobStatus.INTERVIEW, created_at: daysAgo(9) },
+  { id: 'j8', title: 'Data Analyst', company: 'Jenius', location: 'Jakarta, ID', status: JobStatus.INTERVIEW, created_at: daysAgo(8) },
+  { id: 'j9', title: 'Mobile Engineer', company: 'Tiket.com', location: 'Jakarta, ID', status: JobStatus.INTERVIEW, created_at: daysAgo(7) },
+  { id: 'j10', title: 'DevOps Engineer', company: 'Blibli', location: 'Jakarta, ID', status: JobStatus.INTERVIEW, created_at: daysAgo(6) },
+
+  // REJECTED (5)
+  { id: 'j11', title: 'Senior Engineer', company: 'Agoda', location: 'Bangkok', status: JobStatus.REJECTED, created_at: daysAgo(25) },
+  { id: 'j12', title: 'Tech Lead', company: 'Sea Labs', location: 'Jakarta, ID', status: JobStatus.REJECTED, created_at: daysAgo(22) },
+  { id: 'j13', title: 'Solutions Architect', company: 'Google', location: 'Singapore', status: JobStatus.REJECTED, created_at: daysAgo(21) },
+  { id: 'j14', title: 'Frontend Dev', company: 'Meta', location: 'Singapore', status: JobStatus.REJECTED, created_at: daysAgo(19) },
+  { id: 'j15', title: 'System Analyst', company: 'BCA', location: 'Jakarta, ID', status: JobStatus.REJECTED, created_at: daysAgo(17) },
+
+  // APPLIED (7)
+  { id: 'j16', title: 'React Developer', company: 'Stockbit', location: 'Jakarta, ID', status: JobStatus.APPLIED, created_at: daysAgo(5) },
+  { id: 'j17', title: 'UI Designer', company: 'Bibit', location: 'Jakarta, ID', status: JobStatus.APPLIED, created_at: daysAgo(4) },
+  { 
+    id: 'j18', 
+    title: 'Frontend Engineer', 
+    company: 'Xendit', 
+    location: 'Remote', 
+    status: JobStatus.APPLIED, 
+    created_at: daysAgo(3),
+    assessment: { required: true, type: 'Online Game', status: 'In Progress', deadline: futureDate(1), platform: 'Pymetrics' }
+  },
+  { id: 'j19', title: 'Software Engineer', company: 'eFishery', location: 'Bandung, ID', status: JobStatus.APPLIED, created_at: daysAgo(2) },
+  { id: 'j20', title: 'Product Owner', company: 'Flip', location: 'Depok, ID', status: JobStatus.APPLIED, created_at: daysAgo(1) },
+  { id: 'j21', title: 'Marketing Lead', company: 'Kopi Kenangan', location: 'Jakarta, ID', status: JobStatus.APPLIED, created_at: daysAgo(1) },
+  { id: 'j22', title: 'Content Writer', company: 'Sociolla', location: 'Jakarta, ID', status: JobStatus.APPLIED, created_at: daysAgo(0) },
+
+  // SAVED (3)
+  { id: 'j23', title: 'Engineering Manager', company: 'Ajaib', location: 'Jakarta, ID', status: JobStatus.SAVED, created_at: daysAgo(0) },
+  { id: 'j24', title: 'CTO', company: 'Halodoc', location: 'Jakarta, ID', status: JobStatus.SAVED, created_at: daysAgo(0) },
+  { id: 'j25', title: 'VP of Engineering', company: 'Alodokter', location: 'Jakarta, ID', status: JobStatus.SAVED, created_at: daysAgo(0) },
 ];
 
 export const INITIAL_EMPLOYER_JOBS: EmployerJob[] = [
@@ -267,7 +307,6 @@ export const INITIAL_EMPLOYER_JOBS: EmployerJob[] = [
     created_at: new Date().toISOString(),
     description: 'We need a growth wizard to scale our user base.'
   },
-  // ... (Other jobs remain similar)
 ];
 
 export const INITIAL_APPLICATIONS: CandidateApplication[] = []; // Empty for brevity in diff
