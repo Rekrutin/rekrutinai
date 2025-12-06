@@ -7,10 +7,10 @@ import { CountUp } from './CountUp';
 interface SeekerAnalyticsProps {
   jobs: Job[];
   isPro?: boolean;
-  showVelocity?: boolean;
+  mode?: 'full' | 'summary' | 'chart';
 }
 
-export const SeekerAnalytics: React.FC<SeekerAnalyticsProps> = ({ jobs, isPro = false, showVelocity = true }) => {
+export const SeekerAnalytics: React.FC<SeekerAnalyticsProps> = ({ jobs, isPro = false, mode = 'full' }) => {
   const [hoveredDay, setHoveredDay] = useState<number | null>(null);
 
   const total = jobs.length;
@@ -78,22 +78,45 @@ export const SeekerAnalytics: React.FC<SeekerAnalyticsProps> = ({ jobs, isPro = 
   );
 
   // SVG Helper
-  const getPath = (key: 'applied' | 'interview' | 'offer' | 'rejected') => {
-    const points = chartData.map((d, i) => {
-        const x = (i / (chartData.length - 1)) * 100;
-        const y = 100 - (d[key] / maxVal) * 80; // Leave 20% padding at top
-        return `${x},${y}`;
-    }).join(' L ');
-    return `M ${points}`;
+  const getCoordinates = (key: 'applied' | 'interview' | 'offer' | 'rejected') => {
+    return chartData.map((d, i) => ({
+        x: (i / (chartData.length - 1)) * 100,
+        y: 100 - (d[key] / (maxVal || 1)) * 80 // Leave 20% padding at top
+    }));
+  };
+
+  // Build a cubic bezier spline path
+  const buildSmoothPath = (key: 'applied' | 'interview' | 'offer' | 'rejected') => {
+      const coords = getCoordinates(key);
+      if (coords.length === 0) return "";
+      
+      let d = `M ${coords[0].x},${coords[0].y}`;
+      
+      for (let i = 0; i < coords.length - 1; i++) {
+          const p0 = i > 0 ? coords[i - 1] : coords[0];
+          const p1 = coords[i];
+          const p2 = coords[i + 1];
+          const p3 = i !== coords.length - 2 ? coords[i + 2] : p2;
+
+          const cp1x = p1.x + (p2.x - p0.x) / 6;
+          const cp1y = p1.y + (p2.y - p0.y) / 6;
+
+          const cp2x = p2.x - (p3.x - p1.x) / 6;
+          const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+          d += ` C ${cp1x},${cp1y} ${cp2x},${cp2y} ${p2.x},${p2.y}`;
+      }
+      return d;
   };
 
   const getAreaPath = (key: 'applied' | 'interview' | 'offer' | 'rejected') => {
-    const linePath = getPath(key);
+    const linePath = buildSmoothPath(key);
     return `${linePath} L 100,100 L 0,100 Z`;
   };
 
   return (
     <div className="space-y-6 animate-fade-in mb-6">
+      {(mode === 'full' || mode === 'summary') && (
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {/* Total Card */}
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
@@ -158,10 +181,11 @@ export const SeekerAnalytics: React.FC<SeekerAnalyticsProps> = ({ jobs, isPro = 
           </div>
         </div>
       </div>
+      )}
 
       {/* PRO ANALYTICS - APPLICATION VELOCITY CHART */}
-      {showVelocity && (
-      <div className="relative rounded-xl border border-slate-200 bg-white p-6 shadow-sm overflow-hidden min-h-[320px]">
+      {(mode === 'full' || mode === 'chart') && (
+      <div className="relative rounded-xl border border-slate-200 bg-white p-6 shadow-sm overflow-hidden min-h-[280px]">
          {!isPro && (
            <div className="absolute inset-0 z-20 bg-white/60 backdrop-blur-sm flex flex-col items-center justify-center text-center p-6 border-2 border-dashed border-indigo-100 m-2 rounded-lg">
               <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 mb-3">
@@ -193,118 +217,132 @@ export const SeekerAnalytics: React.FC<SeekerAnalyticsProps> = ({ jobs, isPro = 
             {/* SVG CHART */}
             <div className="flex-1 relative w-full h-[200px] mt-4">
                 <svg className="w-full h-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
-                    {/* Grid Lines */}
-                    {[0, 25, 50, 75, 100].map(y => (
-                        <line key={y} x1="0" y1={y} x2="100" y2={y} stroke="#f1f5f9" strokeWidth="0.5" />
-                    ))}
-
-                    {/* Areas */}
-                    <path d={getAreaPath('applied')} fill="url(#gradBlue)" className="opacity-20" />
-                    <path d={getAreaPath('interview')} fill="url(#gradPurple)" className="opacity-20" />
-                    <path d={getAreaPath('offer')} fill="url(#gradGreen)" className="opacity-20" />
-
-                    {/* Gradients */}
+                    {/* Shadow Filter */}
                     <defs>
+                        <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                            <feGaussianBlur stdDeviation="2" result="blur" />
+                            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                        </filter>
                         <linearGradient id="gradBlue" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#6366f1" stopOpacity="0.5" />
+                            <stop offset="0%" stopColor="#6366f1" stopOpacity="0.4" />
                             <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
                         </linearGradient>
                         <linearGradient id="gradPurple" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#a855f7" stopOpacity="0.5" />
+                            <stop offset="0%" stopColor="#a855f7" stopOpacity="0.4" />
                             <stop offset="100%" stopColor="#a855f7" stopOpacity="0" />
                         </linearGradient>
                         <linearGradient id="gradGreen" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#22c55e" stopOpacity="0.5" />
+                            <stop offset="0%" stopColor="#22c55e" stopOpacity="0.4" />
                             <stop offset="100%" stopColor="#22c55e" stopOpacity="0" />
                         </linearGradient>
                     </defs>
 
-                    {/* Lines */}
+                    {/* Grid Lines (Dashed) */}
+                    {[0, 25, 50, 75, 100].map(y => (
+                        <line key={y} x1="0" y1={y} x2="100" y2={y} stroke="#f1f5f9" strokeWidth="0.5" strokeDasharray="2 2" />
+                    ))}
+
+                    {/* Areas */}
+                    <path d={getAreaPath('applied')} fill="url(#gradBlue)" className="transition-all duration-500" />
+                    <path d={getAreaPath('interview')} fill="url(#gradPurple)" className="transition-all duration-500" />
+                    <path d={getAreaPath('offer')} fill="url(#gradGreen)" className="transition-all duration-500" />
+
+                    {/* Smooth Lines with Glow */}
                     <path 
-                        d={getPath('applied')} 
+                        d={buildSmoothPath('applied')} 
                         fill="none" 
                         stroke="#6366f1" 
-                        strokeWidth="1.5" 
+                        strokeWidth="3" 
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeDasharray="1000"
                         strokeDashoffset="1000"
-                        className="animate-draw-line"
+                        className="animate-draw-line drop-shadow-md"
                     />
                     <path 
-                        d={getPath('interview')} 
+                        d={buildSmoothPath('interview')} 
                         fill="none" 
                         stroke="#a855f7" 
-                        strokeWidth="1.5" 
+                        strokeWidth="3" 
                         strokeLinecap="round"
+                        strokeLinejoin="round"
                         strokeDasharray="1000"
                         strokeDashoffset="1000"
-                        className="animate-draw-line"
+                        className="animate-draw-line drop-shadow-md"
                         style={{ animationDelay: '0.2s' }}
                     />
                     <path 
-                        d={getPath('offer')} 
+                        d={buildSmoothPath('offer')} 
                         fill="none" 
                         stroke="#22c55e" 
-                        strokeWidth="1.5" 
+                        strokeWidth="3" 
                         strokeLinecap="round"
+                        strokeLinejoin="round"
                         strokeDasharray="1000"
                         strokeDashoffset="1000"
-                        className="animate-draw-line"
+                        className="animate-draw-line drop-shadow-md"
                         style={{ animationDelay: '0.4s' }}
                     />
                     <path 
-                        d={getPath('rejected')} 
+                        d={buildSmoothPath('rejected')} 
                         fill="none" 
                         stroke="#ef4444" 
-                        strokeWidth="1.5" 
+                        strokeWidth="3" 
                         strokeLinecap="round"
+                        strokeLinejoin="round"
                         strokeDasharray="1000"
                         strokeDashoffset="1000"
-                        className="animate-draw-line"
+                        className="animate-draw-line drop-shadow-md"
                         style={{ animationDelay: '0.5s' }}
                     />
 
                     {/* Interactive Points */}
                     {chartData.map((d, i) => {
                         const x = (i / (chartData.length - 1)) * 100;
+                        
                         const yApplied = 100 - (d.applied / maxVal) * 80;
+                        const yInterview = 100 - (d.interview / maxVal) * 80;
+                        const yOffer = 100 - (d.offer / maxVal) * 80;
+                        const yRejected = 100 - (d.rejected / maxVal) * 80;
                         
                         return (
                             <g key={i} onMouseEnter={() => setHoveredDay(i)} onMouseLeave={() => setHoveredDay(null)}>
-                                <circle 
-                                    cx={x} cy={yApplied} r="1.5" 
-                                    fill="white" stroke="#6366f1" strokeWidth="1" 
-                                    className="cursor-pointer hover:r-2 transition-all"
-                                />
-                                {/* Invisible hit area column */}
+                                {/* Hit area column */}
                                 <rect x={x - 5} y="0" width="10" height="100" fill="transparent" className="cursor-pointer" />
+                                
+                                {/* Points that scale on hover */}
+                                {d.applied > 0 && <circle cx={x} cy={yApplied} r="3" fill="white" stroke="#6366f1" strokeWidth="2" className="transition-all hover:r-5 hover:stroke-width-3" />}
+                                {d.interview > 0 && <circle cx={x} cy={yInterview} r="3" fill="white" stroke="#a855f7" strokeWidth="2" className="transition-all hover:r-5 hover:stroke-width-3" />}
+                                {d.offer > 0 && <circle cx={x} cy={yOffer} r="3" fill="white" stroke="#22c55e" strokeWidth="2" className="transition-all hover:r-5 hover:stroke-width-3" />}
+                                {d.rejected > 0 && <circle cx={x} cy={yRejected} r="2" fill="white" stroke="#ef4444" strokeWidth="2" className="transition-all hover:r-4 hover:stroke-width-3" />}
                             </g>
                         );
                     })}
                 </svg>
 
                 {/* X-Axis Labels */}
-                <div className="flex justify-between mt-2 text-[10px] text-slate-400 font-bold uppercase">
+                <div className="flex justify-between mt-3 px-1 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
                     {chartData.map((d, i) => (
                         <span key={i}>{d.day}</span>
                     ))}
                 </div>
 
-                {/* Tooltip Overlay */}
+                {/* Enhanced Tooltip Overlay */}
                 {hoveredDay !== null && (
                     <div 
-                        className="absolute top-0 bg-slate-800 text-white text-xs rounded-lg p-2 shadow-xl pointer-events-none z-10 w-32"
+                        className="absolute top-0 bg-slate-900/90 backdrop-blur-md text-white text-xs rounded-xl p-3 shadow-2xl pointer-events-none z-30 w-40 border border-slate-700 animate-fade-in"
                         style={{ 
                             left: `${(hoveredDay / (chartData.length - 1)) * 100}%`,
-                            transform: `translateX(-50%) translateY(-110%)`
+                            transform: `translateX(-50%) translateY(-10px)`
                         }}
                     >
-                        <div className="font-bold border-b border-slate-600 pb-1 mb-1">{chartData[hoveredDay].day} Stats</div>
-                        <div className="flex justify-between text-indigo-300"><span>Applied:</span> <span>{chartData[hoveredDay].applied}</span></div>
-                        <div className="flex justify-between text-purple-300"><span>Interview:</span> <span>{chartData[hoveredDay].interview}</span></div>
-                        <div className="flex justify-between text-green-300"><span>Offer:</span> <span>{chartData[hoveredDay].offer}</span></div>
-                        <div className="flex justify-between text-red-300"><span>Rejected:</span> <span>{chartData[hoveredDay].rejected}</span></div>
+                        <div className="font-bold border-b border-slate-700 pb-2 mb-2 text-slate-200">{chartData[hoveredDay].day} Summary</div>
+                        <div className="space-y-1.5">
+                            <div className="flex justify-between items-center"><span className="text-indigo-300 flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-indigo-400"></div> Applied</span> <span className="font-bold">{chartData[hoveredDay].applied}</span></div>
+                            <div className="flex justify-between items-center"><span className="text-purple-300 flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-purple-400"></div> Interview</span> <span className="font-bold">{chartData[hoveredDay].interview}</span></div>
+                            <div className="flex justify-between items-center"><span className="text-green-300 flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-green-400"></div> Offer</span> <span className="font-bold">{chartData[hoveredDay].offer}</span></div>
+                            <div className="flex justify-between items-center"><span className="text-red-300 flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-red-400"></div> Rejected</span> <span className="font-bold">{chartData[hoveredDay].rejected}</span></div>
+                        </div>
                     </div>
                 )}
             </div>

@@ -963,7 +963,7 @@ const App: React.FC = () => {
               <div className="p-4 md:p-8 bg-slate-50/50">
                  <div className="mb-6 relative z-10">
                    <h3 className="text-lg font-bold text-slate-800 mb-2">{t.PRODUCT_PREVIEW_TITLE}</h3>
-                   <SeekerAnalytics jobs={INITIAL_JOBS} isPro={true} showVelocity={false} />
+                   <SeekerAnalytics jobs={INITIAL_JOBS} isPro={true} mode="summary" />
                  </div>
                  
                  <div className="relative h-[450px] overflow-hidden -mx-2 px-2">
@@ -1396,7 +1396,7 @@ const App: React.FC = () => {
                           </div>
 
                           {/* Analytics Summary */}
-                          <SeekerAnalytics jobs={jobs} isPro={subscription.isPro} />
+                          <SeekerAnalytics jobs={jobs} isPro={subscription.isPro} mode="summary" />
 
                           {/* Search */}
                           <div className="relative">
@@ -1441,6 +1441,9 @@ const App: React.FC = () => {
                                 ))}
                              </div>
                           )}
+
+                          {/* Analytics Chart (Bottom) */}
+                          <SeekerAnalytics jobs={jobs} isPro={subscription.isPro} mode="chart" />
                        </div>
                     )}
 
