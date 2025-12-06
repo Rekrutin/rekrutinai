@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Menu, X, CheckCircle, BarChart3, Bot, Calendar, ArrowRight, 
   Linkedin, Github, Plus, LayoutDashboard, LogOut, ChevronDown, 
   Briefcase, Users, Search, List as ListIcon, Kanban, FileText, UserCircle, Sparkles, Bell, CreditCard,
-  MapPin, TrendingUp, Rocket, Files, Zap, Target, Radar, Building2, ExternalLink, Trash2, BrainCircuit, Chrome
+  MapPin, TrendingUp, Rocket, Files, Zap, Target, Radar, Building2, ExternalLink, Trash2, BrainCircuit, Chrome,
+  MessageSquare, User, Check
 } from 'lucide-react';
 import { Job, JobStatus, JobAnalysis, UserRole, EmployerJob, DashboardTab, UserProfile, Resume, JobAlert, Notification, EmployerTab, CandidateApplication, ExternalJobMatch, Language, PlanType } from './types';
 import { INITIAL_JOBS, getFeatures, getPricingPlans, INITIAL_EMPLOYER_JOBS, TRENDING_SEARCHES, INITIAL_APPLICATIONS, INITIAL_EXTERNAL_MATCHES, TRANSLATIONS, MAX_FREE_ATS_SCANS } from './constants';
@@ -49,7 +49,9 @@ const App: React.FC = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [analyzingJob, setAnalyzingJob] = useState<Job | null>(null);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null); 
-  
+  const [isJobDetailOpen, setIsJobDetailOpen] = useState(false);
+  const [isAnalyzerModalOpen, setIsAnalyzerModalOpen] = useState(false);
+
   // Auth & Onboarding State
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
   const [isEmployerSignupModalOpen, setIsEmployerSignupModalOpen] = useState(false);
@@ -682,7 +684,6 @@ const App: React.FC = () => {
     }, ...prev]);
   };
 
-  // ... (Navbar, renderScrollingJobRow, renderLanding, renderPricingPage remain the same except for wiring up buttons) ...
   const Navbar = () => (
     <nav className="fixed w-full z-40 bg-white/80 backdrop-blur-md border-b border-slate-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -963,7 +964,7 @@ const App: React.FC = () => {
               <div className="p-4 md:p-8 bg-slate-50/50">
                  <div className="mb-6 relative z-10">
                    <h3 className="text-lg font-bold text-slate-800 mb-2">{t.PRODUCT_PREVIEW_TITLE}</h3>
-                   <SeekerAnalytics jobs={INITIAL_JOBS} isPro={true} mode="summary" />
+                   <SeekerAnalytics jobs={INITIAL_JOBS} isPro={true} showVelocity={false} />
                  </div>
                  
                  <div className="relative h-[450px] overflow-hidden -mx-2 px-2">
@@ -1137,395 +1138,317 @@ const App: React.FC = () => {
     </div>
   );
 
-  const renderDashboard = () => {
-    if (userRole === 'employer') {
+  const renderSeekerContent = () => {
+    switch (activeTab) {
+      case 'tracker':
         return (
-            <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
-                {/* Employer Navbar */}
-                <header className="bg-white border-b border-slate-200 h-16 px-6 flex items-center justify-between sticky top-0 z-30">
-                     <div className="flex items-center gap-2">
-                        <span className="text-xl font-extrabold text-slate-900">RekrutIn<span className="text-indigo-600">.Employer</span></span>
-                        <span className="bg-indigo-50 text-indigo-700 text-xs font-bold px-2 py-0.5 rounded border border-indigo-100">BETA</span>
-                     </div>
-                     <div className="flex items-center gap-6">
-                        <nav className="hidden md:flex items-center gap-1">
-                           <button 
-                             onClick={() => setEmployerTab('overview')}
-                             className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${employerTab === 'overview' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
-                           >
-                             Overview
-                           </button>
-                           <button 
-                             onClick={() => setEmployerTab('jobs')}
-                             className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${employerTab === 'jobs' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
-                           >
-                             Job Postings
-                           </button>
-                           <button 
-                             onClick={() => setEmployerTab('candidates')}
-                             className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${employerTab === 'candidates' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
-                           >
-                             Candidates
-                           </button>
-                        </nav>
-                        <button 
-                           onClick={() => setIsPostJobModalOpen(true)}
-                           className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-indigo-700 transition-colors flex items-center gap-2"
-                        >
-                           <Plus size={16} /> Post Job
-                        </button>
-                        <div className="h-8 w-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 font-bold cursor-pointer" onClick={handleLogout} title="Logout">
-                           {profile.companyName ? profile.companyName.charAt(0) : 'E'}
-                        </div>
-                     </div>
-                </header>
-
-                <main className="flex-1 max-w-7xl w-full mx-auto px-6 py-8">
-                    {employerTab === 'overview' || employerTab === 'jobs' ? (
-                       <EmployerDashboardSummary 
-                          jobs={employerJobs} 
-                          applications={applications} 
-                          onNavigate={setEmployerTab}
-                       />
-                    ) : (
-                       <EmployerCandidatesView 
-                          jobs={employerJobs} 
-                          candidates={applications} 
-                          selectedJobId={selectedJobId} 
-                          onSelectJob={setSelectedJobId} 
-                          onUpdateStatus={handleUpdateCandidateStatus}
-                       />
-                    )}
-                </main>
-
-                <PostJobModal 
-                   isOpen={isPostJobModalOpen}
-                   onClose={() => setIsPostJobModalOpen(false)}
-                   onPost={handlePostJob}
-                   isMandatory={isMandatoryJobPost}
-                />
-            </div>
-        );
-    }
-
-    // Seeker Dashboard
-    return (
-        <div className="min-h-screen bg-slate-50 flex font-sans">
-             {/* Sidebar */}
-             <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col fixed h-full z-20">
-                <div className="p-6 border-b border-slate-100">
-                   <span className="text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">
-                     RekrutIn.ai
-                   </span>
-                </div>
-                <div className="p-4 space-y-1 flex-1 overflow-y-auto">
-                   <div className="mb-6 px-3">
-                      <div className="flex items-center gap-3 mb-2">
-                         <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold border border-slate-200">
-                            {profile.name.charAt(0)}
-                         </div>
-                         <div className="overflow-hidden">
-                            <p className="text-sm font-bold text-slate-900 truncate">{profile.name}</p>
-                            <p className="text-xs text-slate-500 truncate">{profile.title}</p>
-                         </div>
-                      </div>
-                      <div className="flex items-center gap-2 text-xs bg-slate-50 p-2 rounded-lg border border-slate-100">
-                          <span className={`w-2 h-2 rounded-full ${subscription.isPro ? 'bg-indigo-500' : 'bg-slate-400'}`}></span>
-                          <span className="font-semibold text-slate-600">{subscription.plan} Plan</span>
-                          {!subscription.isPro && (
-                             <button onClick={() => setIsUpgradeModalOpen(true)} className="ml-auto text-indigo-600 font-bold hover:underline">Upgrade</button>
-                          )}
-                      </div>
-                   </div>
-
-                   <button 
-                     onClick={() => setActiveTab('tracker')}
-                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === 'tracker' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'}`}
-                   >
-                     <LayoutDashboard size={18} /> {t.JOB_TRACKER}
-                   </button>
-                   <button 
-                     onClick={() => setActiveTab('resumes')}
-                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === 'resumes' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'}`}
-                   >
-                     <FileText size={18} /> {t.RESUME_MANAGER}
-                   </button>
-                   <button 
-                     onClick={() => setActiveTab('alerts')}
-                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === 'alerts' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'}`}
-                   >
-                     <Bell size={18} /> {t.JOB_ALERTS}
-                   </button>
-                   <button 
-                     onClick={() => setActiveTab('agent')}
-                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === 'agent' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'}`}
-                   >
-                     <Sparkles size={18} /> {t.AI_AGENT}
-                   </button>
-                   <button 
-                     onClick={() => setActiveTab('extension')}
-                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === 'extension' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'}`}
-                   >
-                     <Chrome size={18} /> Extension
-                   </button>
-                   <button 
-                     onClick={() => setActiveTab('profile')}
-                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === 'profile' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'}`}
-                   >
-                     <UserCircle size={18} /> {t.MY_PROFILE}
-                   </button>
-                </div>
-                <div className="p-4 border-t border-slate-200">
-                    <button onClick={handleLogout} className="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-red-600 transition-colors w-full px-3 py-2 rounded-lg hover:bg-red-50">
-                        <LogOut size={18} /> Sign Out
+          <>
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h1 className="text-2xl font-bold text-slate-900">Job Tracker</h1>
+                <p className="text-slate-500">Manage and organize your applications.</p>
+              </div>
+              <div className="flex gap-3">
+                 <div className="bg-white border border-slate-200 rounded-lg p-1 flex">
+                    <button 
+                      onClick={() => setViewMode('list')}
+                      className={`p-2 rounded ${viewMode === 'list' ? 'bg-indigo-50 text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
+                    >
+                      <ListIcon size={18} />
                     </button>
-                </div>
-             </aside>
-
-             {/* Main Content Area */}
-             <main className="flex-1 md:ml-64 p-4 md:p-8 overflow-y-auto">
-                 {/* Top Bar Mobile */}
-                 <div className="md:hidden flex items-center justify-between mb-6">
-                    <span className="text-lg font-extrabold text-indigo-600">RekrutIn</span>
-                    <div className="flex items-center gap-3">
-                        <button 
-                          onClick={() => setIsLoginModalOpen(true)}
-                          className="text-slate-600 font-bold text-xs px-2 py-1 hover:text-indigo-600"
-                        >
-                          {t.NAV_LOGIN}
-                        </button>
-                        <button 
-                          onClick={() => setIsSignupModalOpen(true)}
-                          className="bg-indigo-600 text-white px-3 py-1.5 rounded-full font-bold text-xs shadow-sm hover:bg-indigo-700 transition-colors"
-                        >
-                          {t.NAV_SIGNUP}
-                        </button>
-                        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-slate-600">
-                           <Menu size={24} />
-                        </button>
-                    </div>
+                    <button 
+                      onClick={() => setViewMode('board')}
+                      className={`p-2 rounded ${viewMode === 'board' ? 'bg-indigo-50 text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
+                    >
+                      <Kanban size={18} />
+                    </button>
                  </div>
-                 {/* Mobile Menu Overlay */}
-                 {isMobileMenuOpen && (
-                    <div className="md:hidden fixed inset-0 z-40 bg-white p-4 animate-fade-in">
-                        <div className="flex justify-end mb-4">
-                           <button onClick={() => setIsMobileMenuOpen(false)}><X size={24} /></button>
+                 <button 
+                    onClick={() => setIsAddModalOpen(true)}
+                    className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold shadow-sm hover:bg-indigo-700 transition-colors flex items-center gap-2"
+                 >
+                    <Plus size={18} /> Add Job
+                 </button>
+              </div>
+            </div>
+
+            <SeekerAnalytics 
+                jobs={jobs} 
+                isPro={subscription.isPro} 
+                mode="summary"
+            />
+            
+            <AssessmentTracker 
+               jobs={jobs}
+               onMarkComplete={handleMarkAssessmentComplete}
+               onOpenJob={(job) => { setSelectedJob(job); setIsJobDetailOpen(true); }}
+            />
+
+            {viewMode === 'list' ? (
+              <JobListView 
+                jobs={filteredJobs} 
+                onStatusChange={handleStatusChange} 
+                onAnalyze={(job) => { setAnalyzingJob(job); setIsAnalyzerModalOpen(true); }} 
+                onDelete={handleDeleteJob} 
+                onAddJob={() => setIsAddModalOpen(true)}
+                onJobClick={(job) => { setSelectedJob(job); setIsJobDetailOpen(true); }}
+              />
+            ) : (
+               <div className="flex gap-4 overflow-x-auto pb-4">
+                  {[JobStatus.SAVED, JobStatus.APPLIED, JobStatus.INTERVIEW, JobStatus.OFFER, JobStatus.REJECTED].map(status => (
+                     <div key={status} className="min-w-[280px] w-[300px]">
+                        <h3 className="font-bold text-slate-700 mb-3 flex items-center justify-between">
+                           {status}
+                           <span className="bg-slate-200 text-slate-600 text-xs px-2 py-0.5 rounded-full">{jobs.filter(j => j.status === status).length}</span>
+                        </h3>
+                        <div className="space-y-3">
+                           {filteredJobs.filter(j => j.status === status).map(job => (
+                              <JobCard 
+                                 key={job.id} 
+                                 job={job} 
+                                 onMove={handleMoveJob} 
+                                 onAnalyze={(j) => { setAnalyzingJob(j); setIsAnalyzerModalOpen(true); }}
+                                 onDelete={handleDeleteJob}
+                                 onClick={(j) => { setSelectedJob(j); setIsJobDetailOpen(true); }}
+                              />
+                           ))}
                         </div>
-                        <nav className="space-y-2">
-                           <button onClick={() => {setActiveTab('tracker'); setIsMobileMenuOpen(false)}} className="block w-full text-left py-3 px-4 rounded-lg bg-slate-50 font-bold">Tracker</button>
-                           <button onClick={() => {setActiveTab('resumes'); setIsMobileMenuOpen(false)}} className="block w-full text-left py-3 px-4 rounded-lg bg-slate-50 font-bold">Resumes</button>
-                           <button onClick={() => {setActiveTab('alerts'); setIsMobileMenuOpen(false)}} className="block w-full text-left py-3 px-4 rounded-lg bg-slate-50 font-bold">Alerts</button>
-                           <button onClick={() => {setActiveTab('agent'); setIsMobileMenuOpen(false)}} className="block w-full text-left py-3 px-4 rounded-lg bg-slate-50 font-bold">AI Agent</button>
-                           <button onClick={handleLogout} className="block w-full text-left py-3 px-4 rounded-lg bg-red-50 text-red-600 font-bold mt-8">Sign Out</button>
-                        </nav>
+                     </div>
+                  ))}
+               </div>
+            )}
+
+            <SeekerAnalytics 
+                jobs={jobs} 
+                isPro={subscription.isPro} 
+                mode="chart"
+                size="small"
+            />
+          </>
+        );
+      case 'resumes':
+        return (
+           <ResumeSection 
+             resumes={resumes} 
+             onAddResume={handleAddResume}
+             onDeleteResume={handleDeleteResume}
+             onUpdateResume={handleUpdateResume}
+             onAnalyzeResume={handleAnalyzeResume}
+             plan={profile.plan}
+             scansUsed={profile.atsScansUsed}
+           />
+        );
+      case 'agent':
+        return (
+           <div className="max-w-4xl mx-auto">
+              <h2 className="text-2xl font-bold text-slate-900 mb-6">AI Career Agent</h2>
+              <AIAgentSection jobs={jobs} profile={profile} />
+           </div>
+        );
+      case 'alerts':
+        return (
+           <JobAlertsSection 
+             alerts={jobAlerts} 
+             matchedJobs={matchedJobs}
+             onAddAlert={handleAddAlert}
+             onDeleteAlert={handleDeleteAlert}
+           />
+        );
+      case 'extension':
+        return (
+           <ExtensionPage 
+             profile={profile}
+             jobs={jobs}
+             onJobAdded={handleExtensionJobAdded}
+           />
+        );
+      case 'profile':
+        return (
+           <ProfileSection profile={profile} onUpdate={setProfile} />
+        );
+      case 'billing':
+        return (
+           <div className="max-w-5xl mx-auto">
+              <h2 className="text-2xl font-bold text-slate-900 mb-6">Subscription & Billing</h2>
+              <div className="grid md:grid-cols-3 gap-6">
+                 {pricingPlans.map((plan, i) => (
+                    <div key={i} className={`p-6 rounded-xl border ${profile.plan === plan.name ? 'border-green-500 ring-2 ring-green-100 bg-green-50/20' : 'border-slate-200 bg-white'}`}>
+                       <h3 className="font-bold text-lg text-slate-900">{plan.name}</h3>
+                       <p className="text-2xl font-extrabold text-slate-900 mt-2">{plan.price}<span className="text-sm font-medium text-slate-500">/mo</span></p>
+                       <ul className="mt-4 space-y-2 mb-6">
+                          {plan.features.slice(0, 4).map((f, j) => (
+                             <li key={j} className="text-sm text-slate-600 flex items-start">
+                                <CheckCircle size={14} className="text-green-500 mr-2 mt-0.5" /> {f}
+                             </li>
+                          ))}
+                       </ul>
+                       {profile.plan === plan.name ? (
+                          <button disabled className="w-full py-2 bg-green-100 text-green-700 font-bold rounded-lg cursor-default">Current Plan</button>
+                       ) : (
+                          <button 
+                             onClick={() => handlePaymentAndUpgrade(plan.name as PlanType)}
+                             className="w-full py-2 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700"
+                          >
+                             Upgrade
+                          </button>
+                       )}
+                    </div>
+                 ))}
+              </div>
+           </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const renderDashboard = () => {
+    // Employer Dashboard
+    if (userRole === 'employer') {
+      return (
+        <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+          <nav className="bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center sticky top-0 z-30">
+            <div className="flex items-center gap-8">
+              <span className="text-xl font-extrabold text-slate-900 tracking-tight">
+                RekrutIn<span className="text-indigo-600">Employer</span>
+              </span>
+              <div className="hidden md:flex gap-6">
+                 <button onClick={() => setEmployerTab('overview')} className={`text-sm font-bold transition-colors ${employerTab === 'overview' ? 'text-indigo-600' : 'text-slate-500 hover:text-slate-800'}`}>Overview</button>
+                 <button onClick={() => setEmployerTab('jobs')} className={`text-sm font-bold transition-colors ${employerTab === 'jobs' ? 'text-indigo-600' : 'text-slate-500 hover:text-slate-800'}`}>Jobs</button>
+                 <button onClick={() => setEmployerTab('candidates')} className={`text-sm font-bold transition-colors ${employerTab === 'candidates' ? 'text-indigo-600' : 'text-slate-500 hover:text-slate-800'}`}>Candidates</button>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <button className="p-2 text-slate-400 hover:bg-slate-50 rounded-full relative">
+                 <Bell size={20} />
+                 {notifications.some(n => !n.read) && <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>}
+              </button>
+              <div className="flex items-center gap-2">
+                 <div className="text-right hidden sm:block">
+                    <p className="text-sm font-bold text-slate-900">{profile.name}</p>
+                    <p className="text-xs text-slate-500">{profile.companyName}</p>
+                 </div>
+                 <div onClick={handleLogout} className="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center cursor-pointer hover:bg-slate-300 transition-colors" title="Logout">
+                    <User size={16} className="text-slate-500" />
+                 </div>
+              </div>
+            </div>
+          </nav>
+          <main className="flex-1 max-w-7xl mx-auto w-full p-8">
+            {employerTab === 'overview' && <EmployerDashboardSummary jobs={employerJobs} applications={applications} onNavigate={setEmployerTab} />}
+            {employerTab === 'jobs' && (
+              <div className="animate-fade-in">
+                 <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-2xl font-bold text-slate-900">Your Job Postings</h2>
+                    <button onClick={() => setIsPostJobModalOpen(true)} className="bg-slate-900 text-white px-4 py-2 rounded-lg font-bold hover:bg-slate-800 transition-colors flex items-center gap-2"><Plus size={18} /> Post New Job</button>
+                 </div>
+                 {employerJobs.length === 0 ? (
+                    <div className="text-center py-20 bg-white rounded-xl border border-dashed border-slate-300">
+                       <Briefcase size={48} className="mx-auto text-slate-300 mb-4" />
+                       <h3 className="text-lg font-bold text-slate-900">No jobs posted yet</h3>
+                       <p className="text-slate-500 mb-6">Create your first listing to start receiving candidates.</p>
+                       <button onClick={() => setIsPostJobModalOpen(true)} className="text-indigo-600 font-bold hover:underline">Post a Job</button>
+                    </div>
+                 ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                       {employerJobs.map(job => (
+                          <div key={job.id} className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                             <div className="flex justify-between items-start mb-4">
+                                <div><h3 className="font-bold text-slate-900 text-lg">{job.title}</h3><p className="text-slate-500 text-sm">{job.location} • {job.type}</p></div>
+                                <span className={`text-xs font-bold px-2 py-1 rounded-full ${job.status === 'Active' ? 'bg-green-50 text-green-700' : 'bg-slate-100 text-slate-500'}`}>{job.status}</span>
+                             </div>
+                             <div className="flex items-center justify-between text-sm text-slate-600 mb-4"><span>{applications.filter(a => a.jobId === job.id).length} Applicants</span><span>Posted {new Date(job.created_at).toLocaleDateString()}</span></div>
+                             <button onClick={() => handleViewApplicants(job.id)} className="w-full py-2 border border-indigo-100 text-indigo-600 font-bold rounded-lg hover:bg-indigo-50 transition-colors">View Candidates</button>
+                          </div>
+                       ))}
                     </div>
                  )}
-
-                 {/* Notifications Bell */}
-                 <div className="flex justify-end mb-6 relative" ref={notificationRef}>
-                    <button 
-                      onClick={() => setIsNotificationOpen(!isNotificationOpen)}
-                      className="relative p-2 text-slate-400 hover:text-indigo-600 hover:bg-white rounded-full transition-all"
-                    >
-                       <Bell size={20} />
-                       {notifications.some(n => !n.read) && (
-                          <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
-                       )}
-                    </button>
-                    
-                    {isNotificationOpen && (
-                       <div className="absolute top-10 right-0 w-80 bg-white rounded-xl shadow-xl border border-slate-100 z-30 animate-fade-in overflow-hidden">
-                          <div className="p-3 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                             <h4 className="font-bold text-xs text-slate-700 uppercase">Notifications</h4>
-                             {notifications.length > 0 && (
-                                <button onClick={handleClearNotifications} className="text-xs text-indigo-600 hover:underline">Clear all</button>
-                             )}
-                          </div>
-                          <div className="max-h-64 overflow-y-auto">
-                             {notifications.length === 0 ? (
-                                <div className="p-8 text-center text-slate-400 text-sm">No new notifications</div>
-                             ) : (
-                                notifications.map(notif => (
-                                   <div 
-                                      key={notif.id} 
-                                      className={`p-3 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer ${notif.read ? 'opacity-60' : 'bg-indigo-50/30'}`}
-                                      onClick={() => handleMarkNotificationRead(notif.id)}
-                                   >
-                                      <p className="text-sm font-bold text-slate-800 mb-0.5">{notif.title}</p>
-                                      <p className="text-xs text-slate-600 leading-snug">{notif.message}</p>
-                                      <p className="text-[10px] text-slate-400 mt-1">{new Date(notif.timestamp).toLocaleTimeString()}</p>
-                                   </div>
-                                ))
-                             )}
-                          </div>
-                       </div>
-                    )}
-                 </div>
-
-                 {/* Tab Content */}
-                 <div className="max-w-5xl mx-auto">
-                    {activeTab === 'tracker' && (
-                       <div className="space-y-6">
-                          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                             <div>
-                                <h1 className="text-2xl font-bold text-slate-900">Job Application Tracker</h1>
-                                <p className="text-slate-500 text-sm">Manage your pipeline and track every opportunity.</p>
-                             </div>
-                             <div className="flex items-center gap-3">
-                                <div className="bg-white border border-slate-200 rounded-lg p-1 flex">
-                                   <button 
-                                      onClick={() => setViewMode('list')}
-                                      className={`p-1.5 rounded ${viewMode === 'list' ? 'bg-slate-100 text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
-                                   >
-                                      <ListIcon size={18} />
-                                   </button>
-                                   <button 
-                                      onClick={() => setViewMode('board')}
-                                      className={`p-1.5 rounded ${viewMode === 'board' ? 'bg-slate-100 text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
-                                   >
-                                      <Kanban size={18} />
-                                   </button>
-                                </div>
-                                <button 
-                                   onClick={() => setIsAddModalOpen(true)}
-                                   className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-sm hover:bg-indigo-700 transition-colors flex items-center gap-2"
-                                >
-                                   <Plus size={18} /> Add Job
-                                </button>
-                             </div>
-                          </div>
-
-                          {/* Analytics Summary */}
-                          <SeekerAnalytics jobs={jobs} isPro={subscription.isPro} mode="summary" />
-
-                          {/* Search */}
-                          <div className="relative">
-                             <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                             <input 
-                                type="text" 
-                                placeholder="Search your jobs..." 
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
-                             />
-                          </div>
-
-                          {/* Assessment Tracker Widget */}
-                          <AssessmentTracker 
-                             jobs={jobs} 
-                             onMarkComplete={handleMarkAssessmentComplete} 
-                             onOpenJob={setSelectedJob} 
-                          />
-
-                          {/* Job List / Board */}
-                          {viewMode === 'list' ? (
-                             <JobListView 
-                                jobs={filteredJobs} 
-                                onStatusChange={handleStatusChange}
-                                onAnalyze={(job) => { setAnalyzingJob(job); }}
-                                onDelete={handleDeleteJob}
-                                onAddJob={() => setIsAddModalOpen(true)}
-                                onJobClick={setSelectedJob}
-                             />
-                          ) : (
-                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {filteredJobs.map(job => (
-                                   <JobCard 
-                                      key={job.id} 
-                                      job={job} 
-                                      onMove={handleMoveJob}
-                                      onAnalyze={(job) => { setAnalyzingJob(job); }}
-                                      onDelete={handleDeleteJob}
-                                      onClick={setSelectedJob}
-                                   />
-                                ))}
-                             </div>
-                          )}
-
-                          {/* Analytics Chart (Bottom) */}
-                          <SeekerAnalytics jobs={jobs} isPro={subscription.isPro} mode="chart" />
-                       </div>
-                    )}
-
-                    {activeTab === 'resumes' && (
-                       <ResumeSection 
-                          resumes={resumes}
-                          onAddResume={handleAddResume}
-                          onDeleteResume={handleDeleteResume}
-                          onUpdateResume={handleUpdateResume}
-                          onAnalyzeResume={handleAnalyzeResume}
-                          plan={profile.plan}
-                          scansUsed={profile.atsScansUsed}
-                       />
-                    )}
-
-                    {activeTab === 'profile' && (
-                       <ProfileSection profile={profile} onUpdate={(p) => { setProfile(p); }} />
-                    )}
-
-                    {activeTab === 'agent' && (
-                       <div className="max-w-4xl mx-auto">
-                          <h1 className="text-2xl font-bold text-slate-900 mb-2">AI Career Agent</h1>
-                          <p className="text-slate-500 mb-6 text-sm">Your personal career coach, powered by Gemini 2.5.</p>
-                          <AIAgentSection jobs={jobs} profile={profile} />
-                       </div>
-                    )}
-
-                    {activeTab === 'alerts' && (
-                        <JobAlertsSection 
-                           alerts={jobAlerts} 
-                           matchedJobs={matchedJobs}
-                           onAddAlert={handleAddAlert}
-                           onDeleteAlert={handleDeleteAlert}
-                        />
-                    )}
-
-                    {activeTab === 'extension' && (
-                        <ExtensionPage 
-                           profile={profile}
-                           jobs={jobs}
-                           onJobAdded={handleExtensionJobAdded}
-                        />
-                    )}
-                 </div>
-             </main>
-
-             {/* Modals & Drawers */}
-             <AddJobModal 
-                isOpen={isAddModalOpen}
-                onClose={() => setIsAddModalOpen(false)}
-                onAdd={handleAddJob}
-             />
-
-             {analyzingJob && (
-                <AIAnalyzerModal 
-                   job={analyzingJob}
-                   isOpen={!!analyzingJob}
-                   onClose={() => setAnalyzingJob(null)}
-                   onAnalysisComplete={handleAnalysisComplete}
-                />
-             )}
-
-             <JobDetailDrawer 
-                job={selectedJob}
-                isOpen={!!selectedJob}
-                onClose={() => setSelectedJob(null)}
-                onUpdateJob={handleUpdateJobDetails}
-                isPro={subscription.isPro}
-                onUpgrade={() => {
-                   setSelectedJob(null);
-                   setIsUpgradeModalOpen(true);
-                   setUpgradeFeatureName('AI Success Probability');
-                }}
-             />
-
-             <UpgradeLimitModal 
-                isOpen={isUpgradeModalOpen}
-                onClose={() => setIsUpgradeModalOpen(false)}
-                onUpgrade={() => handlePaymentAndUpgrade('Pro')}
-                featureName={upgradeFeatureName}
-             />
+              </div>
+            )}
+            {employerTab === 'candidates' && <EmployerCandidatesView jobs={employerJobs} candidates={applications} selectedJobId={selectedJobId} onSelectJob={setSelectedJobId} onUpdateStatus={handleUpdateCandidateStatus} />}
+          </main>
+          <PostJobModal isOpen={isPostJobModalOpen} onClose={() => setIsPostJobModalOpen(false)} onPost={handlePostJob} isMandatory={isMandatoryJobPost} />
         </div>
+      );
+    }
+    // Seeker Dashboard
+    return (
+      <div className="min-h-screen bg-slate-50 flex font-sans">
+        <aside className="w-20 lg:w-64 bg-white border-r border-slate-200 flex flex-col fixed h-full z-20 transition-all duration-300">
+          <div className="h-16 flex items-center justify-center lg:justify-start lg:px-6 border-b border-slate-100">
+            <span className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600 lg:hidden">R</span>
+            <span className="text-xl font-extrabold text-slate-900 hidden lg:block">RekrutIn<span className="text-indigo-600">.ai</span></span>
+          </div>
+          <nav className="flex-1 py-6 px-2 lg:px-4 space-y-1 overflow-y-auto">
+             {[
+               { id: 'tracker', icon: LayoutDashboard, label: t.JOB_TRACKER },
+               { id: 'resumes', icon: FileText, label: t.RESUME_MANAGER },
+               { id: 'agent', icon: MessageSquare, label: t.AI_AGENT, badge: 'New' },
+               { id: 'alerts', icon: Bell, label: t.JOB_ALERTS },
+               { id: 'extension', icon: Chrome, label: 'Extension' },
+               { id: 'profile', icon: UserCircle, label: t.MY_PROFILE },
+               { id: 'billing', icon: CreditCard, label: 'Billing' },
+             ].map((item) => (
+                <button key={item.id} onClick={() => setActiveTab(item.id as DashboardTab)} className={`w-full flex items-center justify-center lg:justify-start px-2 lg:px-4 py-3 rounded-xl transition-all duration-200 group relative ${activeTab === item.id ? 'bg-indigo-50 text-indigo-600 font-bold shadow-sm' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'}`} title={item.label}>
+                   <item.icon size={22} className={`lg:mr-3 ${activeTab === item.id ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
+                   <span className="hidden lg:block">{item.label}</span>
+                   {item.badge && <span className="absolute right-2 top-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-[9px] px-1.5 py-0.5 rounded-full font-bold hidden lg:block">{item.badge}</span>}
+                </button>
+             ))}
+          </nav>
+          <div className="p-4 border-t border-slate-100">
+             {profile.plan === 'Free' ? (
+                <div className="bg-slate-900 rounded-xl p-4 text-center hidden lg:block">
+                   <p className="text-white text-xs font-bold mb-2">Unlock Pro Features</p>
+                   <button onClick={() => setActiveTab('billing')} className="w-full py-2 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-1"><Sparkles size={12} className="text-yellow-300" /> Upgrade</button>
+                </div>
+             ) : (
+                <div className="bg-indigo-50 rounded-xl p-3 text-center hidden lg:block border border-indigo-100"><p className="text-indigo-900 text-xs font-bold flex items-center justify-center gap-1"><CheckCircle size={12} /> {profile.plan} Plan Active</p></div>
+             )}
+             <button onClick={handleLogout} className="w-full mt-4 flex items-center justify-center lg:justify-start px-2 lg:px-4 py-2 text-slate-400 hover:text-red-500 transition-colors text-sm font-bold"><LogOut size={20} className="lg:mr-3" /><span className="hidden lg:block">Logout</span></button>
+          </div>
+        </aside>
+        <main className="flex-1 ml-20 lg:ml-64 p-4 lg:p-8 overflow-y-auto">
+          <header className="flex justify-between items-center mb-8">
+             <div className="relative w-full max-w-md hidden md:block">
+                <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input type="text" placeholder={activeTab === 'tracker' ? "Search jobs..." : "Search..."} className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm transition-shadow shadow-sm focus:shadow-md" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+             </div>
+             <div className="flex items-center gap-4 ml-auto">
+                <div className="relative" ref={notificationRef}>
+                   <button onClick={() => setIsNotificationOpen(!isNotificationOpen)} className="p-2.5 bg-white border border-slate-200 text-slate-500 hover:text-indigo-600 rounded-xl shadow-sm hover:shadow transition-all relative">
+                      <Bell size={20} />{notifications.some(n => !n.read) && <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-white"></span>}
+                   </button>
+                   {isNotificationOpen && (
+                      <div className="absolute right-0 top-12 w-80 bg-white rounded-xl shadow-xl border border-slate-100 z-50 overflow-hidden animate-fade-in">
+                         <div className="p-3 border-b border-slate-50 flex justify-between items-center bg-slate-50/50"><h4 className="font-bold text-slate-800 text-sm">Notifications</h4><button onClick={handleClearNotifications} className="text-xs text-slate-500 hover:text-indigo-600">Clear all</button></div>
+                         <div className="max-h-[300px] overflow-y-auto">
+                            {notifications.length === 0 ? (<div className="p-8 text-center text-slate-400 text-sm">No new notifications</div>) : (
+                               notifications.map(notification => (
+                                  <div key={notification.id} className={`p-4 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer ${!notification.read ? 'bg-indigo-50/30' : ''}`} onClick={() => handleMarkNotificationRead(notification.id)}>
+                                     <div className="flex justify-between items-start mb-1"><p className={`text-sm ${!notification.read ? 'font-bold text-slate-900' : 'font-medium text-slate-700'}`}>{notification.title}</p>{!notification.read && <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full mt-1.5"></div>}</div>
+                                     <p className="text-xs text-slate-500 leading-relaxed">{notification.message}</p>
+                                     <p className="text-[10px] text-slate-400 mt-2">{new Date(notification.timestamp).toLocaleTimeString()}</p>
+                                  </div>
+                               ))
+                            )}
+                         </div>
+                      </div>
+                   )}
+                </div>
+                <div className="flex items-center gap-3 pl-4 border-l border-slate-200">
+                   <div className="text-right hidden sm:block"><p className="text-sm font-bold text-slate-900">{profile.name}</p><p className="text-xs text-slate-500 font-medium">{profile.title || 'Job Seeker'}</p></div>
+                   <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 p-[2px] cursor-pointer shadow-md hover:shadow-lg transition-all"><div className="w-full h-full bg-white rounded-full flex items-center justify-center text-indigo-700 font-bold">{profile.name.charAt(0)}</div></div>
+                </div>
+             </div>
+          </header>
+          <div className="animate-fade-in">{renderSeekerContent()}</div>
+        </main>
+        <AddJobModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} onAdd={handleAddJob} />
+        {analyzingJob && <AIAnalyzerModal job={analyzingJob} isOpen={isAnalyzerModalOpen} onClose={() => setIsAnalyzerModalOpen(false)} onAnalysisComplete={handleAnalysisComplete} />}
+        <JobDetailDrawer job={selectedJob} isOpen={isJobDetailOpen} onClose={() => setIsJobDetailOpen(false)} onUpdateJob={handleUpdateJobDetails} isPro={subscription.isPro} onUpgrade={() => { setIsJobDetailOpen(false); setActiveTab('billing'); }} />
+        <UpgradeLimitModal isOpen={isUpgradeModalOpen} onClose={() => setIsUpgradeModalOpen(false)} onUpgrade={() => { setIsUpgradeModalOpen(false); setActiveTab('billing'); }} featureName={upgradeFeatureName} />
+      </div>
     );
   };
 
