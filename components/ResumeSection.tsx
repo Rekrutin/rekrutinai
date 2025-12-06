@@ -74,7 +74,7 @@ NAME: ${profile.name}
 EMAIL: ${profile.email}
 TITLE: ${profile.title}
 
-SUMMARY
+PROFESSIONAL SUMMARY
 ${profile.summary}
 
 SKILLS

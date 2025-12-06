@@ -3,18 +3,38 @@ import { JobStatus, Job, PricingPlan, EmployerJob, CandidateApplication, Externa
 
 // Helper to safely get environment variables without crashing in browser
 export const getEnv = (key: string) => {
+  let value = '';
+  
+  // 1. Try standard process.env (Node/Next.js/CRA)
   try {
     if (typeof process !== 'undefined' && process.env) {
-      return process.env[key] || '';
+      value = process.env[key] || 
+              process.env[`NEXT_PUBLIC_${key}`] || 
+              process.env[`REACT_APP_${key}`] || 
+              '';
     }
   } catch (error) {
-    // Ignore error if process is not available
+    // Ignore error
   }
-  return '';
+
+  // 2. Try Vite import.meta.env
+  if (!value) {
+    try {
+      // @ts-ignore
+      if (typeof import.meta !== 'undefined' && import.meta.env) {
+        // @ts-ignore
+        value = import.meta.env[key] || import.meta.env[`VITE_${key}`] || '';
+      }
+    } catch (error) {
+      // Ignore
+    }
+  }
+
+  return value;
 };
 
-export const SUPABASE_URL = getEnv('NEXT_PUBLIC_SUPABASE_URL');
-export const SUPABASE_ANON_KEY = getEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY');
+export const SUPABASE_URL = getEnv('NEXT_PUBLIC_SUPABASE_URL') || getEnv('SUPABASE_URL');
+export const SUPABASE_ANON_KEY = getEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY') || getEnv('SUPABASE_ANON_KEY');
 export const MAX_FREE_ATS_SCANS = 2;
 export const MAX_FREE_JOBS = 10;
 
