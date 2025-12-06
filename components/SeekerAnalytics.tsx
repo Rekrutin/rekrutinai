@@ -10,6 +10,7 @@ interface SeekerAnalyticsProps {
   showVelocity?: boolean;
   mode?: 'full' | 'summary' | 'chart';
   size?: 'normal' | 'small';
+  onUpgrade?: () => void;
 }
 
 export const SeekerAnalytics: React.FC<SeekerAnalyticsProps> = ({ 
@@ -17,7 +18,8 @@ export const SeekerAnalytics: React.FC<SeekerAnalyticsProps> = ({
   isPro = false, 
   showVelocity = true,
   mode = 'full',
-  size = 'normal'
+  size = 'normal',
+  onUpgrade
 }) => {
   const [hoveredDay, setHoveredDay] = useState<number | null>(null);
 
@@ -207,7 +209,10 @@ export const SeekerAnalytics: React.FC<SeekerAnalyticsProps> = ({
                 <p className="text-xs text-slate-500 mb-4 px-2 leading-relaxed">
                     Visualize your application velocity and success trends.
                 </p>
-                <button className="bg-slate-900 text-white text-xs font-bold px-5 py-2 rounded-full hover:bg-slate-800 transition-transform active:scale-95 shadow-sm">
+                <button 
+                  onClick={onUpgrade}
+                  className="bg-slate-900 text-white text-xs font-bold px-5 py-2 rounded-full hover:bg-slate-800 transition-transform active:scale-95 shadow-sm"
+                >
                     Upgrade to Pro
                 </button>
             </div>
@@ -227,7 +232,10 @@ export const SeekerAnalytics: React.FC<SeekerAnalyticsProps> = ({
                     <p className="text-sm text-slate-500 max-w-xs mt-1 mb-4">
                         See detailed velocity charts for Applied vs Interview vs Offer trends.
                     </p>
-                    <button className="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-bold shadow-md hover:bg-slate-800 transition-colors">
+                    <button 
+                      onClick={onUpgrade}
+                      className="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-bold shadow-md hover:bg-slate-800 transition-colors"
+                    >
                         Upgrade to Pro
                     </button>
                 </div>

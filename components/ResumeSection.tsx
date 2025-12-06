@@ -1,9 +1,10 @@
 
 import React, { useState, useRef } from 'react';
 import { Resume, PlanType } from '../types';
-import { FileText, Upload, CheckCircle, AlertCircle, Trash2, Search, Lock, Eye, Zap, RefreshCw, Loader2, File as FileIcon, X } from 'lucide-react';
+import { FileText, Upload, CheckCircle, AlertCircle, Trash2, Search, Lock, Eye, Zap, RefreshCw, Loader2, File as FileIcon, X, Sparkles } from 'lucide-react';
 import { MAX_FREE_ATS_SCANS } from '../constants';
 import { ResumePreviewDrawer } from './ResumePreviewDrawer';
+import { ResumeScanModal } from './ResumeScanModal';
 import { parseResumeFile } from '../services/geminiService';
 
 interface ResumeSectionProps {
@@ -34,9 +35,12 @@ export const ResumeSection: React.FC<ResumeSectionProps> = ({
   const [parsedContent, setParsedContent] = useState('');
   const [parsedName, setParsedName] = useState('');
   
-  // Drawer State
+  // Drawers & Modals
   const [selectedResume, setSelectedResume] = useState<Resume | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [scanningResume, setScanningResume] = useState<Resume | null>(null);
+  const [isScanModalOpen, setIsScanModalOpen] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isFree = plan === 'Free';
@@ -65,7 +69,6 @@ export const ResumeSection: React.FC<ResumeSectionProps> = ({
         const profile = await parseResumeFile(file);
         
         // Convert structured profile back to a readable text format for storage/display
-        // This simulates "extracting text" since we rely on Gemini for the read
         const generatedContent = `
 NAME: ${profile.name}
 EMAIL: ${profile.email}
@@ -117,6 +120,26 @@ ${profile.skills.join(' • ')}
   const handleViewResume = (resume: Resume) => {
     setSelectedResume(resume);
     setIsDrawerOpen(true);
+  };
+
+  const handleScanClick = (resume: Resume) => {
+    setScanningResume(resume);
+    setIsScanModalOpen(true);
+  };
+
+  const handleApplyOptimization = (optimizedText: string, optimizedScore: number) => {
+    if (scanningResume) {
+      onUpdateResume(scanningResume.id, {
+        content: optimizedText,
+        atsScore: optimizedScore,
+        atsAnalysis: ['Optimized by AI for maximum impact'] // Clear old feedback or add note
+      });
+      setIsScanModalOpen(false);
+      setScanningResume(null);
+      
+      // Optional: Show toast or feedback
+      alert("Resume updated successfully! 🎉");
+    }
   };
 
   return (
@@ -244,7 +267,7 @@ ${profile.skills.join(' • ')}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {resumes.map(resume => (
-          <div key={resume.id} className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 hover:shadow-md transition-shadow group relative overflow-hidden">
+          <div key={resume.id} className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 hover:shadow-md transition-shadow group relative overflow-hidden flex flex-col">
              <div className="flex justify-between items-start mb-4">
                <div className="flex items-center">
                  <div className="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center text-indigo-600 mr-3">
@@ -256,6 +279,13 @@ ${profile.skills.join(' • ')}
                  </div>
                </div>
                <div className="flex gap-1">
+                  <button 
+                    onClick={() => handleScanClick(resume)}
+                    className="p-1.5 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors border border-indigo-200"
+                    title="Optimize with AI"
+                  >
+                    <Sparkles size={16} />
+                  </button>
                   <button 
                     onClick={() => handleViewResume(resume)} 
                     className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
@@ -276,7 +306,7 @@ ${profile.skills.join(' • ')}
              {/* ATS Score Section */}
              <div className="mb-4">
                 {resume.atsScore !== undefined ? (
-                  <div className="bg-slate-50 rounded-lg p-4 border border-slate-100">
+                  <div className="bg-slate-50 rounded-lg p-4 border border-slate-100 flex-1 flex flex-col">
                     <div className="flex justify-between items-center mb-3">
                       <span className="text-sm font-bold text-slate-700">ATS Score</span>
                       <span className={`text-sm font-bold px-3 py-1 rounded-full ${
@@ -299,8 +329,8 @@ ${profile.skills.join(' • ')}
                     </div>
 
                     {resume.atsAnalysis && (
-                      <div className="space-y-2 mt-3">
-                        <p className="text-xs font-bold text-slate-500 uppercase">AI Improvements</p>
+                      <div className="space-y-2 mt-3 flex-1">
+                        <p className="text-xs font-bold text-slate-500 uppercase">AI Feedback</p>
                         <ul className="text-xs text-slate-600 space-y-1.5">
                             {resume.atsAnalysis.slice(0, 3).map((tip, i) => (
                             <li key={i} className="flex items-start">
@@ -313,14 +343,14 @@ ${profile.skills.join(' • ')}
                     )}
                     
                     <button 
-                        onClick={() => handleAnalyzeClick(resume)}
-                        className="mt-3 w-full py-1.5 text-xs font-semibold text-indigo-600 hover:bg-indigo-50 rounded border border-transparent hover:border-indigo-100 transition-colors flex items-center justify-center gap-1"
+                        onClick={() => handleScanClick(resume)}
+                        className="mt-4 w-full py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-all flex items-center justify-center gap-1.5"
                     >
-                        <RefreshCw size={10} /> Re-scan
+                        <Sparkles size={12} className="text-yellow-300" /> Optimize to 100%
                     </button>
                   </div>
                 ) : (
-                  <div className="bg-slate-50 rounded-lg p-4 text-center border border-dashed border-slate-200">
+                  <div className="bg-slate-50 rounded-lg p-4 text-center border border-dashed border-slate-200 flex-1 flex flex-col justify-center">
                     <p className="text-sm font-semibold text-slate-700 mb-1">Not Analyzed Yet</p>
                     <p className="text-xs text-slate-500 mb-4">Check if your resume is readable by ATS bots.</p>
                     <button 
@@ -349,7 +379,7 @@ ${profile.skills.join(' • ')}
              </div>
              
              <div 
-               className="text-xs text-slate-400 truncate cursor-pointer hover:text-indigo-500"
+               className="text-xs text-slate-400 truncate cursor-pointer hover:text-indigo-500 mt-auto pt-2 border-t border-slate-50"
                onClick={() => handleViewResume(resume)}
              >
                 {resume.content ? resume.content.substring(0, 50) + '...' : 'No content preview'}
@@ -376,6 +406,13 @@ ${profile.skills.join(' • ')}
         resume={selectedResume}
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
+      />
+
+      <ResumeScanModal 
+        isOpen={isScanModalOpen}
+        resume={scanningResume}
+        onClose={() => { setIsScanModalOpen(false); setScanningResume(null); }}
+        onApply={handleApplyOptimization}
       />
     </div>
   );

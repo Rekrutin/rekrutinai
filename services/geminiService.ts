@@ -168,6 +168,73 @@ export const analyzeResumeATS = async (resumeText: string): Promise<{ score: num
   }
 };
 
+export const scanAndOptimizeResume = async (resumeText: string): Promise<{
+  originalScore: number;
+  optimizedScore: number;
+  optimizedText: string;
+  improvements: string[];
+}> => {
+  if (!ai) {
+    // Mock logic if API key is missing
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({
+          originalScore: Math.floor(Math.random() * (75 - 50) + 50),
+          optimizedScore: 98,
+          optimizedText: `[AI OPTIMIZED VERSION]\n\n${resumeText}\n\nEXPERIENCE\n• Achieved 20% growth in revenue through strategic initiatives.\n• Led a cross-functional team of 10 engineers.\n\nSKILLS\n• Leadership, React, TypeScript, Node.js`,
+          improvements: ["Quantified achievements with specific numbers", "Added missing ATS keywords", "Improved formatting for readability"]
+        });
+      }, 2500);
+    });
+  }
+
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: `
+        You are an expert Resume Optimizer. Your task is to rewrite the given resume to be 100% ATS-friendly and impactful.
+        
+        INPUT RESUME:
+        "${resumeText.substring(0, 8000)}"
+        
+        INSTRUCTIONS:
+        1. Evaluate the original ATS score (0-100).
+        2. Rewrite the resume content to optimize for ATS (improve keywords, use action verbs, quantify results).
+        3. The optimized score should be near 100.
+        4. List the key improvements made.
+        
+        Return JSON structure:
+        {
+          "originalScore": integer,
+          "optimizedScore": integer,
+          "optimizedText": string (the full rewritten resume text),
+          "improvements": array of strings
+        }
+      `,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            originalScore: { type: Type.INTEGER },
+            optimizedScore: { type: Type.INTEGER },
+            optimizedText: { type: Type.STRING },
+            improvements: { type: Type.ARRAY, items: { type: Type.STRING } }
+          },
+          required: ["originalScore", "optimizedScore", "optimizedText", "improvements"]
+        }
+      }
+    });
+
+    const text = response.text;
+    if (!text) throw new Error("No response");
+    return JSON.parse(text);
+  } catch (error) {
+    console.error("Resume Optimization Error", error);
+    throw error;
+  }
+};
+
 export const generateCoverLetter = async (job: Job, profile: UserProfile): Promise<string> => {
   if (!ai) {
     return `Dear Hiring Manager at ${job.company},\n\nI am writing to express my interest in the ${job.title} position. (Simulated AI Cover Letter - API Key Missing)`;

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Menu, X, CheckCircle, BarChart3, Bot, Calendar, ArrowRight, 
@@ -684,6 +685,7 @@ const App: React.FC = () => {
     }, ...prev]);
   };
 
+  // ... (Navbar, renderScrollingJobRow, renderLanding, renderPricingPage remain the same except for wiring up buttons) ...
   const Navbar = () => (
     <nav className="fixed w-full z-40 bg-white/80 backdrop-blur-md border-b border-slate-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1096,7 +1098,7 @@ const App: React.FC = () => {
                 <ul className="space-y-4 mb-8 flex-1">
                   {plan.features.map((feat, i) => (
                     <li key={i} className="flex items-start text-sm text-slate-700">
-                      <CheckCircle size={16} className="text-green-500 mr-3 flex-shrink-0 mt-0.5" />
+                      <Check size={16} className="text-green-500 mr-3 flex-shrink-0 mt-0.5" />
                       {feat}
                     </li>
                   ))}
@@ -1223,6 +1225,7 @@ const App: React.FC = () => {
                 isPro={subscription.isPro} 
                 mode="chart"
                 size="small"
+                onUpgrade={() => setActiveTab('billing')}
             />
           </>
         );
