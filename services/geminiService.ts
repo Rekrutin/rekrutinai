@@ -4,8 +4,8 @@ import { JobAnalysis, Job, UserProfile, ChatMessage } from "../types";
 import { getEnv } from "../constants";
 
 // Initialize the API client strictly according to guidelines.
-// If process.env.API_KEY is missing in a dev env, we handle the null client gracefully in the function.
-const apiKey = getEnv('API_KEY');
+// Try multiple common names for the API Key to help with Vercel deployment issues
+const apiKey = getEnv('API_KEY') || getEnv('GEMINI_API_KEY') || getEnv('GOOGLE_API_KEY');
 const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
 // Helper to convert File to Base64 for Gemini API
@@ -348,17 +348,37 @@ export const chatWithCareerAgent = async (
 
 export const parseResumeFile = async (file: File): Promise<UserProfile> => {
   if (!ai) {
-    // Robust fallback to ensure the UI flow works even if API key is missing
+    // Robust fallback to ensure the UI flow works even if API key is missing.
+    // Try to be smart about extracting info from the filename to avoid "Software Engineer" default.
     return new Promise((resolve) => {
       setTimeout(() => {
-        const namePart = file.name.split('.')[0].replace(/[_-]/g, ' ');
-        // Simulate a good parse result based on filename
+        const cleanName = file.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, ' ');
+        
+        // Simple heuristic: If filename looks like "John Doe Resume", use "John Doe"
+        // If it looks like "Resume_Account_Specialist", maybe use "Account Specialist" as title?
+        let name = "Candidate";
+        let title = "Job Applicant";
+        
+        const parts = cleanName.split(' ');
+        if (parts.length > 0) {
+            // Assume first 2 words are name if they start with uppercase
+            if (parts[0] && parts[0][0] === parts[0][0].toUpperCase()) {
+                name = parts.slice(0, 2).join(' ');
+            }
+            
+            // If there are words after "Resume" or "CV", use them as title
+            const resumeIndex = parts.findIndex(p => p.toLowerCase().includes('resume') || p.toLowerCase().includes('cv'));
+            if (resumeIndex !== -1 && resumeIndex < parts.length - 1) {
+                title = parts.slice(resumeIndex + 1).join(' ');
+            }
+        }
+
         resolve({
-          name: namePart.split(' ').map((s: string) => s.charAt(0).toUpperCase() + s.slice(1)).join(' '),
-          title: 'Software Engineer', // Default assumption for demo
+          name: name !== "Candidate" ? name : cleanName,
+          title: title, 
           email: 'applicant@example.com',
-          summary: 'Experienced professional with a demonstrated history of working in the technology industry. Skilled in Software Development, Project Management, and Strategic Planning.',
-          skills: ['Leadership', 'Project Management', 'Communication', 'Problem Solving', 'Teamwork', 'React', 'TypeScript'],
+          summary: 'Experienced professional. (Mock data: Real AI analysis requires valid API Key)',
+          skills: ['Communication', 'Teamwork', 'Problem Solving', 'Adaptability'],
           plan: 'Free',
           atsScansUsed: 0
         });
@@ -376,7 +396,7 @@ export const parseResumeFile = async (file: File): Promise<UserProfile> => {
             role: "user", 
             parts: [
                 filePart, 
-                { text: "Extract the candidate's full profile from this resume document. Return valid JSON with keys: name, title (current role), email, summary (professional summary), and skills (array of strings). Do not hallucinate. If a field is missing, return an empty string or empty array." }
+                { text: "Analyze this resume document. Extract the candidate's profile. Return valid JSON with keys: name (Full Name), title (The candidate's MOST RECENT job title found in the Experience section), email, summary (professional summary), and skills (array of strings). Do not hallucinate. If the title is ambiguous, infer the most likely current role from their last job." }
             ] 
         }
       ],
