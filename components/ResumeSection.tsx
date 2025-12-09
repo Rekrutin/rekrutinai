@@ -28,6 +28,7 @@ export const ResumeSection: React.FC<ResumeSectionProps> = ({
 }) => {
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [analyzingId, setAnalyzingId] = useState<string | null>(null);
+  const [showToast, setShowToast] = useState(false);
   
   // Upload & Parsing State
   const [isParsing, setIsParsing] = useState(false);
@@ -137,8 +138,8 @@ ${profile.skills.join(' • ')}
       setIsScanModalOpen(false);
       setScanningResume(null);
       
-      // Optional: Show toast or feedback
-      alert("Resume updated successfully! 🎉");
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 4000);
     }
   };
 
@@ -414,6 +415,18 @@ ${profile.skills.join(' • ')}
         onClose={() => { setIsScanModalOpen(false); setScanningResume(null); }}
         onApply={handleApplyOptimization}
       />
+
+      {showToast && (
+        <div className="fixed bottom-6 right-6 z-[100] bg-slate-900 text-white px-5 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-fade-in border border-slate-700">
+          <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-slate-900 shadow-lg shadow-green-500/20">
+            <CheckCircle size={18} strokeWidth={3} />
+          </div>
+          <div>
+            <p className="font-bold text-sm">Resume Updated</p>
+            <p className="text-xs text-slate-300">Your optimization has been saved.</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
