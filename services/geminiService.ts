@@ -180,8 +180,8 @@ export const scanAndOptimizeResume = async (resumeText: string): Promise<{
       setTimeout(() => {
         resolve({
           originalScore: Math.floor(Math.random() * (75 - 50) + 50),
-          optimizedScore: 98,
-          optimizedText: `[OPTIMIZED VERSION - SIMULATED]\n\n${resumeText}\n\nSUMMARY\nHighly motivated professional with improved keyword density.\n\nKEY ACHIEVEMENTS\n• Boosted efficiency by 25% using Agile methodologies.\n• Led a cross-functional team of 5 to deliver critical projects on time.\n\nSKILLS\n• Leadership, Strategic Planning, Communication, Technical Analysis`,
+          optimizedScore: 100,
+          optimizedText: `[OPTIMIZED VERSION - SIMULATED]\n\n${resumeText}\n\nSUMMARY\nHighly motivated professional with improved keyword density designed to pass ATS filters.\n\nKEY ACHIEVEMENTS\n• Boosted efficiency by 25% using Agile methodologies.\n• Led a cross-functional team of 5 to deliver critical projects on time.\n\nSKILLS\n• Leadership, Strategic Planning, Communication, Technical Analysis`,
           improvements: [
             "Quantified achievements with specific numbers", 
             "Added missing ATS keywords relevant to your industry", 
@@ -204,7 +204,7 @@ export const scanAndOptimizeResume = async (resumeText: string): Promise<{
         INSTRUCTIONS:
         1. Evaluate the original ATS score (0-100).
         2. Rewrite the resume content to optimize for ATS (improve keywords, use action verbs, quantify results).
-        3. The optimized score should be near 100.
+        3. The optimized score should be 100.
         4. List the key improvements made.
         
         Return JSON structure:

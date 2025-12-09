@@ -282,10 +282,10 @@ ${profile.skills.join(' • ')}
                <div className="flex gap-1">
                   <button 
                     onClick={() => handleScanClick(resume)}
-                    className="p-1.5 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors border border-indigo-200"
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-sm text-xs font-bold"
                     title="Optimize with AI"
                   >
-                    <Sparkles size={16} />
+                    <Sparkles size={14} /> Scan with AI
                   </button>
                   <button 
                     onClick={() => handleViewResume(resume)} 
@@ -354,27 +354,38 @@ ${profile.skills.join(' • ')}
                   <div className="bg-slate-50 rounded-lg p-4 text-center border border-dashed border-slate-200 flex-1 flex flex-col justify-center">
                     <p className="text-sm font-semibold text-slate-700 mb-1">Not Analyzed Yet</p>
                     <p className="text-xs text-slate-500 mb-4">Check if your resume is readable by ATS bots.</p>
-                    <button 
-                      onClick={() => handleAnalyzeClick(resume)}
-                      disabled={analyzingId === resume.id}
-                      className={`w-full py-2.5 rounded-lg text-sm font-bold transition-all flex items-center justify-center shadow-sm ${
-                        isLimitReached 
-                          ? 'bg-slate-200 text-slate-500 cursor-not-allowed' 
-                          : 'bg-white text-indigo-600 border border-indigo-200 hover:bg-indigo-600 hover:text-white hover:border-indigo-600 hover:shadow-md'
-                      }`}
-                    >
-                      {analyzingId === resume.id ? (
-                        <>
-                            <div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin mr-2"></div>
-                            Analyzing...
-                        </>
-                      ) : (
-                        <>
-                           {isLimitReached ? <Lock size={14} className="mr-2" /> : <Search size={14} className="mr-2" />} 
-                           {isLimitReached ? 'Scan Limit Reached' : 'Run AI Analysis'}
-                        </>
-                      )}
-                    </button>
+                    
+                    <div className="space-y-2">
+                        <button 
+                          onClick={() => handleAnalyzeClick(resume)}
+                          disabled={analyzingId === resume.id}
+                          className={`w-full py-2 rounded-lg text-sm font-bold transition-all flex items-center justify-center shadow-sm ${
+                            isLimitReached 
+                              ? 'bg-slate-200 text-slate-500 cursor-not-allowed' 
+                              : 'bg-white text-indigo-600 border border-indigo-200 hover:bg-indigo-600 hover:text-white hover:border-indigo-600 hover:shadow-md'
+                          }`}
+                        >
+                          {analyzingId === resume.id ? (
+                            <>
+                                <div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin mr-2"></div>
+                                Analyzing...
+                            </>
+                          ) : (
+                            <>
+                               {isLimitReached ? <Lock size={14} className="mr-2" /> : <Search size={14} className="mr-2" />} 
+                               {isLimitReached ? 'Scan Limit Reached' : 'Check Score'}
+                            </>
+                          )}
+                        </button>
+                        
+                        {/* Secondary 'Full Scan' Action */}
+                        <button 
+                          onClick={() => handleScanClick(resume)}
+                          className="w-full py-2 text-xs font-bold text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors flex items-center justify-center gap-1"
+                        >
+                           <Sparkles size={12} /> Scan & Optimize
+                        </button>
+                    </div>
                   </div>
                 )}
              </div>
