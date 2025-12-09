@@ -4,9 +4,25 @@ import { JobAnalysis, Job, UserProfile, ChatMessage } from "../types";
 import { getEnv } from "../constants";
 
 // Initialize the API client strictly according to guidelines.
-// Try multiple common names for the API Key to help with Vercel deployment issues
-const apiKey = getEnv('API_KEY') || getEnv('GEMINI_API_KEY') || getEnv('GOOGLE_API_KEY');
+// Robustly check for API Key in various environment configurations
+const getApiKey = () => {
+  // 1. Direct check for Vite/Next.js env vars (bypassing potential getEnv lag)
+  // @ts-ignore
+  if (typeof import.meta !== 'undefined' && import.meta.env) {
+    // @ts-ignore
+    const viteKey = import.meta.env.VITE_API_KEY || import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_GOOGLE_API_KEY;
+    if (viteKey) return viteKey;
+  }
+  // 2. Standard check
+  return getEnv('API_KEY') || getEnv('GEMINI_API_KEY') || getEnv('GOOGLE_API_KEY');
+};
+
+const apiKey = getApiKey();
 const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
+
+if (!apiKey) {
+  console.warn("Gemini API Key not found. App running in Mock Mode.");
+}
 
 // Helper to convert File to Base64 for Gemini API
 async function fileToGenerativePart(file: File) {
@@ -30,9 +46,9 @@ export const analyzeJobFit = async (resumeText: string, jobDescription: string):
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve({
-          fitScore: 75,
-          analysis: "API Key missing. This is a simulated analysis. Your profile matches general requirements.",
-          improvements: ["Add real API Key to .env", "Update CV with specific keywords"]
+          fitScore: 78,
+          analysis: "Mock Analysis: Your profile has strong potential but lacks some specific keywords found in the job description.",
+          improvements: ["Add 'Strategic Planning' to skills", "Quantify your leadership experience", "Mention specific tools listed in JD"]
         });
       }, 1500);
     });
@@ -88,8 +104,8 @@ export const calculateSuccessProbability = async (resumeSummary: string, jobDesc
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve({
-          probability: Math.floor(Math.random() * (95 - 60) + 60),
-          explanation: "Simulated: Your experience aligns well with the core requirements."
+          probability: Math.floor(Math.random() * (90 - 65) + 65),
+          explanation: "Simulated: Your experience aligns with the core requirements, but competition is high."
         });
       }, 1000);
     });
@@ -132,7 +148,7 @@ export const calculateSuccessProbability = async (resumeSummary: string, jobDesc
 
 export const analyzeResumeATS = async (resumeText: string): Promise<{ score: number; feedback: string[] }> => {
   if (!ai) {
-    return { score: 65, feedback: ["Simulated: Use standard headings", "Simulated: Quantify achievements"] };
+    return { score: 68, feedback: ["Use standard section headings", "Avoid tables for better parsing", "Quantify achievements with metrics"] };
   }
 
   try {
@@ -175,17 +191,16 @@ export const scanAndOptimizeResume = async (resumeText: string): Promise<{
   improvements: string[];
 }> => {
   if (!ai) {
-    // Better mock logic to ensure the feature feels complete in demo
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve({
           originalScore: Math.floor(Math.random() * (75 - 50) + 50),
           optimizedScore: 100,
-          optimizedText: `[OPTIMIZED VERSION - SIMULATED]\n\n${resumeText}\n\nSUMMARY\nHighly motivated professional with improved keyword density designed to pass ATS filters.\n\nKEY ACHIEVEMENTS\n• Boosted efficiency by 25% using Agile methodologies.\n• Led a cross-functional team of 5 to deliver critical projects on time.\n\nSKILLS\n• Leadership, Strategic Planning, Communication, Technical Analysis`,
+          optimizedText: `[OPTIMIZED VERSION - SIMULATED]\n\n${resumeText}\n\nSUMMARY\nResults-oriented professional with optimized keyword density for ATS compliance.\n\nKEY ACHIEVEMENTS\n• Increased operational efficiency by 30% through process improvements.\n• Led cross-functional teams to deliver projects 2 weeks ahead of schedule.\n\nSKILLS\n• Strategic Planning, Project Management, Data Analysis, Leadership`,
           improvements: [
-            "Quantified achievements with specific numbers", 
-            "Added missing ATS keywords relevant to your industry", 
-            "Improved formatting for better readability"
+            "Quantified achievements with specific metrics", 
+            "Added industry-standard keywords for ATS visibility", 
+            "Restructured bullet points for impact"
           ]
         });
       }, 2500);
@@ -241,7 +256,7 @@ export const scanAndOptimizeResume = async (resumeText: string): Promise<{
 
 export const generateCoverLetter = async (job: Job, profile: UserProfile): Promise<string> => {
   if (!ai) {
-    return `Dear Hiring Manager at ${job.company},\n\nI am writing to express my interest in the ${job.title} position. (Simulated AI Cover Letter - API Key Missing)`;
+    return `Dear Hiring Manager at ${job.company},\n\nI am excited to apply for the ${job.title} position. With my background in ${profile.title}, I am confident in my ability to contribute effectively to your team.\n\n(Note: This is a simulated cover letter. Add a valid API Key for AI generation.)`;
   }
 
   try {
@@ -282,7 +297,7 @@ export const chatWithCareerAgent = async (
   context: { jobs: Job[]; profile: UserProfile }
 ): Promise<string> => {
   if (!ai) {
-    return "I am a simulated AI agent (API Key missing). I see you have " + context.jobs.length + " jobs tracked. I can help you analyze them once connected.";
+    return "I am a simulated AI agent (API Key missing). I see you have " + context.jobs.length + " jobs tracked. Once you connect a valid API Key, I can help you analyze them in depth.";
   }
 
   // 1. Construct the System Context
@@ -297,7 +312,7 @@ export const chatWithCareerAgent = async (
   const jobsContext = `
     TRACKED JOBS:
     ${context.jobs.map(j => 
-      `- ${j.title} at ${j.company} (Status: ${j.status}). Desc: ${j.description ? 'Available' : 'Missing'}`
+      `- ${j.title} at ${j.company} (Status: ${j.status}).`
     ).join("\n")}
   `;
 
@@ -314,7 +329,6 @@ export const chatWithCareerAgent = async (
     GUIDELINES:
     - Be encouraging, strategic, and concise.
     - Reference specific jobs from their list when relevant.
-    - If they ask about a specific company, check if it's in their list first.
     - Suggest specific improvements based on their skills vs job requirements.
     - Keep responses under 150 words unless asked for a detailed guide.
   `;
@@ -349,40 +363,45 @@ export const chatWithCareerAgent = async (
 export const parseResumeFile = async (file: File): Promise<UserProfile> => {
   if (!ai) {
     // Robust fallback to ensure the UI flow works even if API key is missing.
-    // Try to be smart about extracting info from the filename to avoid "Software Engineer" default.
     return new Promise((resolve) => {
       setTimeout(() => {
         const cleanName = file.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, ' ');
         
-        // Simple heuristic: If filename looks like "John Doe Resume", use "John Doe"
-        // If it looks like "Resume_Account_Specialist", maybe use "Account Specialist" as title?
-        let name = "Candidate";
-        let title = "Job Applicant";
+        let name = "Job Applicant";
+        let title = "Candidate";
         
-        const parts = cleanName.split(' ');
-        if (parts.length > 0) {
-            // Assume first 2 words are name if they start with uppercase
-            if (parts[0] && parts[0][0] === parts[0][0].toUpperCase()) {
-                name = parts.slice(0, 2).join(' ');
-            }
-            
-            // If there are words after "Resume" or "CV", use them as title
-            const resumeIndex = parts.findIndex(p => p.toLowerCase().includes('resume') || p.toLowerCase().includes('cv'));
-            if (resumeIndex !== -1 && resumeIndex < parts.length - 1) {
-                title = parts.slice(resumeIndex + 1).join(' ');
-            }
+        // 1. Improved Heuristic for Title Detection in Filename
+        // Look for common job roles in the filename
+        const commonRoles = ['Account Specialist', 'Software Engineer', 'Product Manager', 'Designer', 'Marketing', 'Sales', 'HR', 'Data Analyst', 'Developer', 'Consultant', 'Admin', 'Coordinator'];
+        
+        const foundRole = commonRoles.find(role => cleanName.toLowerCase().includes(role.toLowerCase()));
+        if (foundRole) {
+            title = foundRole;
+        }
+
+        // 2. Improved Name Detection
+        // Filter out common non-name words
+        const parts = cleanName.split(' ').filter(p => {
+            const lower = p.toLowerCase();
+            return !['resume', 'cv', 'profile', 'pdf', 'docx', 'document', ...commonRoles.map(r => r.toLowerCase())].includes(lower);
+        });
+
+        if (parts.length >= 2) {
+            name = parts.slice(0, 2).join(' '); // Assume first 2 remaining words are name
+        } else if (parts.length === 1) {
+            name = parts[0];
         }
 
         resolve({
-          name: name !== "Candidate" ? name : cleanName,
+          name: name,
           title: title, 
           email: 'applicant@example.com',
-          summary: 'Experienced professional. (Mock data: Real AI analysis requires valid API Key)',
+          summary: `Experienced ${title} looking for new opportunities. (Mock data: Connect API Key for real analysis)`,
           skills: ['Communication', 'Teamwork', 'Problem Solving', 'Adaptability'],
           plan: 'Free',
           atsScansUsed: 0
         });
-      }, 2000);
+      }, 1500);
     });
   }
 
@@ -430,8 +449,8 @@ export const parseResumeFile = async (file: File): Promise<UserProfile> => {
     console.error("Resume File Parse Error", error);
     // Return safe fallback
     return {
-        name: '',
-        title: '',
+        name: 'Applicant',
+        title: 'Candidate',
         email: '',
         summary: 'Could not analyze file. Please update your profile manually.',
         skills: [],
