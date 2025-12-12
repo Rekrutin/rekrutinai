@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Resume, PlanType } from '../types';
 import { FileText, Upload, CheckCircle, AlertCircle, Trash2, Search, Lock, Eye, Zap, RefreshCw, Loader2, File as FileIcon, X, Sparkles } from 'lucide-react';
@@ -69,8 +68,12 @@ export const ResumeSection: React.FC<ResumeSectionProps> = ({
         // Use existing AI service to parse the file
         const profile = await parseResumeFile(file);
         
-        // Convert structured profile back to a readable text format for storage/display
-        const generatedContent = `
+        // Use the full resume text extracted by AI if available, otherwise fallback to structured summary
+        let generatedContent = profile.resumeText || '';
+        
+        // If resumeText is suspiciously short or missing (e.g. legacy fallback), construct a structured one
+        if (!generatedContent || generatedContent.length < 50) {
+             generatedContent = `
 NAME: ${profile.name}
 EMAIL: ${profile.email}
 TITLE: ${profile.title}
@@ -80,12 +83,13 @@ ${profile.summary}
 
 SKILLS
 ${profile.skills.join(' • ')}
-        `.trim();
+            `.trim();
+        }
         
         setParsedContent(generatedContent);
       } catch (err) {
         console.error("Parsing error", err);
-        setParsedContent("Could not auto-parse text. Please try again.");
+        setParsedContent("Could not auto-parse text. Please copy/paste your resume content here.");
       } finally {
         setIsParsing(false);
       }

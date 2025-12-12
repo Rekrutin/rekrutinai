@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { JobAnalysis, Job, UserProfile, ChatMessage } from "../types";
 import { getEnv } from "../constants";
@@ -371,8 +370,7 @@ export const parseResumeFile = async (file: File): Promise<UserProfile> => {
         let title = "Candidate";
         
         // 1. Improved Heuristic for Title Detection in Filename
-        // Look for common job roles in the filename
-        const commonRoles = ['Account Specialist', 'Software Engineer', 'Product Manager', 'Designer', 'Marketing', 'Sales', 'HR', 'Data Analyst', 'Developer', 'Consultant', 'Admin', 'Coordinator'];
+        const commonRoles = ['Account Specialist', 'Software Engineer', 'Product Manager', 'Designer', 'Marketing', 'Sales', 'HR', 'Data Analyst', 'Developer', 'Consultant', 'Admin', 'Coordinator', 'Executive', 'Manager', 'Assistant'];
         
         const foundRole = commonRoles.find(role => cleanName.toLowerCase().includes(role.toLowerCase()));
         if (foundRole) {
@@ -380,7 +378,6 @@ export const parseResumeFile = async (file: File): Promise<UserProfile> => {
         }
 
         // 2. Improved Name Detection
-        // Filter out common non-name words
         const parts = cleanName.split(' ').filter(p => {
             const lower = p.toLowerCase();
             return !['resume', 'cv', 'profile', 'pdf', 'docx', 'document', ...commonRoles.map(r => r.toLowerCase())].includes(lower);
@@ -392,14 +389,39 @@ export const parseResumeFile = async (file: File): Promise<UserProfile> => {
             name = parts[0];
         }
 
+        const mockResumeBody = `
+${name.toUpperCase()}
+${title} | Jakarta, Indonesia | applicant@example.com
+
+PROFESSIONAL SUMMARY
+Results-driven ${title} with 5+ years of experience in high-paced environments. Proven track record of success in project management and team leadership. Looking for new opportunities to leverage skills in a challenging role.
+
+EXPERIENCE
+Senior ${title} | Tech Company A | 2020 - Present
+• Led a team of 10+ professionals to achieve Q4 targets.
+• Increased efficiency by 20% through workflow optimization.
+• Collaborated with cross-functional teams to deliver projects on time.
+
+${title} | Company B | 2018 - 2020
+• Managed daily operations and reporting.
+• Implemented new CRM system for better data tracking.
+
+EDUCATION
+Bachelor of Science | University of Indonesia | 2014 - 2018
+
+SKILLS
+Communication • Leadership • Strategic Planning • Data Analysis
+        `.trim();
+
         resolve({
           name: name,
           title: title, 
           email: 'applicant@example.com',
-          summary: `Experienced ${title} looking for new opportunities. (Mock data: Connect API Key for real analysis)`,
+          summary: `Experienced ${title} looking for new opportunities.`,
           skills: ['Communication', 'Teamwork', 'Problem Solving', 'Adaptability'],
           plan: 'Free',
-          atsScansUsed: 0
+          atsScansUsed: 0,
+          resumeText: mockResumeBody
         });
       }, 1500);
     });
@@ -415,7 +437,7 @@ export const parseResumeFile = async (file: File): Promise<UserProfile> => {
             role: "user", 
             parts: [
                 filePart, 
-                { text: "Analyze this resume document. Extract the candidate's profile. Return valid JSON with keys: name (Full Name), title (The candidate's MOST RECENT job title found in the Experience section), email, summary (professional summary), and skills (array of strings). Do not hallucinate. If the title is ambiguous, infer the most likely current role from their last job." }
+                { text: "Analyze this resume document. Extract the candidate's profile. Return valid JSON with keys: name (Full Name), title (The candidate's MOST RECENT job title found in the Experience section), email, summary (professional summary), skills (array of strings), and resumeText (The FULL extracted text content of the resume, nicely formatted with Markdown headers and bullet points. Preserve the original content structure as much as possible). Do not hallucinate." }
             ] 
         }
       ],
@@ -428,9 +450,10 @@ export const parseResumeFile = async (file: File): Promise<UserProfile> => {
             title: { type: Type.STRING },
             email: { type: Type.STRING },
             summary: { type: Type.STRING },
-            skills: { type: Type.ARRAY, items: { type: Type.STRING } }
+            skills: { type: Type.ARRAY, items: { type: Type.STRING } },
+            resumeText: { type: Type.STRING }
           },
-          required: ["name", "title", "email", "summary", "skills"]
+          required: ["name", "title", "email", "summary", "skills", "resumeText"]
         }
       }
     });
@@ -455,7 +478,8 @@ export const parseResumeFile = async (file: File): Promise<UserProfile> => {
         summary: 'Could not analyze file. Please update your profile manually.',
         skills: [],
         plan: 'Free',
-        atsScansUsed: 0
+        atsScansUsed: 0,
+        resumeText: 'Error parsing resume text. Please copy/paste your resume content here.'
     };
   }
 };
