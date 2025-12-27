@@ -6,26 +6,26 @@ import {
   TrendingUp, Users, Target, Rocket, Briefcase, BarChart3, ChevronRight, Bell, Menu, X, Star, Globe, Play, Bot, ShieldCheck, ZapIcon,
   Chrome, Quote, Search, Trophy
 } from 'lucide-react';
-import { Job, JobStatus, UserRole, EmployerJob, DashboardTab, UserProfile, Resume, ExternalJobMatch, Language, PlanType, JobAnalysis, PricingPlan } from './types';
-import { TRANSLATIONS, INITIAL_EXTERNAL_MATCHES, getPricingPlans, INITIAL_JOBS } from './constants';
-import { supabase } from './services/supabaseClient';
-import { JobListView } from './components/JobListView';
-import { AddJobModal } from './components/AddJobModal';
-import { AIAnalyzerModal } from './components/AIAnalyzerModal';
-import { SeekerAnalytics } from './components/SeekerAnalytics';
-import { ResumeSection } from './components/ResumeSection';
-import { AIAgentSection } from './components/AIAgentSection';
-import { SignupModal } from './components/SignupModal';
-import { LoginModal } from './components/LoginModal';
-import { UpgradeLimitModal } from './components/UpgradeLimitModal';
-import { EmployerSignupModal } from './components/EmployerSignupModal';
-import { JobDetailDrawer } from './components/JobDetailDrawer';
-import { AdminDashboard } from './components/AdminDashboard'; 
-import { FeaturesPage } from './components/FeaturesPage';
-import { HowItWorksPage } from './components/HowItWorksPage';
-import { useSubscription } from './hooks/useSubscription';
-import { createCheckoutSession } from './services/paymentService';
-import { CountUp } from './components/CountUp';
+import { Job, JobStatus, UserRole, EmployerJob, DashboardTab, UserProfile, Resume, ExternalJobMatch, Language, PlanType, JobAnalysis, PricingPlan } from './types.ts';
+import { TRANSLATIONS, INITIAL_EXTERNAL_MATCHES, getPricingPlans, INITIAL_JOBS } from './constants.ts';
+import { supabase } from './services/supabaseClient.ts';
+import { JobListView } from './components/JobListView.tsx';
+import { AddJobModal } from './components/AddJobModal.tsx';
+import { AIAnalyzerModal } from './components/AIAnalyzerModal.tsx';
+import { SeekerAnalytics } from './components/SeekerAnalytics.tsx';
+import { ResumeSection } from './components/ResumeSection.tsx';
+import { AIAgentSection } from './components/AIAgentSection.tsx';
+import { SignupModal } from './components/SignupModal.tsx';
+import { LoginModal } from './components/LoginModal.tsx';
+import { UpgradeLimitModal } from './components/UpgradeLimitModal.tsx';
+import { EmployerSignupModal } from './components/EmployerSignupModal.tsx';
+import { JobDetailDrawer } from './components/JobDetailDrawer.tsx';
+import { AdminDashboard } from './components/AdminDashboard.tsx'; 
+import { FeaturesPage } from './components/FeaturesPage.tsx';
+import { HowItWorksPage } from './components/HowItWorksPage.tsx';
+import { useSubscription } from './hooks/useSubscription.ts';
+import { createCheckoutSession } from './services/paymentService.ts';
+import { CountUp } from './components/CountUp.tsx';
 
 const userDatabase = [
   { id: '1', email: 'john@example.com', name: 'John Doe', plan: 'Free' as PlanType },
@@ -265,13 +265,13 @@ const App: React.FC = () => {
              </button>
           </div>
 
-          {/* SEXY HERO STATS */}
+          {/* HERO STATS - UPDATED NUMBERS */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-5xl mx-auto py-12 border-y border-slate-100/60 mb-24">
             {[
               { label: t.STATS_USERS, value: 12.4, icon: <Users size={20} className="text-indigo-600" />, suffix: "K+" },
               { label: t.STATS_JOBS, value: 150, icon: <Briefcase size={20} className="text-blue-500" />, suffix: "K+" },
               { label: t.STATS_FASTER, value: 3.5, icon: <Rocket size={20} className="text-purple-500" />, suffix: "x" },
-              { label: t.STATS_APPS, value: 85, icon: <CheckCircle size={20} className="text-indigo-500" />, suffix: "K+" }
+              { label: t.STATS_APPS, value: 85, icon: <CheckCircle size={20} className="text-green-500" />, suffix: "K+" }
             ].map((stat, i) => (
               <div key={i} className="text-center group p-4 rounded-2xl hover:bg-slate-50 transition-colors">
                 <div className="flex justify-center mb-3 text-slate-400 group-hover:scale-110 transition-transform">
@@ -285,68 +285,66 @@ const App: React.FC = () => {
             ))}
           </div>
 
-          {/* SEXY COMPAQ LIVE TRACKER DASHBOARD PREVIEW */}
+          {/* COMPAQ SEXY LIVE TRACKER DASHBOARD PREVIEW */}
           <div className="relative max-w-6xl mx-auto mb-32 group">
-             <div className="absolute -top-6 left-1/2 -translate-x-1/2 px-6 py-2.5 bg-white border border-slate-200 rounded-full shadow-[0_15px_30px_rgba(0,0,0,0.1)] text-[11px] font-black text-slate-800 z-30 flex items-center gap-2.5">
+             {/* Tag above the mock */}
+             <div className="absolute -top-6 left-1/2 -translate-x-1/2 px-6 py-2 bg-white border border-slate-200 rounded-full shadow-2xl text-[10px] font-black text-slate-800 z-30 flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
                 {t.PRODUCT_PREVIEW_TITLE.toUpperCase()}
              </div>
              
-             {/* Compaq Dark Device Mockup */}
-             <div className="bg-[#0A0C16] rounded-[3rem] p-3 md:p-6 shadow-[0_80px_150px_-20px_rgba(10,12,22,0.6)] border border-slate-800/80 overflow-hidden relative">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_100%_0%,_rgba(79,70,229,0.12)_0%,_transparent_50%)] pointer-events-none"></div>
+             {/* Compaq Device Mockup */}
+             <div className="bg-[#0A0C16] rounded-[2.5rem] p-2 md:p-5 shadow-[0_50px_100px_-20px_rgba(10,12,22,0.6)] border border-slate-800 overflow-hidden relative">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_100%_0%,_rgba(79,70,229,0.1)_0%,_transparent_50%)] pointer-events-none"></div>
                 
-                <div className="bg-[#121422] rounded-[2.5rem] p-0 min-h-[500px] overflow-hidden relative border border-slate-800/40 flex">
+                <div className="bg-[#121422] rounded-[2rem] p-0 h-[480px] overflow-hidden relative border border-slate-800/40 flex">
                    
-                   {/* Sidebar (Left) */}
+                   {/* Sidebar Mock (Left) */}
                    <div className="w-16 md:w-20 border-r border-slate-800/40 flex flex-col items-center py-8 gap-10">
-                      <div className="w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
+                      <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
                          <Sparkles size={20} className="text-white" />
                       </div>
                       <div className="space-y-8">
                          {[LayoutGrid, FileText, MessageSquare, Target, Settings].map((Icon, idx) => (
-                           <div key={idx} className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${idx === 0 ? 'bg-indigo-500/10 text-indigo-400' : 'text-slate-700 hover:text-slate-500'}`}>
+                           <div key={idx} className={`w-8 h-8 rounded-lg flex items-center justify-center ${idx === 0 ? 'bg-indigo-500/10 text-indigo-400' : 'text-slate-700'}`}>
                               <Icon size={18} />
                            </div>
                          ))}
                       </div>
                    </div>
 
-                   {/* Dashboard Interior */}
+                   {/* Main Content */}
                    <div className="flex-1 flex flex-col">
-                      {/* Top Summary Bar */}
-                      <div className="px-8 py-6 flex items-center justify-between border-b border-slate-800/30 bg-[#0D0F1A]/40">
-                         <div className="flex gap-10">
+                      {/* Top Action Bar */}
+                      <div className="h-20 px-8 flex items-center justify-between border-b border-slate-800/30">
+                         <div className="flex gap-8">
                             {[
                               { label: 'Applied', value: '1.2K', color: 'text-blue-400' },
                               { label: 'Interviews', value: '48', color: 'text-purple-400' },
                               { label: 'Offer Rate', value: '12%', color: 'text-green-400' }
                             ].map((stat, i) => (
                               <div key={i} className="flex flex-col">
-                                 <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{stat.label}</span>
-                                 <span className={`text-xl font-black ${stat.color}`}>{stat.value}</span>
+                                 <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-0.5">{stat.label}</span>
+                                 <span className={`text-lg font-black ${stat.color}`}>{stat.value}</span>
                               </div>
                             ))}
                          </div>
-                         <div className="flex gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-slate-800/50 border border-slate-700/50 flex items-center justify-center text-slate-500"><Search size={14} /></div>
-                            <div className="h-8 px-4 bg-indigo-600 rounded-lg flex items-center justify-center text-white text-[10px] font-black shadow-lg border border-indigo-500/30">
-                               + ADD NEW
-                            </div>
+                         <div className="h-8 px-4 bg-indigo-600 rounded-lg flex items-center justify-center text-white text-[10px] font-black shadow-lg border border-indigo-500/30">
+                            + ADD NEW
                          </div>
                       </div>
 
                       {/* Header Table */}
-                      <div className="px-10 py-4 border-b border-slate-800/40 flex text-[9px] font-black text-slate-600 tracking-[0.2em] uppercase items-center bg-[#0D0F1A]/50">
+                      <div className="px-8 py-3 border-b border-slate-800/40 flex text-[8px] font-black text-slate-600 tracking-[0.2em] uppercase items-center bg-[#0D0F1A]/50">
                          <div className="w-2/5">Role & Company</div>
                          <div className="w-1/5 text-center">Status</div>
                          <div className="w-1/5 text-center">Date</div>
                          <div className="w-1/5 text-right">AI Score</div>
                       </div>
 
-                      {/* List (Compact Scrolling Animation) */}
+                      {/* List Animation */}
                       <div className="flex-1 overflow-hidden relative bg-[#0D0F1A]/20">
-                         <div className="px-6 py-4 space-y-2 animate-[scrollVertical_25s_linear_infinite] hover-pause">
+                         <div className="px-5 py-4 space-y-2 animate-scroll-vertical hover-pause">
                             {[
                               { title: 'Product Manager', company: 'Google', status: 'OFFER', color: 'text-green-400 bg-green-400/10 border-green-400/20', date: 'Jan 12', score: 98 },
                               { title: 'Frontend Lead', company: 'Meta', status: 'INTERVIEW', color: 'text-purple-400 bg-purple-400/10 border-purple-400/20', date: 'Jan 10', score: 94 },
@@ -356,9 +354,11 @@ const App: React.FC = () => {
                               { title: 'Designer', company: 'Figma', status: 'OFFER', color: 'text-green-400 bg-green-400/10 border-green-400/20', date: 'Jan 05', score: 96 },
                               { title: 'Backend Dev', company: 'Netflix', status: 'INTERVIEW', color: 'text-purple-400 bg-purple-400/10 border-purple-400/20', date: 'Jan 14', score: 89 },
                               { title: 'Marketing Mgr', company: 'HubSpot', status: 'OFFER', color: 'text-green-400 bg-green-400/10 border-green-400/20', date: 'Jan 03', score: 93 },
+                              { title: 'Product Manager', company: 'Google', status: 'OFFER', color: 'text-green-400 bg-green-400/10 border-green-400/20', date: 'Jan 12', score: 98 },
+                              { title: 'Frontend Lead', company: 'Meta', status: 'INTERVIEW', color: 'text-purple-400 bg-purple-400/10 border-purple-400/20', date: 'Jan 10', score: 94 },
                             ].map((row, idx) => (
-                              <div key={idx} className="flex items-center px-6 py-4 bg-[#1C1F35]/40 border border-slate-800/60 rounded-[1.2rem] transition-all hover:bg-[#252A47] hover:border-indigo-500/30 group/row">
-                                 <div className="w-2/5 flex items-center gap-4">
+                              <div key={idx} className="flex items-center px-5 py-4 bg-[#1C1F35]/40 border border-slate-800/60 rounded-[1.2rem] transition-all hover:bg-[#252A47] hover:border-indigo-500/30 group/row">
+                                 <div className="w-2/5 flex items-center gap-3">
                                     <div className="w-10 h-10 bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl flex-shrink-0 flex items-center justify-center border border-slate-800/60 group-hover/row:scale-105 transition-transform">
                                        <Briefcase size={16} className="text-slate-600" />
                                     </div>
@@ -384,8 +384,8 @@ const App: React.FC = () => {
                               </div>
                             ))}
                          </div>
-                         {/* Bottom fade */}
-                         <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#121422] to-transparent pointer-events-none"></div>
+                         {/* Seamless bottom fade */}
+                         <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#121422] to-transparent pointer-events-none z-10"></div>
                       </div>
                    </div>
                 </div>
@@ -394,10 +394,10 @@ const App: React.FC = () => {
                 <div className="absolute inset-x-0 bottom-16 flex justify-center z-40 pointer-events-none">
                    <button 
                     onClick={() => setIsSignupModalOpen(true)}
-                    className="pointer-events-auto bg-indigo-600 text-white px-14 py-6 rounded-[2.5rem] font-black text-2xl shadow-[0_25px_100px_rgba(79,70,229,0.7)] hover:bg-indigo-500 transition-all hover:scale-105 active:scale-95 flex items-center gap-5 ring-8 ring-indigo-600/10 group/cta"
+                    className="pointer-events-auto bg-indigo-600 text-white px-12 py-5 rounded-[2.5rem] font-black text-xl shadow-[0_20px_80px_rgba(79,70,229,0.7)] hover:bg-indigo-500 transition-all hover:scale-105 active:scale-95 flex items-center gap-5 ring-8 ring-indigo-600/10 group/cta"
                    >
                       {t.PRODUCT_CTA}
-                      <ArrowRight size={32} className="group-hover/cta:translate-x-2 transition-transform" />
+                      <ArrowRight size={28} className="group-hover/cta:translate-x-2 transition-transform" />
                    </button>
                 </div>
              </div>
