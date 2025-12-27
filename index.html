@@ -4,7 +4,23 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>RekrutIn.ai - Land Your Next Job</title>
+    <title>RekrutIn.ai - Land Your Next Job Faster</title>
+    <meta name="description" content="AI-powered job tracking dashboard helping candidates track, analyze, and optimize applications to get hired faster." />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://rekrutin.com/" />
+    <meta property="og:title" content="RekrutIn.ai - Land Your Next Job Smarter" />
+    <meta property="og:description" content="Your personal AI recruiter. Track applications, analyze your CV, and find matching roles in seconds." />
+    <meta property="og:image" content="https://rekrutin.com/og-image.png" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://rekrutin.com/" />
+    <meta property="twitter:title" content="RekrutIn.ai - Land Your Next Job Smarter" />
+    <meta property="twitter:description" content="Your personal AI recruiter. Track applications, analyze your CV, and find matching roles in seconds." />
+    <meta property="twitter:image" content="https://rekrutin.com/og-image.png" />
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
@@ -68,32 +84,25 @@
     <style>
       html, body, #root { height: 100%; }
       body { font-family: 'Inter', sans-serif; }
-      /* Custom scrollbar for dashboard columns */
-      .scrollbar-hide::-webkit-scrollbar {
-          display: none;
-      }
-      .scrollbar-hide {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-      }
-      /* Pause animation on hover */
-      .hover-pause:hover {
-        animation-play-state: paused;
-      }
+      .scrollbar-hide::-webkit-scrollbar { display: none; }
+      .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+      .hover-pause:hover { animation-play-state: paused; }
     </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.555.0",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "@supabase/supabase-js": "https://aistudiocdn.com/@supabase/supabase-js@^2.84.0",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0"
-  }
-}
-</script>
-</head>
+    <script type="importmap">
+    {
+      "imports": {
+        "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+        "lucide-react": "https://aistudiocdn.com/lucide-react@^0.555.0",
+        "react/": "https://aistudiocdn.com/react@^19.2.0/",
+        "react": "https://aistudiocdn.com/react@^19.2.0",
+        "@supabase/supabase-js": "https://aistudiocdn.com/@supabase/supabase-js@^2.84.0",
+        "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
+        "@vercel/analytics": "https://aistudiocdn.com/@vercel/analytics@^1.5.0",
+        "@vercel/speed-insights": "https://aistudiocdn.com/@vercel/speed-insights@^1.1.0"
+      }
+    }
+    </script>
+  </head>
   <body class="bg-slate-50 text-slate-900 antialiased">
     <div id="root"></div>
     <script type="module" src="./index.tsx"></script>

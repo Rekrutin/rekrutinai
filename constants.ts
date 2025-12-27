@@ -35,8 +35,12 @@ export const getEnv = (key: string) => {
 
 export const SUPABASE_URL = getEnv('NEXT_PUBLIC_SUPABASE_URL') || getEnv('SUPABASE_URL');
 export const SUPABASE_ANON_KEY = getEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY') || getEnv('SUPABASE_ANON_KEY');
+
+// Updated Free Limits
 export const MAX_FREE_ATS_SCANS = 2;
-export const MAX_FREE_JOBS = 10;
+export const MAX_FREE_JOBS = 30;
+export const MAX_FREE_EXTENSION_USES = 20;
+export const MAX_FREE_RECOMMENDATIONS = 2;
 
 // --- INTERNATIONALIZATION DATA ---
 
@@ -63,9 +67,9 @@ export const TRANSLATIONS = {
     PRODUCT_CTA: "Try AI Dashboard Free",
     FEATURES_TITLE: "Everything You Need to Get Hired",
     FEATURES_DESC: "Stop using spreadsheets. Start using an AI-powered command center for your career.",
-    PRICING_TITLE: "Simple, Transparent Pricing",
-    PRICING_DESC: "Invest in your career for less than the cost of a coffee.",
-    PRICING_POPULAR: "Popular",
+    PRICING_TITLE: "Smallest Investment, Biggest Return",
+    PRICING_DESC: "Join 10,000+ professionals using AI to land offers 3x faster. Choose the path that fits your ambition.",
+    PRICING_POPULAR: "Best Value - Save 30%",
     PRICING_MONTH: "/mo",
     FOOTER_DESC: "© 2025 RekrutIn.ai — Designed with 💡 in Indonesia",
     JOB_TRACKER: "Job Tracker",
@@ -97,9 +101,9 @@ export const TRANSLATIONS = {
     PRODUCT_CTA: "Coba Dashboard AI Gratis",
     FEATURES_TITLE: "Semua yang Kamu Butuhkan",
     FEATURES_DESC: "Berhenti menggunakan spreadsheet manual. Mulai gunakan pusat komando berbasis AI untuk karirmu.",
-    PRICING_TITLE: "Harga Simpel & Transparan",
-    PRICING_DESC: "Investasi untuk karirmu dengan harga kurang dari segelas kopi.",
-    PRICING_POPULAR: "Terlaris",
+    PRICING_TITLE: "Investasi Terkecil untuk Karir Terbesar",
+    PRICING_DESC: "Gabung dengan 10,000+ profesional yang menggunakan AI untuk dapat kerja 3x lebih cepat. Pilih paket suksesmu.",
+    PRICING_POPULAR: "Paling Hemat - Diskon 30%",
     PRICING_MONTH: "/bulan",
     FOOTER_DESC: "© 2025 RekrutIn.ai — Dibuat dengan 💡 di Indonesia",
     JOB_TRACKER: "Pelacak Kerja",
@@ -115,81 +119,69 @@ export const getPricingPlans = (lang: Language): PricingPlan[] => {
   const isId = lang === 'id';
   return [
     {
-      name: isId ? 'Gratis' : 'Free',
+      id: 'Free',
+      name: isId ? 'Starter' : 'Starter',
       price: 'Rp0',
-      description: isId ? 'Sempurna untuk memulai' : 'Perfect for getting started',
+      description: isId ? 'Hanya dasar untuk memulai' : 'The essentials to get started',
       features: isId ? [
-        '10 lamaran kerja (batas)',
-        'Pelacakan kerja dasar',
-        'Dashboard & pengingat dasar'
+        'Lacak 30 lamaran kerja',
+        '2x Skor Kecocokan AI',
+        '2x Rekomendasi Personal',
+        '20x Penggunaan Ekstensi',
+        'Dashboard pelacakan dasar'
       ] : [
-        '10 job applications (limit)',
-        'Basic job tracking',
-        'Basic dashboard & reminders'
+        'Track 30 job applications',
+        '2x AI Fit Scores',
+        '2x AI Personalized Recommendations',
+        '20x Extension Uses',
+        'Basic tracking dashboard'
       ],
       cta: isId ? 'Mulai Gratis' : 'Start Free'
     },
     {
-      name: 'Pro',
+      id: 'Pro',
+      name: isId ? 'Pro Monthly' : 'Pro Monthly',
       price: 'Rp165.000',
-      description: isId ? 'Pilihan Utama Pencari Kerja' : 'Main MRR Driver',
+      description: isId ? 'Untuk pencari kerja aktif' : 'For the active job seeker',
       features: isId ? [
-        'Pelacakan kerja tanpa batas',
-        'Ekstensi Chrome (auto-capture)',
-        'Skor Kecocokan Resume AI',
+        'Semua fitur Starter',
+        'Pelacakan lamaran TANPA BATAS',
+        'Ekstensi Chrome (unlimited)',
+        'Skor Kecocokan AI (unlimited)',
         'Prediksi Peluang Sukses AI',
-        'Rekomendasi personal',
-        'Analisis progres',
         'Akses awal fitur baru'
       ] : [
-        'Unlimited job tracking',
-        'Chrome extension (auto-capture)',
-        'AI Resume Fit Score',
+        'Everything in Starter',
+        'UNLIMITED job tracking',
+        'Chrome extension (unlimited)',
+        'Unlimited AI Fit Scores',
         'AI Success Probability',
-        'Personalized recommendations',
-        'Progress analytics',
         'Early access to new features'
       ],
-      cta: isId ? 'Pilih Pro' : 'Go Pro',
-      highlight: true
+      cta: isId ? 'Pilih Pro Bulanan' : 'Get Pro Monthly',
     },
     {
-      name: 'Career+',
-      price: 'Rp356.000',
-      description: isId ? 'Untuk pertumbuhan serius' : 'For serious growth',
+      id: 'Accelerator',
+      name: isId ? 'Career Accelerator' : 'Career Accelerator',
+      price: 'Rp350.000',
+      description: isId ? '90 hari akses penuh (Hemat 30%)' : '90-day full access (Save 30%)',
       features: isId ? [
         'Semua fitur Pro',
-        'Modul pembelajaran karir',
-        'Kursus optimasi CV & LinkedIn',
-        'Template siap pakai',
-        'Strategi pencarian kerja tingkat lanjut'
+        'Lacak lamaran tanpa batas',
+        'Ekstensi Chrome (unlimited)',
+        'Skor Kecocokan AI (unlimited)',
+        'Prioritas dukungan AI',
+        'Masa aktif 3 bulan penuh'
       ] : [
-        'All Pro features',
-        'Career learning modules',
-        'CV & LinkedIn optimization course',
-        'Pre-written templates',
-        'Advanced job search strategies'
+        'All Pro features included',
+        'Unlimited job tracking',
+        'Chrome extension (unlimited)',
+        'Unlimited AI Fit Scores',
+        'Priority AI Support',
+        'Full 3-month active period'
       ],
-      cta: isId ? 'Gabung Career+' : 'Join Career+'
-    },
-    {
-      name: 'Elite',
-      price: 'Rp455.000',
-      description: isId ? 'Dampak maksimal' : 'Maximum impact',
-      features: isId ? [
-        'Semua fitur Career+',
-        '1x Latihan Interview (Live)',
-        'Dukungan chat prioritas',
-        'Audit personal CV & LinkedIn',
-        'Roadmap pencarian kerja lanjutan'
-      ] : [
-        'All Career+ features',
-        '1x Interview Training (Live)',
-        'Priority chat support',
-        'Personalized CV & LinkedIn audit',
-        'Advanced job search roadmap'
-      ],
-      cta: isId ? 'Dapatkan Elite' : 'Get Elite'
+      cta: isId ? 'Ambil Paket Hemat' : 'Claim Best Value',
+      highlight: true
     }
   ];
 };

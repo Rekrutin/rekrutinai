@@ -1,18 +1,15 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { JobAnalysis, Job, UserProfile, ChatMessage } from "../types";
 import { getEnv } from "../constants";
 
-// Initialize the API client strictly according to guidelines.
-// Robustly check for API Key in various environment configurations
 const getApiKey = () => {
-  // 1. Direct check for Vite/Next.js env vars (bypassing potential getEnv lag)
   // @ts-ignore
   if (typeof import.meta !== 'undefined' && import.meta.env) {
     // @ts-ignore
     const viteKey = import.meta.env.VITE_API_KEY || import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_GOOGLE_API_KEY;
     if (viteKey) return viteKey;
   }
-  // 2. Standard check
   return getEnv('API_KEY') || getEnv('GEMINI_API_KEY') || getEnv('GOOGLE_API_KEY');
 };
 
@@ -23,7 +20,6 @@ if (!apiKey) {
   console.warn("Gemini API Key not found. App running in Mock Mode.");
 }
 
-// Helper to convert File to Base64 for Gemini API
 async function fileToGenerativePart(file: File) {
   const base64EncodedDataPromise = new Promise<string>((resolve) => {
     const reader = new FileReader();
@@ -41,7 +37,6 @@ async function fileToGenerativePart(file: File) {
 
 export const analyzeJobFit = async (resumeText: string, jobDescription: string): Promise<JobAnalysis> => {
   if (!ai) {
-    console.warn("Gemini API Key missing. Returning mock analysis.");
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve({
@@ -54,7 +49,7 @@ export const analyzeJobFit = async (resumeText: string, jobDescription: string):
   }
 
   try {
-    const model = "gemini-2.5-flash";
+    const model = "gemini-3-pro-preview"; // Upgraded for high-quality analysis
     const prompt = `
       You are an expert career coach and recruiter. 
       Analyze the following Resume against the Job Description.
@@ -112,7 +107,7 @@ export const calculateSuccessProbability = async (resumeSummary: string, jobDesc
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3-pro-preview",
       contents: `
         Estimate the probability (0-100) of a candidate getting an interview for this job.
         
@@ -152,7 +147,7 @@ export const analyzeResumeATS = async (resumeText: string): Promise<{ score: num
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3-pro-preview",
       contents: `
         Analyze this resume text for ATS (Applicant Tracking System) friendliness and overall quality.
         Resume Text: "${resumeText.substring(0, 5000)}"
@@ -208,7 +203,7 @@ export const scanAndOptimizeResume = async (resumeText: string): Promise<{
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3-pro-preview",
       contents: `
         You are an expert Resume Optimizer. Your task is to rewrite the given resume to be 100% ATS-friendly and impactful.
         
@@ -255,12 +250,12 @@ export const scanAndOptimizeResume = async (resumeText: string): Promise<{
 
 export const generateCoverLetter = async (job: Job, profile: UserProfile): Promise<string> => {
   if (!ai) {
-    return `Dear Hiring Manager at ${job.company},\n\nI am excited to apply for the ${job.title} position. With my background in ${profile.title}, I am confident in my ability to contribute effectively to your team.\n\n(Note: This is a simulated cover letter. Add a valid API Key for AI generation.)`;
+    return `Dear Hiring Manager at ${job.company},\n\nI am excited to apply for the ${job.title} position. With my background in ${profile.title}, I am confident in my ability to contribute effectively to your team.\n\n(Note: This is a simulated cover letter.)`;
   }
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3-flash-preview",
       contents: `
         Write a professional, engaging cover letter for the following candidate and job.
         
@@ -279,7 +274,6 @@ export const generateCoverLetter = async (job: Job, profile: UserProfile): Promi
         - Professional but modern tone.
         - Highlight how the candidate's skills match the job.
         - Keep it under 300 words.
-        - Use placeholders like [Phone Number] if contact info is missing.
       `
     });
 
@@ -296,10 +290,9 @@ export const chatWithCareerAgent = async (
   context: { jobs: Job[]; profile: UserProfile }
 ): Promise<string> => {
   if (!ai) {
-    return "I am a simulated AI agent (API Key missing). I see you have " + context.jobs.length + " jobs tracked. Once you connect a valid API Key, I can help you analyze them in depth.";
+    return "I am a simulated AI agent (API Key missing). I see you have " + context.jobs.length + " jobs tracked.";
   }
 
-  // 1. Construct the System Context
   const profileContext = `
     USER PROFILE:
     Name: ${context.profile.name}
@@ -328,7 +321,6 @@ export const chatWithCareerAgent = async (
     GUIDELINES:
     - Be encouraging, strategic, and concise.
     - Reference specific jobs from their list when relevant.
-    - Suggest specific improvements based on their skills vs job requirements.
     - Keep responses under 150 words unless asked for a detailed guide.
   `;
 
@@ -344,7 +336,7 @@ export const chatWithCareerAgent = async (
     });
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3-flash-preview", // Flash for fast interactive chat
       contents: contents,
       config: {
         systemInstruction: systemInstruction,
@@ -361,67 +353,19 @@ export const chatWithCareerAgent = async (
 
 export const parseResumeFile = async (file: File): Promise<UserProfile> => {
   if (!ai) {
-    // Robust fallback to ensure the UI flow works even if API key is missing.
     return new Promise((resolve) => {
       setTimeout(() => {
-        const cleanName = file.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, ' ');
-        
-        let name = "Job Applicant";
-        let title = "Candidate";
-        
-        // 1. Improved Heuristic for Title Detection in Filename
-        const commonRoles = ['Account Specialist', 'Software Engineer', 'Product Manager', 'Designer', 'Marketing', 'Sales', 'HR', 'Data Analyst', 'Developer', 'Consultant', 'Admin', 'Coordinator', 'Executive', 'Manager', 'Assistant'];
-        
-        const foundRole = commonRoles.find(role => cleanName.toLowerCase().includes(role.toLowerCase()));
-        if (foundRole) {
-            title = foundRole;
-        }
-
-        // 2. Improved Name Detection
-        const parts = cleanName.split(' ').filter(p => {
-            const lower = p.toLowerCase();
-            return !['resume', 'cv', 'profile', 'pdf', 'docx', 'document', ...commonRoles.map(r => r.toLowerCase())].includes(lower);
-        });
-
-        if (parts.length >= 2) {
-            name = parts.slice(0, 2).join(' '); // Assume first 2 remaining words are name
-        } else if (parts.length === 1) {
-            name = parts[0];
-        }
-
-        const mockResumeBody = `
-${name.toUpperCase()}
-${title} | Jakarta, Indonesia | applicant@example.com
-
-PROFESSIONAL SUMMARY
-Results-driven ${title} with 5+ years of experience in high-paced environments. Proven track record of success in project management and team leadership. Looking for new opportunities to leverage skills in a challenging role.
-
-EXPERIENCE
-Senior ${title} | Tech Company A | 2020 - Present
-• Led a team of 10+ professionals to achieve Q4 targets.
-• Increased efficiency by 20% through workflow optimization.
-• Collaborated with cross-functional teams to deliver projects on time.
-
-${title} | Company B | 2018 - 2020
-• Managed daily operations and reporting.
-• Implemented new CRM system for better data tracking.
-
-EDUCATION
-Bachelor of Science | University of Indonesia | 2014 - 2018
-
-SKILLS
-Communication • Leadership • Strategic Planning • Data Analysis
-        `.trim();
-
+        // Added extensionUses: 0 to fix UserProfile type incompatibility
         resolve({
-          name: name,
-          title: title, 
+          name: "Job Applicant",
+          title: "Candidate", 
           email: 'applicant@example.com',
-          summary: `Experienced ${title} looking for new opportunities.`,
-          skills: ['Communication', 'Teamwork', 'Problem Solving', 'Adaptability'],
+          summary: `Experienced candidate looking for new opportunities.`,
+          skills: ['Communication', 'Problem Solving'],
           plan: 'Free',
           atsScansUsed: 0,
-          resumeText: mockResumeBody
+          extensionUses: 0,
+          resumeText: 'Mock Resume Text'
         });
       }, 1500);
     });
@@ -431,13 +375,13 @@ Communication • Leadership • Strategic Planning • Data Analysis
     const filePart = await fileToGenerativePart(file);
     
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3-pro-preview",
       contents: [
         { 
             role: "user", 
             parts: [
                 filePart, 
-                { text: "Analyze this resume document. Extract the candidate's profile. Return valid JSON with keys: name (Full Name), title (The candidate's MOST RECENT job title found in the Experience section), email, summary (professional summary), skills (array of strings), and resumeText (The FULL extracted text content of the resume, nicely formatted with Markdown headers and bullet points. Preserve the original content structure as much as possible). Do not hallucinate." }
+                { text: "Analyze this resume document. Extract the candidate's profile. Return valid JSON with keys: name (Full Name), title (The candidate's MOST RECENT job title), email, summary (professional summary), skills (array of strings), and resumeText (The FULL extracted text content of the resume in Markdown). Do not hallucinate." }
             ] 
         }
       ],
@@ -463,23 +407,26 @@ Communication • Leadership • Strategic Planning • Data Analysis
     
     const data = JSON.parse(text);
     
+    // Added extensionUses: 0 to fix UserProfile type incompatibility
     return {
       ...data,
       plan: 'Free',
-      atsScansUsed: 0
+      atsScansUsed: 0,
+      extensionUses: 0
     };
   } catch (error) {
     console.error("Resume File Parse Error", error);
-    // Return safe fallback
+    // Added extensionUses: 0 to fix UserProfile type incompatibility
     return {
         name: 'Applicant',
         title: 'Candidate',
         email: '',
-        summary: 'Could not analyze file. Please update your profile manually.',
+        summary: 'Could not analyze file.',
         skills: [],
         plan: 'Free',
         atsScansUsed: 0,
-        resumeText: 'Error parsing resume text. Please copy/paste your resume content here.'
+        extensionUses: 0,
+        resumeText: 'Error parsing resume text.'
     };
   }
 };

@@ -25,6 +25,7 @@ export const EmployerSignupModal: React.FC<EmployerSignupModalProps> = ({ isOpen
       setIsLoading(true);
       // Simulate API call
       setTimeout(() => {
+        // Added extensionUses: 0 to fix UserProfile type error
         const newProfile: UserProfile = {
           name: fullName,
           title: 'Recruiter', // Default title
@@ -33,7 +34,8 @@ export const EmployerSignupModal: React.FC<EmployerSignupModalProps> = ({ isOpen
           summary: '',
           skills: [],
           plan: 'Free',
-          atsScansUsed: 0
+          atsScansUsed: 0,
+          extensionUses: 0
         };
         
         onComplete(newProfile);

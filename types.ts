@@ -107,6 +107,7 @@ export interface UserProfile {
   resumeText?: string;
   plan: PlanType;
   atsScansUsed: number;
+  extensionUses: number; // Added to track free tier extension usage
   companyName?: string;
   subscription?: Subscription;
   betaAccess?: boolean;
@@ -147,7 +148,8 @@ export interface Notification {
   type: 'alert' | 'system';
 }
 
-export type PlanType = 'Free' | 'Pro' | 'Career+' | 'Elite';
+// Engaging Plan Names
+export type PlanType = 'Free' | 'Pro' | 'Accelerator' | 'Career+' | 'Elite'; 
 export type UserRole = 'seeker' | 'employer' | 'admin';
 export type DashboardTab = 'tracker' | 'resumes' | 'profile' | 'agent' | 'alerts' | 'billing' | 'extension';
 export type EmployerTab = 'overview' | 'jobs' | 'candidates';
@@ -205,7 +207,8 @@ export interface RevenueMetrics {
 }
 
 export interface PricingPlan {
-  name: PlanType | string;
+  id: PlanType;
+  name: string;
   price: string;
   features: string[];
   cta: string;
