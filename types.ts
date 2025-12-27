@@ -21,12 +21,6 @@ export interface JobContact {
   linkedin?: string;
 }
 
-export interface JobNote {
-  id: string;
-  content: string;
-  updatedAt: string;
-}
-
 export interface JobTimelineEvent {
   status: JobStatus;
   date: string;
@@ -38,9 +32,9 @@ export type AssessmentStatus = 'Pending' | 'In Progress' | 'Completed' | 'Missed
 export interface JobAssessment {
   required: boolean;
   type: AssessmentType;
-  deadline?: string; // ISO date string
+  deadline?: string;
   status: AssessmentStatus;
-  platform?: string; // e.g. HireVue, HackerRank
+  platform?: string;
   link?: string;
 }
 
@@ -88,17 +82,8 @@ export interface CandidateApplication {
   skills: string[];
 }
 
-export interface Subscription {
-  id: string;
-  userId: string;
-  plan: PlanType;
-  status: 'active' | 'cancelled' | 'expired' | 'trial';
-  startedAt: string;
-  currentPeriodEnd: string;
-  provider?: string; // e.g., 'midtrans', 'stripe'
-}
-
 export interface UserProfile {
+  id?: string;
   name: string;
   title: string;
   email: string;
@@ -107,20 +92,24 @@ export interface UserProfile {
   resumeText?: string;
   plan: PlanType;
   atsScansUsed: number;
-  extensionUses: number; // Added to track free tier extension usage
+  extensionUses: number;
   companyName?: string;
-  subscription?: Subscription;
-  betaAccess?: boolean;
-  extensionToken?: string; // For Chrome Extension
+  extensionToken?: string;
 }
 
 export interface Resume {
   id: string;
-  name: string;
-  content: string; 
-  uploadDate: string;
-  atsScore?: number;
+  user_id?: string;
+  title: string;
+  name: string; // Legacy fallback
+  file_path: string;
+  extracted_text: string | null;
+  ats_score: number;
+  atsScore?: number; // Legacy UI support
   atsAnalysis?: string[];
+  uploadDate: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface ChatMessage {
@@ -148,63 +137,12 @@ export interface Notification {
   type: 'alert' | 'system';
 }
 
-// Engaging Plan Names
 export type PlanType = 'Free' | 'Pro' | 'Accelerator' | 'Career+' | 'Elite'; 
 export type UserRole = 'seeker' | 'employer' | 'admin';
 export type DashboardTab = 'tracker' | 'resumes' | 'profile' | 'agent' | 'alerts' | 'billing' | 'extension';
 export type EmployerTab = 'overview' | 'jobs' | 'candidates';
 export type AdminView = 'overview' | 'revenue' | 'users' | 'resumes' | 'apps' | 'employers' | 'jobs' | 'logs' | 'settings';
-export type OnboardingStep = 'idle' | 'upload' | 'scanning' | 'review' | 'credentials' | 'complete';
 export type Language = 'en' | 'id';
-
-export interface AdminUser {
-  id: string;
-  email: string;
-  name: string;
-  role: 'seeker' | 'employer' | 'admin';
-  status: 'active' | 'suspended';
-  joinedDate: string;
-  lastActive: string;
-  plan: PlanType;
-  resumesCount: number;
-  appsCount: number;
-}
-
-export interface AdminEmployer {
-  id: string;
-  companyName: string;
-  contactPerson: string;
-  email: string;
-  jobsPosted: number;
-  status: 'active' | 'suspended';
-  joinedDate: string;
-}
-
-export interface Transaction {
-  id: string;
-  userEmail: string;
-  plan: PlanType;
-  amount: string;
-  date: string;
-  status: 'Success' | 'Failed' | 'Pending';
-  method: 'Credit Card' | 'PayPal' | 'Bank Transfer';
-}
-
-export interface SystemLog {
-  id: string;
-  event: string;
-  details: string;
-  user?: string;
-  timestamp: string;
-  severity: 'INFO' | 'WARN' | 'ERROR' | 'SUCCESS';
-}
-
-export interface RevenueMetrics {
-  mrr: number;
-  totalRevenue: number;
-  paidUsers: number;
-  arppu: number;
-}
 
 export interface PricingPlan {
   id: PlanType;
@@ -232,7 +170,6 @@ export interface ExternalJobMatch {
   aiFitScore: number;
 }
 
-// --- EXTENSION TYPES ---
 export interface ExtensionJobPayload {
   token: string;
   job_title: string;
@@ -249,4 +186,46 @@ export interface ExtensionApiResponse {
   job?: Job;
   quota_remaining?: number;
   is_pro?: boolean;
+}
+
+export interface AdminUser {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  status: 'active' | 'suspended';
+  joinedDate: string;
+  lastActive: string;
+  plan: PlanType;
+  resumesCount: number;
+  appsCount: number;
+}
+
+export interface Transaction {
+  id: string;
+  userEmail: string;
+  plan: PlanType;
+  amount: string;
+  date: string;
+  status: 'Success' | 'Failed';
+  method: string;
+}
+
+export interface SystemLog {
+  id: string;
+  event: string;
+  details: string;
+  timestamp: string;
+  severity: 'INFO' | 'SUCCESS' | 'WARN' | 'ERROR';
+  user?: string;
+}
+
+export interface AdminEmployer {
+  id: string;
+  companyName: string;
+  contactPerson: string;
+  email: string;
+  jobsPosted: number;
+  status: 'active' | 'suspended';
+  joinedDate: string;
 }

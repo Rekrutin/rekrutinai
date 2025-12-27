@@ -60,24 +60,26 @@ export const TRANSLATIONS = {
     SEARCH_BUTTON: "Search",
     TRENDING: "Trending:",
     STATS_JOBS: "Active Jobs",
-    STATS_COMPANIES: "Companies",
+    STATS_USERS: "Active Users",
     STATS_FASTER: "Hired Faster",
     STATS_APPS: "Applications",
     PRODUCT_PREVIEW_TITLE: "Live Application Tracker",
     PRODUCT_CTA: "Try AI Dashboard Free",
-    FEATURES_TITLE: "Everything You Need to Get Hired",
-    FEATURES_DESC: "Stop using spreadsheets. Start using an AI-powered command center for your career.",
-    PRICING_TITLE: "Smallest Investment, Biggest Return",
-    PRICING_DESC: "Join 10,000+ professionals using AI to land offers 3x faster. Choose the path that fits your ambition.",
-    PRICING_POPULAR: "Best Value - Save 30%",
-    PRICING_MONTH: "/mo",
-    FOOTER_DESC: "© 2025 RekrutIn.ai — Designed with 💡 in Indonesia",
-    JOB_TRACKER: "Job Tracker",
-    RESUME_MANAGER: "Resume Manager",
-    JOB_ALERTS: "Job Alerts",
-    MY_PROFILE: "My Profile",
-    AI_AGENT: "AI Career Agent",
-    UPGRADE_PLAN: "Upgrade Plan"
+    TESTIMONIALS_TITLE: "What Our Users Say",
+    TESTIMONIALS_DESC: "Real success stories from professionals who accelerated their career with RekrutIn.",
+    TESTIMONIAL_1_NAME: "Anita Wijaya",
+    TESTIMONIAL_1_ROLE: "Software Engineer at Shopee",
+    TESTIMONIAL_1_TEXT: "RekrutIn changed everything. I used to lose track of where I applied, but now I have an AI coach that helps me optimize every single application. Landed my role in 3 weeks!",
+    TESTIMONIAL_2_NAME: "Budi Santoso",
+    TESTIMONIAL_2_ROLE: "Product Manager at Gojek",
+    TESTIMONIAL_2_TEXT: "The AI Fit Score is a game-changer. It told me exactly what was missing in my resume for the PM role. I increased my interview rate by almost 50% immediately.",
+    TESTIMONIAL_3_NAME: "Clarissa Tan",
+    TESTIMONIAL_3_ROLE: "UX Designer at Traveloka",
+    TESTIMONIAL_3_TEXT: "Managing 50+ applications was a nightmare until I found RekrutIn. The extension makes saving jobs from LinkedIn so seamless. Highly recommended!",
+    CTA_TITLE: "Ready to Land Your Dream Job?",
+    CTA_DESC: "Join 10,000+ professionals who have accelerated their career by 3x using RekrutIn.",
+    CTA_BUTTON: "Join Now Free",
+    FOOTER_DESC: "© 2025 RekrutIn.ai — Designed with 💡 in Indonesia"
   },
   id: {
     NAV_FEATURES: "Fitur",
@@ -94,24 +96,26 @@ export const TRANSLATIONS = {
     SEARCH_BUTTON: "Cari",
     TRENDING: "Populer:",
     STATS_JOBS: "Lowongan Aktif",
-    STATS_COMPANIES: "Perusahaan",
+    STATS_USERS: "Pengguna Aktif",
     STATS_FASTER: "Lebih Cepat Direkrut",
     STATS_APPS: "Lamaran Terkirim",
     PRODUCT_PREVIEW_TITLE: "Pelacak Lamaran Live",
     PRODUCT_CTA: "Coba Dashboard AI Gratis",
-    FEATURES_TITLE: "Semua yang Kamu Butuhkan",
-    FEATURES_DESC: "Berhenti menggunakan spreadsheet manual. Mulai gunakan pusat komando berbasis AI untuk karirmu.",
-    PRICING_TITLE: "Investasi Terkecil untuk Karir Terbesar",
-    PRICING_DESC: "Gabung dengan 10,000+ profesional yang menggunakan AI untuk dapat kerja 3x lebih cepat. Pilih paket suksesmu.",
-    PRICING_POPULAR: "Paling Hemat - Diskon 30%",
-    PRICING_MONTH: "/bulan",
-    FOOTER_DESC: "© 2025 RekrutIn.ai — Dibuat dengan 💡 di Indonesia",
-    JOB_TRACKER: "Pelacak Kerja",
-    RESUME_MANAGER: "Manajer Resume",
-    JOB_ALERTS: "Notifikasi Lowongan",
-    MY_PROFILE: "Profil Saya",
-    AI_AGENT: "Agen Karir AI",
-    UPGRADE_PLAN: "Upgrade Paket"
+    TESTIMONIALS_TITLE: "Apa Kata Pengguna Kami",
+    TESTIMONIALS_DESC: "Kisah sukses nyata dari para profesional yang mempercepat karir mereka dengan RekrutIn.",
+    TESTIMONIAL_1_NAME: "Anita Wijaya",
+    TESTIMONIAL_1_ROLE: "Software Engineer di Shopee",
+    TESTIMONIAL_1_TEXT: "RekrutIn mengubah segalanya. Dulu saya sering lupa melamar di mana saja, tapi sekarang saya punya pelatih AI yang mengoptimalkan setiap lamaran. Dapat kerja dalam 3 minggu!",
+    TESTIMONIAL_2_NAME: "Budi Santoso",
+    TESTIMONIAL_2_ROLE: "Product Manager di Gojek",
+    TESTIMONIAL_2_TEXT: "Skor Kecocokan AI sangat membantu. Saya diberitahu apa yang kurang di resume saya. Tingkat panggilan interview saya naik hampir 50% seketika.",
+    TESTIMONIAL_3_NAME: "Clarissa Tan",
+    TESTIMONIAL_3_ROLE: "UX Designer di Traveloka",
+    TESTIMONIAL_3_TEXT: "Mengelola 50+ lamaran sangat melelahkan sampai saya menemukan RekrutIn. Ekstensi browsernya memudahkan simpan lowongan dari LinkedIn. Sangat direkomendasikan!",
+    CTA_TITLE: "Siap Mendapatkan Pekerjaan Impianmu?",
+    CTA_DESC: "Gabung dengan 10.000+ profesional yang mempercepat karir mereka 3x lipat menggunakan RekrutIn.",
+    CTA_BUTTON: "Daftar Sekarang Gratis",
+    FOOTER_DESC: "© 2025 RekrutIn.ai — Dibuat dengan 💡 di Indonesia"
   }
 };
 
@@ -147,8 +151,8 @@ export const getPricingPlans = (lang: Language): PricingPlan[] => {
         'Semua fitur Starter',
         'Pelacakan lamaran TANPA BATAS',
         'Ekstensi Chrome (unlimited)',
-        'Skor Kecocokan AI (unlimited)',
-        'Prediksi Peluang Sukses AI',
+        'Unlimited AI Fit Scores',
+        'AI Success Probability',
         'Akses awal fitur baru'
       ] : [
         'Everything in Starter',
@@ -169,7 +173,7 @@ export const getPricingPlans = (lang: Language): PricingPlan[] => {
         'Semua fitur Pro',
         'Lacak lamaran tanpa batas',
         'Ekstensi Chrome (unlimited)',
-        'Skor Kecocokan AI (unlimited)',
+        'Unlimited AI Fit Scores',
         'Prioritas dukungan AI',
         'Masa aktif 3 bulan penuh'
       ] : [
@@ -186,142 +190,62 @@ export const getPricingPlans = (lang: Language): PricingPlan[] => {
   ];
 };
 
-export const getFeatures = (lang: Language) => {
-  const isId = lang === 'id';
-  return [
-    {
-      title: isId ? 'Wawasan Dashboard' : 'Dashboard Insights',
-      description: isId 
-        ? 'Visualisasikan progres pencarian kerjamu dan dapatkan umpan balik berbasis data tentang performa CV-mu.' 
-        : 'Visualize your job-hunting progress and get data-driven feedback on your CV performance.',
-      icon: 'BarChart'
-    },
-    {
-      title: isId ? 'Analisis Kecocokan AI' : 'AI Fit Analyzer',
-      description: isId
-        ? 'Bandingkan resumemu dengan lowongan kerja secara instan dan dapatkan skor kecocokan & tips dari AI.'
-        : 'Instantly compare your resume with any job listing and get an AI-generated fit score & tips.',
-      icon: 'Bot'
-    },
-    {
-      title: isId ? 'Pelacakan Pintar' : 'Smart Tracking',
-      description: isId
-        ? 'Jangan pernah kehilangan jejak lagi — ketahui di mana kamu melamar, kapan, dan apa langkah selanjutnya.'
-        : 'Never lose track again — know where you applied, when, and what your next move should be.',
-      icon: 'Calendar'
-    }
-  ];
-};
-
-// --- DATA MOCKS ---
-
-// Helper to get past date
-const daysAgo = (days: number) => new Date(Date.now() - 86400000 * days).toISOString();
-const futureDate = (days: number) => new Date(Date.now() + 86400000 * days).toISOString();
-
 export const INITIAL_JOBS: Job[] = [
-  // OFFERS (2) - High Success
   { 
     id: 'j1', 
     title: 'Senior Frontend Engineer', 
     company: 'Ruangguru', 
     location: 'Jakarta, ID', 
     status: JobStatus.OFFER, 
-    created_at: daysAgo(20),
+    created_at: new Date(Date.now() - 86400000 * 20).toISOString(),
     ai_analysis: { fitScore: 95, analysis: 'Perfect match for React stack.', improvements: [] },
     timeline: [
-        { status: JobStatus.APPLIED, date: daysAgo(20) },
-        { status: JobStatus.INTERVIEW, date: daysAgo(10) },
-        { status: JobStatus.OFFER, date: daysAgo(1) }
+        { status: JobStatus.APPLIED, date: new Date(Date.now() - 86400000 * 20).toISOString() },
+        { status: JobStatus.INTERVIEW, date: new Date(Date.now() - 86400000 * 10).toISOString() },
+        { status: JobStatus.OFFER, date: new Date(Date.now() - 86400000 * 1).toISOString() }
     ]
   },
-  { 
-    id: 'j2', 
-    title: 'Product Manager', 
-    company: 'Mekari', 
-    location: 'Jakarta, ID', 
-    status: JobStatus.OFFER, 
-    created_at: daysAgo(18),
-    ai_analysis: { fitScore: 92, analysis: 'Strong domain expertise.', improvements: [] },
-    timeline: [
-        { status: JobStatus.APPLIED, date: daysAgo(18) },
-        { status: JobStatus.INTERVIEW, date: daysAgo(5) },
-        { status: JobStatus.OFFER, date: daysAgo(0) }
-    ]
-  },
-
-  // INTERVIEWS (8) - Bringing Interview Rate to ~40% (10/25)
   { 
     id: 'j3', 
     title: 'Software Engineer', 
     company: 'GoTo Financial', 
     location: 'Jakarta, ID', 
     status: JobStatus.INTERVIEW, 
-    created_at: daysAgo(15), 
+    created_at: new Date(Date.now() - 86400000 * 15).toISOString(), 
     ai_analysis: { fitScore: 88, analysis: 'Solid technical background.', improvements: [] },
-    assessment: { required: true, type: 'Coding Test', status: 'Completed', deadline: daysAgo(10) }
+    assessment: { required: true, type: 'Coding Test', status: 'Completed', deadline: new Date(Date.now() - 86400000 * 10).toISOString() }
   },
-  { id: 'j4', title: 'UX Designer', company: 'Traveloka', location: 'Tangerang, ID', status: JobStatus.INTERVIEW, created_at: daysAgo(14) },
-  { id: 'j5', title: 'Backend Developer', company: 'Shopee', location: 'Singapore', status: JobStatus.INTERVIEW, created_at: daysAgo(12) },
-  { 
-    id: 'j6', 
-    title: 'Full Stack Dev', 
-    company: 'Grab', 
-    location: 'Jakarta, ID', 
-    status: JobStatus.INTERVIEW, 
-    created_at: daysAgo(10),
-    assessment: { required: true, type: 'Video Interview', status: 'Pending', deadline: futureDate(2), platform: 'HireVue' }
-  },
-  { id: 'j7', title: 'QA Engineer', company: 'Bukalapak', location: 'Remote', status: JobStatus.INTERVIEW, created_at: daysAgo(9) },
-  { id: 'j8', title: 'Data Analyst', company: 'Jenius', location: 'Jakarta, ID', status: JobStatus.INTERVIEW, created_at: daysAgo(8) },
-  { id: 'j9', title: 'Mobile Engineer', company: 'Tiket.com', location: 'Jakarta, ID', status: JobStatus.INTERVIEW, created_at: daysAgo(7) },
-  { id: 'j10', title: 'DevOps Engineer', company: 'Blibli', location: 'Jakarta, ID', status: JobStatus.INTERVIEW, created_at: daysAgo(6) },
-
-  // REJECTED (5)
-  { id: 'j11', title: 'Senior Engineer', company: 'Agoda', location: 'Bangkok', status: JobStatus.REJECTED, created_at: daysAgo(25) },
-  { id: 'j12', title: 'Tech Lead', company: 'Sea Labs', location: 'Jakarta, ID', status: JobStatus.REJECTED, created_at: daysAgo(22) },
-  { id: 'j13', title: 'Solutions Architect', company: 'Google', location: 'Singapore', status: JobStatus.REJECTED, created_at: daysAgo(21) },
-  { id: 'j14', title: 'Frontend Dev', company: 'Meta', location: 'Singapore', status: JobStatus.REJECTED, created_at: daysAgo(19) },
-  { id: 'j15', title: 'System Analyst', company: 'BCA', location: 'Jakarta, ID', status: JobStatus.REJECTED, created_at: daysAgo(17) },
-
-  // APPLIED (7)
-  { id: 'j16', title: 'React Developer', company: 'Stockbit', location: 'Jakarta, ID', status: JobStatus.APPLIED, created_at: daysAgo(5) },
-  { id: 'j17', title: 'UI Designer', company: 'Bibit', location: 'Jakarta, ID', status: JobStatus.APPLIED, created_at: daysAgo(4) },
-  { 
-    id: 'j18', 
-    title: 'Frontend Engineer', 
-    company: 'Xendit', 
-    location: 'Remote', 
-    status: JobStatus.APPLIED, 
-    created_at: daysAgo(3),
-    assessment: { required: true, type: 'Online Game', status: 'In Progress', deadline: futureDate(1), platform: 'Pymetrics' }
-  },
-  { id: 'j19', title: 'Software Engineer', company: 'eFishery', location: 'Bandung, ID', status: JobStatus.APPLIED, created_at: daysAgo(2) },
-  { id: 'j20', title: 'Product Owner', company: 'Flip', location: 'Depok, ID', status: JobStatus.APPLIED, created_at: daysAgo(1) },
-  { id: 'j21', title: 'Marketing Lead', company: 'Kopi Kenangan', location: 'Jakarta, ID', status: JobStatus.APPLIED, created_at: daysAgo(1) },
-  { id: 'j22', title: 'Content Writer', company: 'Sociolla', location: 'Jakarta, ID', status: JobStatus.APPLIED, created_at: daysAgo(0) },
-
-  // SAVED (3)
-  { id: 'j23', title: 'Engineering Manager', company: 'Ajaib', location: 'Jakarta, ID', status: JobStatus.SAVED, created_at: daysAgo(0) },
-  { id: 'j24', title: 'CTO', company: 'Halodoc', location: 'Jakarta, ID', status: JobStatus.SAVED, created_at: daysAgo(0) },
-  { id: 'j25', title: 'VP of Engineering', company: 'Alodokter', location: 'Jakarta, ID', status: JobStatus.SAVED, created_at: daysAgo(0) },
+  { id: 'j4', title: 'UX Designer', company: 'Traveloka', location: 'Tangerang, ID', status: JobStatus.INTERVIEW, created_at: new Date(Date.now() - 86400000 * 14).toISOString() },
+  { id: 'j11', title: 'Senior Engineer', company: 'Agoda', location: 'Bangkok', status: JobStatus.REJECTED, created_at: new Date(Date.now() - 86400000 * 25).toISOString() },
+  { id: 'j16', title: 'React Developer', company: 'Stockbit', location: 'Jakarta, ID', status: JobStatus.APPLIED, created_at: new Date(Date.now() - 86400000 * 5).toISOString() },
 ];
 
+// INITIAL_EMPLOYER_JOBS added to fix error in AdminDashboard.tsx
 export const INITIAL_EMPLOYER_JOBS: EmployerJob[] = [
   {
-    id: '101',
-    title: 'Growth Marketing Manager',
-    location: 'Jakarta, Indonesia',
+    id: 'ej1',
+    title: 'Senior Frontend Developer',
+    location: 'Remote, Indonesia',
+    type: 'Full-time',
+    salary_range: 'Rp 20.000.000 - Rp 35.000.000',
+    applicants_count: 12,
+    status: 'Active',
+    created_at: new Date(Date.now() - 86400000 * 5).toISOString(),
+    description: 'Looking for a Senior Frontend Developer with expertise in React and TypeScript.'
+  },
+  {
+    id: 'ej2',
+    title: 'Product Designer',
+    location: 'Jakarta, ID',
     type: 'Full-time',
     salary_range: 'Rp 15.000.000 - Rp 25.000.000',
-    applicants_count: 5,
+    applicants_count: 8,
     status: 'Active',
-    created_at: new Date().toISOString(),
-    description: 'We need a growth wizard to scale our user base.'
-  },
+    created_at: new Date(Date.now() - 86400000 * 10).toISOString(),
+    description: 'Join our design team to create beautiful and functional user experiences.'
+  }
 ];
 
-export const INITIAL_APPLICATIONS: CandidateApplication[] = []; // Empty for brevity in diff
 export const INITIAL_EXTERNAL_MATCHES: ExternalJobMatch[] = [
   {
     id: 'ext1',
@@ -335,20 +259,7 @@ export const INITIAL_EXTERNAL_MATCHES: ExternalJobMatch[] = [
     postedAt: new Date().toISOString(),
     description: 'Looking for a Senior React Dev with 5+ years experience...',
     aiFitScore: 94
-  },
-  {
-    id: 'ext2',
-    title: 'Product Manager - Fintech',
-    company: 'Gojek',
-    location: 'Jakarta, Indonesia',
-    type: 'Full-time',
-    salary_range: 'Rp 30.000.000+',
-    source: 'Glints',
-    externalUrl: 'https://glints.com',
-    postedAt: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
-    description: 'Join our fintech team to revolutionize payments...',
-    aiFitScore: 88
-  },
+  }
 ];
 
 export const TRENDING_SEARCHES = [

@@ -1,24 +1,9 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
 import { JobAnalysis, Job, UserProfile, ChatMessage } from "../types";
-import { getEnv } from "../constants";
 
-const getApiKey = () => {
-  // @ts-ignore
-  if (typeof import.meta !== 'undefined' && import.meta.env) {
-    // @ts-ignore
-    const viteKey = import.meta.env.VITE_API_KEY || import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_GOOGLE_API_KEY;
-    if (viteKey) return viteKey;
-  }
-  return getEnv('API_KEY') || getEnv('GEMINI_API_KEY') || getEnv('GOOGLE_API_KEY');
-};
-
-const apiKey = getApiKey();
-const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
-
-if (!apiKey) {
-  console.warn("Gemini API Key not found. App running in Mock Mode.");
-}
+// Always initialize the Gemini client with process.env.API_KEY directly.
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 async function fileToGenerativePart(file: File) {
   const base64EncodedDataPromise = new Promise<string>((resolve) => {
@@ -36,36 +21,21 @@ async function fileToGenerativePart(file: File) {
 }
 
 export const analyzeJobFit = async (resumeText: string, jobDescription: string): Promise<JobAnalysis> => {
-  if (!ai) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          fitScore: 78,
-          analysis: "Mock Analysis: Your profile has strong potential but lacks some specific keywords found in the job description.",
-          improvements: ["Add 'Strategic Planning' to skills", "Quantify your leadership experience", "Mention specific tools listed in JD"]
-        });
-      }, 1500);
-    });
-  }
-
   try {
-    const model = "gemini-3-pro-preview"; // Upgraded for high-quality analysis
-    const prompt = `
-      You are an expert career coach and recruiter. 
-      Analyze the following Resume against the Job Description.
-      
-      RESUME:
-      ${resumeText}
-      
-      JOB DESCRIPTION:
-      ${jobDescription}
-      
-      Provide a fit score from 0 to 100, a brief analysis summary, and a list of specific improvements for the resume.
-    `;
-
     const response = await ai.models.generateContent({
-      model: model,
-      contents: prompt,
+      model: "gemini-3-pro-preview", 
+      contents: `
+        You are an expert career coach and recruiter. 
+        Analyze the following Resume against the Job Description.
+        
+        RESUME:
+        ${resumeText}
+        
+        JOB DESCRIPTION:
+        ${jobDescription}
+        
+        Provide a fit score from 0 to 100, a brief analysis summary, and a list of specific improvements for the resume.
+      `,
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -83,6 +53,7 @@ export const analyzeJobFit = async (resumeText: string, jobDescription: string):
       }
     });
 
+    // Extracting text output directly from the .text property.
     const text = response.text;
     if (!text) throw new Error("No response from AI");
     
@@ -94,17 +65,6 @@ export const analyzeJobFit = async (resumeText: string, jobDescription: string):
 };
 
 export const calculateSuccessProbability = async (resumeSummary: string, jobDescription: string): Promise<{ probability: number; explanation: string }> => {
-  if (!ai) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          probability: Math.floor(Math.random() * (90 - 65) + 65),
-          explanation: "Simulated: Your experience aligns with the core requirements, but competition is high."
-        });
-      }, 1000);
-    });
-  }
-
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-pro-preview",
@@ -141,10 +101,6 @@ export const calculateSuccessProbability = async (resumeSummary: string, jobDesc
 };
 
 export const analyzeResumeATS = async (resumeText: string): Promise<{ score: number; feedback: string[] }> => {
-  if (!ai) {
-    return { score: 68, feedback: ["Use standard section headings", "Avoid tables for better parsing", "Quantify achievements with metrics"] };
-  }
-
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-pro-preview",
@@ -184,23 +140,6 @@ export const scanAndOptimizeResume = async (resumeText: string): Promise<{
   optimizedText: string;
   improvements: string[];
 }> => {
-  if (!ai) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          originalScore: Math.floor(Math.random() * (75 - 50) + 50),
-          optimizedScore: 100,
-          optimizedText: `[OPTIMIZED VERSION - SIMULATED]\n\n${resumeText}\n\nSUMMARY\nResults-oriented professional with optimized keyword density for ATS compliance.\n\nKEY ACHIEVEMENTS\n• Increased operational efficiency by 30% through process improvements.\n• Led cross-functional teams to deliver projects 2 weeks ahead of schedule.\n\nSKILLS\n• Strategic Planning, Project Management, Data Analysis, Leadership`,
-          improvements: [
-            "Quantified achievements with specific metrics", 
-            "Added industry-standard keywords for ATS visibility", 
-            "Restructured bullet points for impact"
-          ]
-        });
-      }, 2500);
-    });
-  }
-
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-pro-preview",
@@ -249,10 +188,6 @@ export const scanAndOptimizeResume = async (resumeText: string): Promise<{
 };
 
 export const generateCoverLetter = async (job: Job, profile: UserProfile): Promise<string> => {
-  if (!ai) {
-    return `Dear Hiring Manager at ${job.company},\n\nI am excited to apply for the ${job.title} position. With my background in ${profile.title}, I am confident in my ability to contribute effectively to your team.\n\n(Note: This is a simulated cover letter.)`;
-  }
-
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
@@ -289,10 +224,6 @@ export const chatWithCareerAgent = async (
   newMessage: string,
   context: { jobs: Job[]; profile: UserProfile }
 ): Promise<string> => {
-  if (!ai) {
-    return "I am a simulated AI agent (API Key missing). I see you have " + context.jobs.length + " jobs tracked.";
-  }
-
   const profileContext = `
     USER PROFILE:
     Name: ${context.profile.name}
@@ -336,7 +267,7 @@ export const chatWithCareerAgent = async (
     });
 
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview", // Flash for fast interactive chat
+      model: "gemini-3-flash-preview",
       contents: contents,
       config: {
         systemInstruction: systemInstruction,
@@ -352,39 +283,17 @@ export const chatWithCareerAgent = async (
 };
 
 export const parseResumeFile = async (file: File): Promise<UserProfile> => {
-  if (!ai) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        // Added extensionUses: 0 to fix UserProfile type incompatibility
-        resolve({
-          name: "Job Applicant",
-          title: "Candidate", 
-          email: 'applicant@example.com',
-          summary: `Experienced candidate looking for new opportunities.`,
-          skills: ['Communication', 'Problem Solving'],
-          plan: 'Free',
-          atsScansUsed: 0,
-          extensionUses: 0,
-          resumeText: 'Mock Resume Text'
-        });
-      }, 1500);
-    });
-  }
-
   try {
     const filePart = await fileToGenerativePart(file);
     
     const response = await ai.models.generateContent({
-      model: "gemini-3-pro-preview",
-      contents: [
-        { 
-            role: "user", 
-            parts: [
-                filePart, 
-                { text: "Analyze this resume document. Extract the candidate's profile. Return valid JSON with keys: name (Full Name), title (The candidate's MOST RECENT job title), email, summary (professional summary), skills (array of strings), and resumeText (The FULL extracted text content of the resume in Markdown). Do not hallucinate." }
-            ] 
-        }
-      ],
+      model: "gemini-3-flash-preview",
+      contents: { 
+          parts: [
+              filePart, 
+              { text: "Extract profile metadata from this resume. Return JSON with: name (string), title (latest job title), email (string), summary (brief bio), skills (top 5 skills array). Do not include full resume text." }
+          ] 
+      },
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -394,39 +303,27 @@ export const parseResumeFile = async (file: File): Promise<UserProfile> => {
             title: { type: Type.STRING },
             email: { type: Type.STRING },
             summary: { type: Type.STRING },
-            skills: { type: Type.ARRAY, items: { type: Type.STRING } },
-            resumeText: { type: Type.STRING }
+            skills: { type: Type.ARRAY, items: { type: Type.STRING } }
           },
-          required: ["name", "title", "email", "summary", "skills", "resumeText"]
+          required: ["name", "title", "email", "summary", "skills"]
         }
       }
     });
 
     const text = response.text;
-    if (!text) throw new Error("No response");
+    if (!text) throw new Error("Empty AI response");
     
     const data = JSON.parse(text);
     
-    // Added extensionUses: 0 to fix UserProfile type incompatibility
     return {
       ...data,
       plan: 'Free',
       atsScansUsed: 0,
-      extensionUses: 0
+      extensionUses: 0,
+      resumeText: '' // Handled separately or later to avoid large token delay in signup
     };
   } catch (error) {
     console.error("Resume File Parse Error", error);
-    // Added extensionUses: 0 to fix UserProfile type incompatibility
-    return {
-        name: 'Applicant',
-        title: 'Candidate',
-        email: '',
-        summary: 'Could not analyze file.',
-        skills: [],
-        plan: 'Free',
-        atsScansUsed: 0,
-        extensionUses: 0,
-        resumeText: 'Error parsing resume text.'
-    };
+    throw error;
   }
 };

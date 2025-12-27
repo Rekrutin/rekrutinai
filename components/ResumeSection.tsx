@@ -1,149 +1,199 @@
-import React, { useState, useRef } from 'react';
+
+import React, { useState, useRef, useEffect } from 'react';
 import { Resume, PlanType } from '../types';
-import { FileText, Upload, CheckCircle, AlertCircle, Trash2, Search, Lock, Eye, Zap, RefreshCw, Loader2, File as FileIcon, X, Sparkles } from 'lucide-react';
+import { FileText, Upload, CheckCircle, Trash2, Search, Zap, Loader2, File as FileIcon, X, Sparkles, AlertTriangle, Eye, Database, Mail, Fingerprint } from 'lucide-react';
 import { MAX_FREE_ATS_SCANS } from '../constants';
 import { ResumePreviewDrawer } from './ResumePreviewDrawer';
 import { ResumeScanModal } from './ResumeScanModal';
-import { parseResumeFile } from '../services/geminiService';
+import { parseResumeFile, analyzeResumeATS } from '../services/geminiService';
+import { supabase } from '../services/supabaseClient';
 
 interface ResumeSectionProps {
   resumes: Resume[];
-  onAddResume: (resume: Resume) => void;
-  onDeleteResume: (id: string) => void;
-  onUpdateResume: (id: string, updates: Partial<Resume>) => void;
-  onAnalyzeResume: (resume: Resume) => Promise<void>;
+  setResumes: React.Dispatch<React.SetStateAction<Resume[]>>;
   plan: PlanType;
   scansUsed: number;
+  session: any;
 }
 
 export const ResumeSection: React.FC<ResumeSectionProps> = ({ 
   resumes, 
-  onAddResume, 
-  onDeleteResume, 
-  onUpdateResume, 
-  onAnalyzeResume,
+  setResumes,
   plan,
-  scansUsed
+  scansUsed,
+  session
 }) => {
   const [isUploadOpen, setIsUploadOpen] = useState(false);
-  const [analyzingId, setAnalyzingId] = useState<string | null>(null);
-  const [showToast, setShowToast] = useState(false);
-  
-  // Upload & Parsing State
   const [isParsing, setIsParsing] = useState(false);
-  const [parsedFile, setParsedFile] = useState<File | null>(null);
-  const [parsedContent, setParsedContent] = useState('');
-  const [parsedName, setParsedName] = useState('');
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [toast, setToast] = useState<{message: string, type: 'success' | 'error'} | null>(null);
   
-  // Drawers & Modals
+  // Drawer/Modal State
   const [selectedResume, setSelectedResume] = useState<Resume | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [scanningResume, setScanningResume] = useState<Resume | null>(null);
   const [isScanModalOpen, setIsScanModalOpen] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-
   const isFree = plan === 'Free';
   const scansRemaining = Math.max(0, MAX_FREE_ATS_SCANS - scansUsed);
   const isLimitReached = isFree && scansRemaining === 0;
 
-  const resetUploadState = () => {
-    setParsedFile(null);
-    setParsedContent('');
-    setParsedName('');
-    setIsParsing(false);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
-
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setParsedFile(file);
-      setIsParsing(true);
+  // FETCH RESUMES FROM DB
+  useEffect(() => {
+    const fetchResumes = async () => {
+      if (!supabase || !session?.user) return;
+      const { data, error } = await supabase
+        .from('resumes')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false });
       
-      // Set default name from filename (remove extension)
-      setParsedName(file.name.replace(/\.[^/.]+$/, ""));
-
-      try {
-        // Use existing AI service to parse the file
-        const profile = await parseResumeFile(file);
-        
-        // Use the full resume text extracted by AI if available, otherwise fallback to structured summary
-        let generatedContent = profile.resumeText || '';
-        
-        // If resumeText is suspiciously short or missing (e.g. legacy fallback), construct a structured one
-        if (!generatedContent || generatedContent.length < 50) {
-             generatedContent = `
-NAME: ${profile.name}
-EMAIL: ${profile.email}
-TITLE: ${profile.title}
-
-PROFESSIONAL SUMMARY
-${profile.summary}
-
-SKILLS
-${profile.skills.join(' • ')}
-            `.trim();
-        }
-        
-        setParsedContent(generatedContent);
-      } catch (err) {
-        console.error("Parsing error", err);
-        setParsedContent("Could not auto-parse text. Please copy/paste your resume content here.");
-      } finally {
-        setIsParsing(false);
+      if (!error && data) {
+        setResumes(data.map(r => ({
+          ...r,
+          atsScore: r.ats_score, // Map for legacy UI support
+          uploadDate: r.created_at,
+          name: r.title
+        })));
       }
-    }
+    };
+    fetchResumes();
+  }, [session]);
+
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 4000);
   };
 
-  const handleSaveResume = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (parsedName && parsedContent) {
-      const newResume: Resume = {
-        id: Math.random().toString(36).substr(2, 9),
-        name: parsedName,
-        content: parsedContent,
-        uploadDate: new Date().toISOString()
-      };
-      onAddResume(newResume);
-      resetUploadState();
-      setIsUploadOpen(false);
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!supabase || !session?.user) {
+      showToast("Please login to upload resumes", "error");
+      return;
     }
-  };
+    
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-  const handleAnalyzeClick = async (resume: Resume) => {
-    setAnalyzingId(resume.id);
+    setIsParsing(true);
+    setUploadError(null);
+
     try {
-      await onAnalyzeResume(resume);
-    } catch (error) {
-      console.error("Analysis failed", error);
+      // 1. Check if bucket exists (silent check through attempt)
+      const { data: buckets } = await supabase.storage.listBuckets();
+      if (!buckets?.find(b => b.name === 'resumes')) {
+         throw new Error("Storage bucket 'resumes' not found. Please create it in Supabase.");
+      }
+
+      // 2. Parse text with Gemini for extracted_text field
+      const parsedProfile = await parseResumeFile(file);
+      const extractedText = parsedProfile.resumeText || parsedProfile.summary;
+
+      // 3. Create DB Record
+      const { data: dbRecord, error: dbError } = await supabase
+        .from('resumes')
+        .insert({
+          user_id: session.user.id,
+          title: file.name.replace(/\.[^/.]+$/, ""),
+          file_path: 'pending',
+          extracted_text: extractedText,
+          ats_score: 0
+        })
+        .select()
+        .single();
+
+      if (dbError) throw dbError;
+
+      // 4. Upload to Storage: userId/resumeId-filename
+      const filePath = `${session.user.id}/${dbRecord.id}-${file.name}`;
+      const { error: storageError } = await supabase.storage
+        .from('resumes')
+        .upload(filePath, file);
+
+      if (storageError) throw storageError;
+
+      // 5. Update DB with path
+      const { error: updateError } = await supabase
+        .from('resumes')
+        .update({ file_path: filePath })
+        .eq('id', dbRecord.id);
+
+      if (updateError) throw updateError;
+
+      // 6. Local Update
+      const newResume: Resume = {
+        ...dbRecord,
+        file_path: filePath,
+        name: dbRecord.title,
+        uploadDate: dbRecord.created_at,
+        atsScore: 0
+      };
+      setResumes(prev => [newResume, ...prev]);
+      showToast("Resume uploaded ✅");
+      setIsUploadOpen(false);
+
+    } catch (err: any) {
+      console.error(err);
+      setUploadError(err.message || "Failed to upload. Try again.");
+      showToast(err.message || "Upload failed", "error");
     } finally {
-      setAnalyzingId(null);
+      setIsParsing(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
-  
-  const handleViewResume = (resume: Resume) => {
-    setSelectedResume(resume);
-    setIsDrawerOpen(true);
-  };
 
-  const handleScanClick = (resume: Resume) => {
-    setScanningResume(resume);
-    setIsScanModalOpen(true);
-  };
+  const handleDeleteResume = async (id: string, filePath: string) => {
+    if (!supabase || !window.confirm("Permanently delete this resume?")) return;
 
-  const handleApplyOptimization = (optimizedText: string, optimizedScore: number) => {
-    if (scanningResume) {
-      onUpdateResume(scanningResume.id, {
-        content: optimizedText,
-        atsScore: optimizedScore,
-        atsAnalysis: ['Optimized by AI for maximum impact'] // Clear old feedback or add note
-      });
-      setIsScanModalOpen(false);
-      setScanningResume(null);
+    try {
+      // Delete from storage
+      await supabase.storage.from('resumes').remove([filePath]);
+      // Delete from DB
+      await supabase.from('resumes').delete().eq('id', id);
       
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 4000);
+      setResumes(prev => prev.filter(r => r.id !== id));
+      showToast("Resume deleted");
+    } catch (err) {
+      showToast("Delete failed", "error");
+    }
+  };
+
+  const handleRunAIAtsCheck = async (resume: Resume) => {
+    if (isLimitReached) {
+      showToast("Scan limit reached. Upgrade to Pro!", "error");
+      return;
+    }
+    
+    try {
+      const result = await analyzeResumeATS(resume.extracted_text || "");
+      await supabase
+        .from('resumes')
+        .update({ ats_score: result.score })
+        .eq('id', resume.id);
+      
+      setResumes(prev => prev.map(r => r.id === resume.id ? { ...r, atsScore: result.score, ats_score: result.score } : r));
+      showToast("ATS Scan Complete!");
+    } catch (e) {
+      showToast("Scan failed", "error");
+    }
+  };
+
+  const handleApplyOptimization = async (optimizedText: string, optimizedScore: number) => {
+    if (scanningResume && supabase) {
+      await supabase
+        .from('resumes')
+        .update({ extracted_text: optimizedText, ats_score: optimizedScore })
+        .eq('id', scanningResume.id);
+
+      setResumes(prev => prev.map(r => r.id === scanningResume.id ? { 
+        ...r, 
+        extracted_text: optimizedText, 
+        atsScore: optimizedScore,
+        ats_score: optimizedScore 
+      } : r));
+      
+      setIsScanModalOpen(false);
+      showToast("Optimization applied & saved to DB ✅");
     }
   };
 
@@ -152,127 +202,67 @@ ${profile.skills.join(' • ')}
       <div className="flex justify-between items-end">
         <div>
            <h2 className="text-xl font-bold text-slate-900">Resume Manager</h2>
-           <p className="text-slate-500 text-sm">Upload multiple versions and check their ATS compatibility.</p>
+           <p className="text-slate-500 text-sm">Stored securely in your RekrutIn cloud account.</p>
         </div>
         <button 
           onClick={() => setIsUploadOpen(!isUploadOpen)}
           className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors"
         >
-          <Upload size={16} className="mr-2" /> Upload Resume
+          <Upload size={16} className="mr-2" /> Upload New Version
         </button>
       </div>
 
-      {/* Usage Banner */}
-      <div className={`p-4 rounded-xl border flex flex-col md:flex-row md:justify-between md:items-center gap-4 ${isLimitReached && isFree ? 'bg-red-50 border-red-200' : 'bg-gradient-to-r from-indigo-50 to-white border-indigo-100'}`}>
-         <div className="flex items-center gap-3">
-           <div className={`p-2.5 rounded-lg ${isLimitReached && isFree ? 'bg-red-100 text-red-600' : 'bg-indigo-100 text-indigo-600'}`}>
-             {isLimitReached && isFree ? <Lock size={20} /> : <Zap size={20} />}
-           </div>
-           <div>
-             <p className={`text-sm font-bold ${isLimitReached && isFree ? 'text-red-800' : 'text-indigo-900'}`}>
-               {isFree ? 'Free AI Scan Credits' : 'Pro Plan Active'}
-             </p>
-             <p className="text-xs text-slate-500">
-               {isFree ? (
-                 <>You have used <span className="font-bold">{scansUsed}</span> of <span className="font-bold">{MAX_FREE_ATS_SCANS}</span> free analysis scans.</>
-               ) : (
-                 <>You have <strong>Unlimited</strong> AI scans to perfect your CV.</>
-               )}
-             </p>
-           </div>
+      {/* VERIFICATION / DEBUG SECTION */}
+      <div className="bg-slate-900 text-slate-300 p-4 rounded-xl border border-slate-700 font-mono text-[10px] space-y-1">
+         <div className="flex items-center gap-2 mb-1 text-blue-400 font-bold uppercase tracking-widest border-b border-slate-800 pb-1">
+            <Database size={10} /> Database Sync Status
          </div>
-         {isLimitReached && isFree && (
-           <span className="text-xs font-bold text-white bg-red-500 px-4 py-2 rounded-lg shadow-sm hover:bg-red-600 transition-colors cursor-default whitespace-nowrap">
-             Limit Reached - Upgrade Plan
-           </span>
-         )}
-         {!isFree && (
-            <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100">
-                Unlimited Access
-            </span>
-         )}
+         <p className="flex items-center gap-2">
+            <Fingerprint size={10} /> User ID: <span className="text-white">{session?.user?.id || 'Not logged in'}</span>
+         </p>
+         <p className="flex items-center gap-2">
+            <Mail size={10} /> Email: <span className="text-white">{session?.user?.email || 'N/A'}</span>
+         </p>
+         <p className="flex items-center gap-2">
+            <FileText size={10} /> Resumes Found: <span className="text-green-400 font-bold">{resumes.length} (Synced from Supabase)</span>
+         </p>
       </div>
 
       {isUploadOpen && (
         <div className="bg-white p-6 rounded-xl border border-indigo-100 shadow-lg animate-fade-in">
           <div className="flex justify-between items-center mb-4">
-             <h3 className="font-bold text-slate-800">Upload Resume</h3>
+             <h3 className="font-bold text-slate-800">Upload File</h3>
              <button onClick={() => setIsUploadOpen(false)}><X size={20} className="text-slate-400 hover:text-slate-600"/></button>
           </div>
           
-          <div className="space-y-6">
-            {!parsedFile ? (
-              <div 
-                className="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center hover:bg-slate-50 hover:border-indigo-400 transition-all cursor-pointer"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  className="hidden" 
-                  accept=".pdf,.doc,.docx,.txt"
-                  onChange={handleFileSelect}
-                />
-                <div className="w-12 h-12 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600 mx-auto mb-3">
-                  <Upload size={24} />
-                </div>
-                <p className="text-sm font-bold text-slate-700">Click to Upload or Drag & Drop</p>
-                <p className="text-xs text-slate-400 mt-1">PDF, DOCX up to 5MB</p>
+          <div 
+            className={`border-2 border-dashed rounded-xl p-10 text-center transition-all cursor-pointer ${
+              isParsing ? 'bg-indigo-50 border-indigo-300' : 'hover:bg-slate-50 border-slate-300 hover:border-indigo-400'
+            }`}
+            onClick={() => !isParsing && fileInputRef.current?.click()}
+          >
+            <input type="file" ref={fileInputRef} className="hidden" accept=".pdf,.doc,.docx" onChange={handleFileUpload} />
+            {isParsing ? (
+              <div className="flex flex-col items-center">
+                 <Loader2 size={32} className="text-indigo-600 animate-spin mb-3" />
+                 <p className="text-sm font-bold text-indigo-700">Persisting to Supabase Storage...</p>
+                 <p className="text-xs text-indigo-500 mt-1">Extracting text & creating DB record</p>
               </div>
             ) : (
-              <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-white rounded-lg border border-slate-200 flex items-center justify-center text-indigo-600 shadow-sm">
-                      <FileIcon size={20} />
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-slate-800">{parsedFile.name}</p>
-                      <p className="text-xs text-slate-500">{(parsedFile.size / 1024).toFixed(0)} KB</p>
-                    </div>
-                  </div>
-                  <button onClick={resetUploadState} className="text-slate-400 hover:text-red-500">
-                    <Trash2 size={18} />
-                  </button>
-                </div>
-
-                {isParsing ? (
-                  <div className="flex items-center gap-3 text-sm text-indigo-600 bg-indigo-50 p-3 rounded-lg">
-                    <Loader2 size={16} className="animate-spin" />
-                    Analyzing document structure and extracting content...
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 p-3 rounded-lg border border-green-100">
-                    <CheckCircle size={16} />
-                    Ready to save as "{parsedName}"
-                  </div>
-                )}
+              <div className="flex flex-col items-center">
+                <Upload size={32} className="text-slate-400 mb-3" />
+                <p className="text-sm font-bold text-slate-700">Select PDF or DOCX</p>
+                <p className="text-xs text-slate-400 mt-1">Automatic Cloud Backup</p>
               </div>
             )}
-
-            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-              <button 
-                type="button" 
-                onClick={() => setIsUploadOpen(false)}
-                className="px-4 py-2 text-slate-600 text-sm font-medium hover:bg-slate-50 rounded-lg"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={handleSaveResume}
-                disabled={!parsedFile || isParsing}
-                className="px-6 py-2 bg-indigo-600 text-white text-sm font-bold rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              >
-                {isParsing ? 'Processing...' : 'Save Resume'}
-              </button>
-            </div>
           </div>
+          {uploadError && <p className="mt-4 text-xs text-red-500 font-medium flex items-center gap-1"><AlertTriangle size={12} /> {uploadError}</p>}
         </div>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {resumes.map(resume => (
-          <div key={resume.id} className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 hover:shadow-md transition-shadow group relative overflow-hidden flex flex-col">
+          <div key={resume.id} className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 hover:shadow-md transition-shadow group flex flex-col">
              <div className="flex justify-between items-start mb-4">
                <div className="flex items-center">
                  <div className="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center text-indigo-600 mr-3">
@@ -280,168 +270,59 @@ ${profile.skills.join(' • ')}
                  </div>
                  <div>
                    <h3 className="font-bold text-slate-800 truncate max-w-[150px]">{resume.name}</h3>
-                   <span className="text-xs text-slate-400">Added {new Date(resume.uploadDate).toLocaleDateString()}</span>
+                   <span className="text-xs text-slate-400">Synced {new Date(resume.uploadDate).toLocaleDateString()}</span>
                  </div>
                </div>
                <div className="flex gap-1">
-                  <button 
-                    onClick={() => handleScanClick(resume)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-sm text-xs font-bold"
-                    title="Optimize with AI"
-                  >
-                    <Sparkles size={14} /> Scan with AI
-                  </button>
-                  <button 
-                    onClick={() => handleViewResume(resume)} 
-                    className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                    title="View Resume"
-                  >
-                    <Eye size={16} />
-                  </button>
-                  <button 
-                    onClick={() => onDeleteResume(resume.id)} 
-                    className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                    title="Delete Resume"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  <button onClick={() => { setSelectedResume(resume); setIsDrawerOpen(true); }} className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg transition-colors"><Eye size={16} /></button>
+                  <button onClick={() => handleDeleteResume(resume.id, resume.file_path)} className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg transition-colors"><Trash2 size={16} /></button>
                </div>
              </div>
 
-             {/* ATS Score Section */}
-             <div className="mb-4">
-                {resume.atsScore !== undefined ? (
-                  <div className="bg-slate-50 rounded-lg p-4 border border-slate-100 flex-1 flex flex-col">
-                    <div className="flex justify-between items-center mb-3">
-                      <span className="text-sm font-bold text-slate-700">ATS Score</span>
-                      <span className={`text-sm font-bold px-3 py-1 rounded-full ${
-                        resume.atsScore >= 80 ? 'bg-green-100 text-green-700' : 
-                        resume.atsScore >= 60 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
-                      }`}>
-                        {resume.atsScore}/100
-                      </span>
-                    </div>
-                    
-                    {/* Visual Progress Bar */}
-                    <div className="w-full bg-slate-200 rounded-full h-2 mb-3">
-                        <div 
-                            className={`h-2 rounded-full transition-all duration-1000 ${
-                                resume.atsScore >= 80 ? 'bg-green-500' : 
-                                resume.atsScore >= 60 ? 'bg-yellow-500' : 'bg-red-500'
-                            }`}
-                            style={{ width: `${resume.atsScore}%` }}
-                        ></div>
-                    </div>
-
-                    {resume.atsAnalysis && (
-                      <div className="space-y-2 mt-3 flex-1">
-                        <p className="text-xs font-bold text-slate-500 uppercase">AI Feedback</p>
-                        <ul className="text-xs text-slate-600 space-y-1.5">
-                            {resume.atsAnalysis.slice(0, 3).map((tip, i) => (
-                            <li key={i} className="flex items-start">
-                                <AlertCircle size={10} className="mr-1.5 mt-0.5 text-indigo-500 flex-shrink-0" />
-                                <span>{tip}</span>
-                            </li>
-                            ))}
-                        </ul>
+             <div className="bg-slate-50 rounded-lg p-4 border border-slate-100 flex-1 flex flex-col justify-center items-center">
+                {resume.ats_score ? (
+                   <div className="w-full">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-xs font-bold text-slate-500 uppercase">ATS Visibility</span>
+                        <span className="text-sm font-black text-indigo-600">{resume.ats_score}%</span>
                       </div>
-                    )}
-                    
-                    <button 
-                        onClick={() => handleScanClick(resume)}
-                        className="mt-4 w-full py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-all flex items-center justify-center gap-1.5"
-                    >
-                        <Sparkles size={12} className="text-yellow-300" /> Optimize to 100%
-                    </button>
-                  </div>
+                      <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                        <div className="bg-indigo-600 h-full transition-all duration-1000" style={{ width: `${resume.ats_score}%` }}></div>
+                      </div>
+                      <button 
+                        onClick={() => { setScanningResume(resume); setIsScanModalOpen(true); }}
+                        className="mt-3 w-full py-1.5 text-[10px] font-bold text-white bg-indigo-600 rounded hover:bg-indigo-700 transition-all flex items-center justify-center gap-1"
+                      >
+                         <Sparkles size={10} /> Optimize Text
+                      </button>
+                   </div>
                 ) : (
-                  <div className="bg-slate-50 rounded-lg p-4 text-center border border-dashed border-slate-200 flex-1 flex flex-col justify-center">
-                    <p className="text-sm font-semibold text-slate-700 mb-1">Not Analyzed Yet</p>
-                    <p className="text-xs text-slate-500 mb-4">Check if your resume is readable by ATS bots.</p>
-                    
-                    <div className="space-y-2">
-                        <button 
-                          onClick={() => handleAnalyzeClick(resume)}
-                          disabled={analyzingId === resume.id}
-                          className={`w-full py-2 rounded-lg text-sm font-bold transition-all flex items-center justify-center shadow-sm ${
-                            isLimitReached 
-                              ? 'bg-slate-200 text-slate-500 cursor-not-allowed' 
-                              : 'bg-white text-indigo-600 border border-indigo-200 hover:bg-indigo-600 hover:text-white hover:border-indigo-600 hover:shadow-md'
-                          }`}
-                        >
-                          {analyzingId === resume.id ? (
-                            <>
-                                <div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin mr-2"></div>
-                                Analyzing...
-                            </>
-                          ) : (
-                            <>
-                               {isLimitReached ? <Lock size={14} className="mr-2" /> : <Search size={14} className="mr-2" />} 
-                               {isLimitReached ? 'Scan Limit Reached' : 'Check Score'}
-                            </>
-                          )}
-                        </button>
-                        
-                        {/* Secondary 'Full Scan' Action */}
-                        <button 
-                          onClick={() => handleScanClick(resume)}
-                          className="w-full py-2 text-xs font-bold text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors flex items-center justify-center gap-1"
-                        >
-                           <Sparkles size={12} /> Scan & Optimize
-                        </button>
-                    </div>
-                  </div>
+                   <>
+                      <p className="text-xs font-medium text-slate-500 mb-3">No ATS Score Data</p>
+                      <button 
+                        onClick={() => handleRunAIAtsCheck(resume)}
+                        className="w-full py-2 bg-white border border-indigo-200 text-indigo-600 rounded-lg text-xs font-bold hover:bg-indigo-50 transition-colors flex items-center justify-center gap-1.5"
+                      >
+                         <Search size={12} /> Scan Now
+                      </button>
+                   </>
                 )}
-             </div>
-             
-             <div 
-               className="text-xs text-slate-400 truncate cursor-pointer hover:text-indigo-500 mt-auto pt-2 border-t border-slate-50"
-               onClick={() => handleViewResume(resume)}
-             >
-                {resume.content ? resume.content.substring(0, 50) + '...' : 'No content preview'}
              </div>
           </div>
         ))}
-        
-        {/* Empty State / Add Card */}
-        {resumes.length < 3 && !isUploadOpen && (
-            <div 
-                onClick={() => setIsUploadOpen(true)}
-                className="col-span-1 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/30 flex flex-col items-center justify-center p-6 cursor-pointer hover:border-indigo-300 hover:bg-indigo-50/30 transition-all min-h-[280px]"
-            >
-                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-slate-400 shadow-sm mb-3 group-hover:text-indigo-500 group-hover:scale-110 transition-transform">
-                    <Upload size={24} />
-                </div>
-                <h3 className="font-bold text-slate-700">Upload Another Version</h3>
-                <p className="text-xs text-slate-400 mt-1 text-center px-4">Tailor different resumes for different job roles.</p>
-            </div>
-        )}
       </div>
 
-      <ResumePreviewDrawer 
-        resume={selectedResume}
-        isOpen={isDrawerOpen}
-        onClose={() => setIsDrawerOpen(false)}
-      />
-
-      <ResumeScanModal 
-        isOpen={isScanModalOpen}
-        resume={scanningResume}
-        onClose={() => { setIsScanModalOpen(false); setScanningResume(null); }}
-        onApply={handleApplyOptimization}
-      />
-
-      {showToast && (
-        <div className="fixed bottom-6 right-6 z-[100] bg-slate-900 text-white px-5 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-fade-in border border-slate-700">
-          <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-slate-900 shadow-lg shadow-green-500/20">
-            <CheckCircle size={18} strokeWidth={3} />
-          </div>
-          <div>
-            <p className="font-bold text-sm">Resume Updated</p>
-            <p className="text-xs text-slate-300">Your optimization has been saved.</p>
-          </div>
+      {toast && (
+        <div className={`fixed bottom-6 right-6 z-[100] px-5 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-fade-in border ${
+          toast.type === 'error' ? 'bg-red-900 text-white border-red-700' : 'bg-slate-900 text-white border-slate-700'
+        }`}>
+          {toast.type === 'success' ? <CheckCircle size={18} className="text-green-500" /> : <AlertTriangle size={18} className="text-red-400" />}
+          <p className="font-bold text-sm">{toast.message}</p>
         </div>
       )}
+
+      <ResumePreviewDrawer resume={selectedResume} isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} />
+      <ResumeScanModal isOpen={isScanModalOpen} resume={scanningResume} onClose={() => { setIsScanModalOpen(false); setScanningResume(null); }} onApply={handleApplyOptimization} />
     </div>
   );
 };

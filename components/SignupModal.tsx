@@ -1,8 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
-import { Upload, FileText, CheckCircle, Sparkles, X, ArrowRight, Loader2, Lock, Mail, Eye, EyeOff, User, Briefcase, Hash, RefreshCw, ChevronLeft } from 'lucide-react';
+import { Upload, FileText, CheckCircle, Sparkles, X, ArrowRight, Lock, Mail, Eye, EyeOff, User, Briefcase, ChevronLeft, AlertCircle } from 'lucide-react';
 import { UserProfile, Resume } from '../types';
 import { parseResumeFile } from '../services/geminiService';
+import { supabase } from '../services/supabaseClient';
 
 interface SignupModalProps {
   isOpen: boolean;
@@ -14,193 +15,101 @@ export const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose, onCom
   const [step, setStep] = useState<'upload' | 'scanning' | 'review' | 'credentials'>('upload');
   const [isDragging, setIsDragging] = useState(false);
   const [file, setFile] = useState<File | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   
   // Form State
   const [scannedData, setScannedData] = useState<UserProfile | null>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Reset state when modal closes to prevent getting trapped in a step
   useEffect(() => {
     if (!isOpen) {
-      const timer = setTimeout(() => {
+      setTimeout(() => {
         setStep('upload');
         setFile(null);
         setScannedData(null);
         setEmail('');
         setPassword('');
-      }, 300); // Wait for potential closing animation
-      return () => clearTimeout(timer);
+        setErrorMsg(null);
+      }, 300);
     }
   }, [isOpen]);
 
   if (!isOpen) return null;
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = () => {
-    setIsDragging(false);
-  };
-
   const processFile = async (uploadedFile: File) => {
     setFile(uploadedFile);
     setStep('scanning');
-
+    setErrorMsg(null);
     try {
-      // Use AI to extract REAL profile from file content
       const profile = await parseResumeFile(uploadedFile);
-      
       setScannedData(profile);
-      // Pre-fill email if AI generated one, but allow user to change it
       setEmail(profile.email || '');
       setStep('review');
     } catch (error) {
-      console.error("Parsing failed", error);
-      // Fallback
-      setScannedData({
-        name: '',
-        title: '',
-        email: '',
-        summary: 'Manual entry required.',
-        skills: [],
-        plan: 'Free',
-        atsScansUsed: 0
-      });
-      setStep('review');
+      handleSkipToManual();
+      setErrorMsg("We couldn't auto-parse this file. Please enter details manually.");
     }
   };
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      processFile(e.dataTransfer.files[0]);
-    }
-  };
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      processFile(e.target.files[0]);
-    }
-  };
-
-  const handleUpdateScannedData = (field: keyof UserProfile, value: any) => {
-    if (scannedData) {
-      setScannedData({ ...scannedData, [field]: value });
-    }
-  };
-
-  const handleContinueToCredentials = () => {
-    setStep('credentials');
-  };
-
-  const handleBackToReview = () => {
+  const handleSkipToManual = () => {
+    setScannedData({ name: '', title: '', email: '', summary: '', skills: [], plan: 'Free', atsScansUsed: 0, extensionUses: 0, resumeText: '' });
     setStep('review');
   };
 
-  const handleReupload = () => {
-    setStep('upload');
-    setFile(null);
-    setScannedData(null);
+  const handleUpdateScannedData = (field: keyof UserProfile, value: any) => {
+    if (scannedData) setScannedData({ ...scannedData, [field]: value });
   };
 
-  const handleCreateAccount = (e: React.FormEvent) => {
+  const handleCreateAccount = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (scannedData && file && email && password) {
-      const finalProfile: UserProfile = {
-        ...scannedData,
-        email: email
-      };
-      
-      // Generate enriched content that matches the AI-parsed profile
-      const enrichedResumeContent = `
-NAME: ${finalProfile.name}
-EMAIL: ${email}
-TITLE: ${finalProfile.title}
+    if (!supabase || isSubmitting) return;
 
-PROFESSIONAL SUMMARY
-${finalProfile.summary}
+    setIsSubmitting(true);
+    setErrorMsg(null);
 
-SKILLS
-${finalProfile.skills.join(' • ')}
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: scannedData?.name || '',
+          title: scannedData?.title || ''
+        }
+      }
+    });
 
-EXPERIENCE
-${finalProfile.title} | ${finalProfile.skills[0] ? 'Experience' : 'Previous Employer'}
-- Leveraged ${finalProfile.skills[0] || 'skills'} to drive results.
-`;
-
-      const newResume: Resume = {
-        id: 'initial-resume',
-        name: file.name,
-        content: enrichedResumeContent, 
-        uploadDate: new Date().toISOString(),
-      };
-      
-      onComplete(finalProfile, newResume, password);
+    if (error) {
+      setErrorMsg(error.message);
+      setIsSubmitting(false);
+    } else if (data.user) {
+      // Logic for initial resume upload would go into a follow-up or be handled after profile sync
+      // For now, we allow the app state to catch up through Auth state listener
+      onClose();
     }
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-fade-in">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden relative">
-        <button 
-          onClick={onClose} 
-          className="absolute top-4 right-4 p-2 text-slate-300 hover:text-slate-600 rounded-full hover:bg-slate-50 transition-colors z-10"
-        >
-          <X size={20} />
-        </button>
-
-        {/* Back Button (Only for Review or Credentials steps) */}
-        {(step === 'review' || step === 'credentials') && (
-          <button 
-            onClick={step === 'credentials' ? handleBackToReview : handleReupload}
-            className="absolute top-4 left-4 p-2 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-50 transition-colors z-10 flex items-center gap-1 text-sm font-medium"
-          >
-            <ChevronLeft size={18} /> Back
-          </button>
-        )}
+        <button onClick={onClose} className="absolute top-4 right-4 p-2 text-slate-300 hover:text-slate-600 rounded-full transition-colors z-10"><X size={20} /></button>
 
         {step === 'upload' && (
           <div className="p-8 md:p-10 text-center">
-            <div className="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-6 text-indigo-600 shadow-sm">
-              <Sparkles size={32} />
-            </div>
-            <h2 className="text-2xl font-extrabold text-slate-900 mb-2">Let's build your profile</h2>
-            <p className="text-slate-500 mb-8">Drop your resume here. Our AI will extract your details instantly.</p>
-
-            <div 
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              className={`border-2 border-dashed rounded-2xl p-10 transition-all duration-300 cursor-pointer group ${
-                isDragging 
-                  ? 'border-indigo-500 bg-indigo-50/50 scale-105' 
-                  : 'border-slate-200 hover:border-indigo-400 hover:bg-slate-50'
-              }`}
-            >
-              <input 
-                type="file" 
-                className="hidden" 
-                id="resume-upload" 
-                accept=".pdf,.doc,.docx,image/*"
-                onChange={handleFileSelect}
-              />
-              <label htmlFor="resume-upload" className="cursor-pointer flex flex-col items-center">
-                <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 transition-colors ${
-                    isDragging ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-400 group-hover:bg-indigo-50 group-hover:text-indigo-500'
-                }`}>
-                  <Upload size={28} />
-                </div>
-                <p className="font-bold text-slate-700 text-lg">Click to Upload or Drag & Drop</p>
-                <p className="text-sm text-slate-400 mt-2">PDF, DOCX, Images up to 10MB</p>
+            <div className="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-6 text-indigo-600 shadow-sm"><Sparkles size={32} /></div>
+            <h2 className="text-2xl font-extrabold text-slate-900 mb-2">Build your profile</h2>
+            <p className="text-slate-500 mb-8">Upload your resume to pre-fill your career details via Gemini AI.</p>
+            <div onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }} onDragLeave={() => setIsDragging(false)} onDrop={(e) => { e.preventDefault(); if (e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]); }} className={`border-2 border-dashed rounded-2xl p-10 transition-all duration-300 cursor-pointer ${isDragging ? 'border-indigo-500 bg-indigo-50/50 scale-105' : 'border-slate-200 hover:border-indigo-400 hover:bg-slate-50'}`}>
+              <input type="file" className="hidden" id="res-upload" accept=".pdf,.doc,.docx" onChange={(e) => e.target.files && processFile(e.target.files[0])} />
+              <label htmlFor="res-upload" className="cursor-pointer flex flex-col items-center">
+                <Upload size={28} className="text-slate-400 mb-4" />
+                <p className="font-bold text-slate-700 text-lg">Click to Upload</p>
+                <p className="text-sm text-slate-400 mt-2">PDF, DOCX up to 10MB</p>
               </label>
             </div>
-            
-            <p className="text-xs text-slate-400 mt-6">By uploading, you agree to our Terms & Privacy Policy.</p>
+            <button onClick={handleSkipToManual} className="mt-6 text-sm text-slate-400 hover:text-indigo-600 font-medium">Or skip and enter manually</button>
           </div>
         )}
 
@@ -209,92 +118,32 @@ ${finalProfile.title} | ${finalProfile.skills[0] ? 'Experience' : 'Previous Empl
             <div className="relative w-24 h-24 mx-auto mb-8">
                <div className="absolute inset-0 border-4 border-indigo-100 rounded-full"></div>
                <div className="absolute inset-0 border-4 border-indigo-600 rounded-full border-t-transparent animate-spin"></div>
-               <div className="absolute inset-0 flex items-center justify-center">
-                  <FileText size={32} className="text-indigo-600 animate-pulse" />
-               </div>
+               <div className="absolute inset-0 flex items-center justify-center"><FileText size={32} className="text-indigo-600 animate-pulse" /></div>
             </div>
-            <h3 className="text-xl font-bold text-slate-900 mb-2">AI is Analyzing your Resume...</h3>
-            <div className="h-6 overflow-hidden relative max-w-xs mx-auto">
-               <div className="absolute w-full text-sm text-indigo-500 font-medium animate-float">
-                  Extracting Skills & Experience...
-               </div>
-            </div>
+            <h3 className="text-xl font-bold text-slate-900 mb-2">AI Parsing...</h3>
+            <p className="text-sm text-indigo-500 font-medium animate-float">Extracting career metadata with Gemini 3 Pro...</p>
           </div>
         )}
 
         {step === 'review' && scannedData && (
           <div className="p-8">
             <div className="text-center mb-6">
-              <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-green-600">
-                <CheckCircle size={28} />
-              </div>
-              <h2 className="text-2xl font-bold text-slate-900">Resume Parsed!</h2>
-              <p className="text-slate-500">Review the extracted details below.</p>
+              <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-green-600"><CheckCircle size={28} /></div>
+              <h2 className="text-2xl font-bold text-slate-900">Review Identity</h2>
+              <p className="text-slate-500 text-sm">We'll use these to create your profile.</p>
             </div>
-
             <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100 mb-6 space-y-4 shadow-inner">
-               {/* Name Input */}
                <div>
-                 <label className="text-xs font-bold text-slate-400 uppercase mb-1 flex items-center gap-1">
-                   <User size={12} /> Full Name
-                 </label>
-                 <input 
-                    type="text" 
-                    value={scannedData.name}
-                    onChange={(e) => handleUpdateScannedData('name', e.target.value)}
-                    className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none"
-                    placeholder="Enter full name"
-                 />
+                 <label className="text-xs font-bold text-slate-400 uppercase mb-1 flex items-center gap-1"><User size={12} /> Full Name</label>
+                 <input type="text" value={scannedData.name} onChange={(e) => handleUpdateScannedData('name', e.target.value)} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-semibold text-slate-800" />
                </div>
-
-               {/* Title Input */}
                <div>
-                 <label className="text-xs font-bold text-slate-400 uppercase mb-1 flex items-center gap-1">
-                   <Briefcase size={12} /> Job Title
-                 </label>
-                 <input 
-                    type="text" 
-                    value={scannedData.title}
-                    onChange={(e) => handleUpdateScannedData('title', e.target.value)}
-                    className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none"
-                    placeholder="e.g. Software Engineer"
-                 />
-               </div>
-
-               {/* Skills Tag Input */}
-               <div>
-                 <label className="text-xs font-bold text-slate-400 uppercase mb-1 flex items-center gap-1">
-                   <Hash size={12} /> Top Skills Found
-                 </label>
-                 <div className="flex flex-wrap gap-2">
-                   {scannedData.skills && scannedData.skills.length > 0 ? (
-                     scannedData.skills.map((skill, i) => (
-                       <span key={i} className="px-2 py-1 bg-white border border-slate-200 rounded text-xs font-medium text-indigo-600 shadow-sm">
-                         {skill}
-                       </span>
-                     ))
-                   ) : (
-                     <span className="text-xs text-slate-400 italic">No specific skills found. Add in profile later.</span>
-                   )}
-                   <span className="px-2 py-1 border border-dashed border-slate-300 rounded text-xs text-slate-400 cursor-default">
-                     + Edit in Profile
-                   </span>
-                 </div>
+                 <label className="text-xs font-bold text-slate-400 uppercase mb-1 flex items-center gap-1"><Briefcase size={12} /> Job Title</label>
+                 <input type="text" value={scannedData.title} onChange={(e) => handleUpdateScannedData('title', e.target.value)} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-semibold text-slate-800" />
                </div>
             </div>
-
-            <button 
-              onClick={handleContinueToCredentials}
-              className="w-full bg-indigo-600 text-white py-3.5 rounded-xl font-bold text-lg hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 flex items-center justify-center group"
-            >
-              Confirm & Continue <ArrowRight size={20} className="ml-2 group-hover:translate-x-1 transition-transform" />
-            </button>
-            
-            <button 
-              onClick={handleReupload}
-              className="w-full mt-3 py-3 text-slate-500 font-semibold hover:text-indigo-600 transition-colors flex items-center justify-center gap-2"
-            >
-              <RefreshCw size={16} /> Re-upload Resume
+            <button onClick={() => setStep('credentials')} className="w-full bg-indigo-600 text-white py-3.5 rounded-xl font-bold text-lg hover:bg-indigo-700 shadow-lg flex items-center justify-center group">
+              Next: Sync to Cloud <ArrowRight size={20} className="ml-2 group-hover:translate-x-1 transition-transform" />
             </button>
           </div>
         )}
@@ -302,61 +151,26 @@ ${finalProfile.title} | ${finalProfile.skills[0] ? 'Experience' : 'Previous Empl
         {step === 'credentials' && (
            <div className="p-8">
              <div className="text-center mb-6">
-                <div className="w-14 h-14 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4 text-indigo-600">
-                  <Lock size={28} />
-                </div>
-                <h2 className="text-2xl font-bold text-slate-900">Secure your Account</h2>
-                <p className="text-slate-500">Create a password to access your AI dashboard.</p>
+                <div className="w-14 h-14 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4 text-indigo-600"><Lock size={28} /></div>
+                <h2 className="text-2xl font-bold text-slate-900">Cloud Account</h2>
+                <p className="text-slate-500 text-sm">Resumes are stored on your private Supabase bucket.</p>
              </div>
-
              <form onSubmit={handleCreateAccount} className="space-y-4">
+                {errorMsg && <div className="p-3 bg-red-50 text-red-600 text-xs rounded-lg flex items-center gap-2"><AlertCircle size={14} /> {errorMsg}</div>}
                 <div>
-                   <label className="block text-sm font-semibold text-slate-700 mb-1">Email Address</label>
-                   <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                         <Mail size={18} className="text-slate-400" />
-                      </div>
-                      <input 
-                        type="email" 
-                        required
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="w-full pl-10 p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-shadow"
-                        placeholder="name@example.com"
-                      />
-                   </div>
+                   <label className="block text-sm font-semibold text-slate-700 mb-1">Email</label>
+                   <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" />
                 </div>
-                
                 <div>
                    <label className="block text-sm font-semibold text-slate-700 mb-1">Password</label>
                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                         <Lock size={18} className="text-slate-400" />
-                      </div>
-                      <input 
-                        type={showPassword ? "text" : "password"}
-                        required
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Min. 8 characters"
-                        className="w-full pl-10 pr-10 p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-shadow"
-                      />
-                      <button 
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
-                      >
-                         {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                      </button>
+                      <input type={showPassword ? "text" : "password"} required value={password} onChange={(e) => setPassword(e.target.value)} className="w-full p-3 border border-slate-200 rounded-xl" />
+                      <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400">{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button>
                    </div>
                 </div>
-
                 <div className="pt-4">
-                   <button 
-                    type="submit"
-                    className="w-full bg-slate-900 text-white py-3.5 rounded-xl font-bold text-lg hover:bg-slate-800 transition-all shadow-lg flex items-center justify-center group"
-                   >
-                     Create Account
+                   <button type="submit" disabled={isSubmitting} className="w-full bg-slate-900 text-white py-3.5 rounded-xl font-bold text-lg hover:bg-slate-800 transition-all flex items-center justify-center">
+                     {isSubmitting ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : 'Complete Secure Signup'}
                    </button>
                 </div>
              </form>
