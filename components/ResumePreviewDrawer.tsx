@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { X, FileText, Calendar, Download, Briefcase } from 'lucide-react';
-import { Resume } from '../types';
+import { Resume } from '../types.ts';
 
 interface ResumePreviewDrawerProps {
   resume: Resume | null;

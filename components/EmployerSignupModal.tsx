@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Briefcase, Building2, Mail, Lock, X, Eye, EyeOff, ArrowRight } from 'lucide-react';
-import { UserProfile } from '../types';
+import { UserProfile } from '../types.ts';
 
 interface EmployerSignupModalProps {
   isOpen: boolean;

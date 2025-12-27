@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { EmployerJob } from '../types';
+import { EmployerJob } from '../types.ts';
 import { X } from 'lucide-react';
 
 interface PostJobModalProps {

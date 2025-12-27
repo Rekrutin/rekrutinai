@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { EmployerJob, CandidateApplication } from '../types';
+import { EmployerJob, CandidateApplication } from '../types.ts';
 import { Users, Briefcase, FileText, TrendingUp, Clock, AlertCircle, ArrowRight, CheckCircle } from 'lucide-react';
 
 interface EmployerDashboardSummaryProps {

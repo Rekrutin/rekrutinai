@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { JobAlert, ExternalJobMatch } from '../types';
+import { JobAlert, ExternalJobMatch } from '../types.ts';
 import { Bell, MapPin, Search, Trash2, Plus, Briefcase, ExternalLink, Clock, Globe, BrainCircuit, Linkedin, CheckCircle, Zap, Code, PenTool, TrendingUp, Monitor } from 'lucide-react';
 
 interface JobAlertsSectionProps {

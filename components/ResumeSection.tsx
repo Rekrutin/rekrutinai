@@ -1,12 +1,12 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Resume, PlanType } from '../types';
+import { Resume, PlanType } from '../types.ts';
 import { FileText, Upload, CheckCircle, Trash2, Search, Zap, Loader2, File as FileIcon, X, Sparkles, AlertTriangle, Eye, Database, Mail, Fingerprint } from 'lucide-react';
-import { MAX_FREE_ATS_SCANS } from '../constants';
-import { ResumePreviewDrawer } from './ResumePreviewDrawer';
-import { ResumeScanModal } from './ResumeScanModal';
-import { parseResumeFile, analyzeResumeATS } from '../services/geminiService';
-import { supabase } from '../services/supabaseClient';
+import { MAX_FREE_ATS_SCANS } from '../constants.ts';
+import { ResumePreviewDrawer } from './ResumePreviewDrawer.tsx';
+import { ResumeScanModal } from './ResumeScanModal.tsx';
+import { parseResumeFile, analyzeResumeATS } from '../services/geminiService.ts';
+import { supabase } from '../services/supabaseClient.ts';
 
 interface ResumeSectionProps {
   resumes: Resume[];

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { Resume } from '../types';
-import { scanAndOptimizeResume } from '../services/geminiService';
+import { Resume } from '../types.ts';
+import { scanAndOptimizeResume } from '../services/geminiService.ts';
 import { X, Sparkles, CheckCircle, ArrowRight, Wand2, RefreshCw } from 'lucide-react';
 
 interface ResumeScanModalProps {
@@ -36,7 +36,7 @@ export const ResumeScanModal: React.FC<ResumeScanModalProps> = ({ isOpen, resume
     if (!resume) return;
     setStatus('scanning');
     try {
-      const data = await scanAndOptimizeResume(resume.content);
+      const data = await scanAndOptimizeResume(resume.extracted_text || "");
       setResult(data);
       setStatus('complete');
     } catch (error) {
@@ -100,7 +100,7 @@ export const ResumeScanModal: React.FC<ResumeScanModalProps> = ({ isOpen, resume
                 </div>
                 <div className="flex-1 p-6 overflow-y-auto bg-slate-50/50">
                   <pre className="whitespace-pre-wrap font-mono text-sm text-slate-600 leading-relaxed">
-                    {resume.content}
+                    {resume.extracted_text}
                   </pre>
                 </div>
               </div>

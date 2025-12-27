@@ -1,8 +1,8 @@
 
 import React, { useState } from 'react';
-import { UserProfile, Job, ExtensionJobPayload } from '../types';
-import { trackJobFromExtension } from '../services/extensionBackend';
-import { Download, Chrome, Play, CheckCircle, AlertTriangle, Code, Terminal, Key } from 'lucide-react';
+import { UserProfile, Job, ExtensionJobPayload } from '../types.ts';
+import { trackJobFromExtension } from '../services/extensionBackend.ts';
+import { Download, Chrome, Play, CheckCircle, AlertTriangle, Code, Terminal, Key, Globe, Bot, Sparkles } from 'lucide-react';
 
 interface ExtensionPageProps {
   profile: UserProfile;

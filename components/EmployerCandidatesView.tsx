@@ -1,6 +1,6 @@
 
 import React, { useMemo } from 'react';
-import { CandidateApplication, EmployerJob } from '../types';
+import { CandidateApplication, EmployerJob } from '../types.ts';
 import { BrainCircuit, Mail, Calendar, CheckCircle, XCircle, Clock, ChevronRight, User } from 'lucide-react';
 
 interface EmployerCandidatesViewProps {

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Job, JobStatus } from '../types';
+import { Job, JobStatus } from '../types.ts';
 import { Briefcase, MapPin, BrainCircuit, GripVertical, ChevronRight, ChevronLeft, Trash2, Bell, Clock } from 'lucide-react';
 
 interface JobCardProps {

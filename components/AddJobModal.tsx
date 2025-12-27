@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { JobStatus, Job } from '../types';
+import { JobStatus, Job } from '../types.ts';
 import { X, Link as LinkIcon } from 'lucide-react';
 
 interface AddJobModalProps {

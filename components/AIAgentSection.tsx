@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Job, UserProfile, ChatMessage } from '../types';
-import { chatWithCareerAgent } from '../services/geminiService';
+import { Job, UserProfile, ChatMessage } from '../types.ts';
+import { chatWithCareerAgent } from '../services/geminiService.ts';
 import { Send, Bot, User, Sparkles } from 'lucide-react';
 
 interface AIAgentSectionProps {
@@ -54,9 +54,6 @@ What's on your mind?`,
     setIsTyping(true);
 
     try {
-      // Pass the CURRENT history (excluding the new message we just added visually, 
-      // but the service function handles appending the new message)
-      // We pass `messages` which is the history *before* this new turn.
       const responseText = await chatWithCareerAgent(messages, userMsg.content, { jobs, profile });
       
       const aiMsg: ChatMessage = {

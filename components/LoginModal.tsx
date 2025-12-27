@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Mail, Lock, X, Eye, EyeOff, LogIn, AlertCircle } from 'lucide-react';
-import { supabase } from '../services/supabaseClient';
+import { supabase } from '../services/supabaseClient.ts';
 
 interface LoginModalProps {
   isOpen: boolean;
