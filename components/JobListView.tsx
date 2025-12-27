@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Job, JobStatus } from '../types';
+import { Job, JobStatus } from '../types.ts';
 import { BrainCircuit, ExternalLink, Trash2, Calendar, MapPin, Building2, Plus, Bell, Clock } from 'lucide-react';
 
 interface JobListViewProps {

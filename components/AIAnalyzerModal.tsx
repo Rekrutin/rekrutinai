@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
-import { Job, JobAnalysis } from '../types';
-import { analyzeJobFit } from '../services/geminiService';
+import { Job, JobAnalysis } from '../types.ts';
+import { analyzeJobFit } from '../services/geminiService.ts';
 import { X, Sparkles, AlertCircle, CheckCircle } from 'lucide-react';
 
 interface AIAnalyzerModalProps {

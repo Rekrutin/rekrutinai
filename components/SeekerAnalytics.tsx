@@ -1,8 +1,8 @@
 
 import React, { useMemo, useState } from 'react';
-import { Job, JobStatus } from '../types';
+import { Job, JobStatus } from '../types.ts';
 import { BarChart3, Users, XCircle, Trophy, TrendingUp, Lock, Sparkles } from 'lucide-react';
-import { CountUp } from './CountUp';
+import { CountUp } from './CountUp.tsx';
 
 interface SeekerAnalyticsProps {
   jobs: Job[];

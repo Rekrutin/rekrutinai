@@ -1,5 +1,5 @@
 
-import { JobStatus, Job, PricingPlan, EmployerJob, CandidateApplication, ExternalJobMatch, Language } from './types';
+import { JobStatus, Job, PricingPlan, EmployerJob, CandidateApplication, ExternalJobMatch, Language } from './types.ts';
 
 // Helper to safely get environment variables without crashing in browser
 export const getEnv = (key: string) => {

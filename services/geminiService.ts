@@ -1,9 +1,11 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { JobAnalysis, Job, UserProfile, ChatMessage } from "../types";
+import { JobAnalysis, Job, UserProfile, ChatMessage } from "../types.ts";
 
 // Always initialize the Gemini client with process.env.API_KEY directly.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Added a fallback to empty string to prevent "process is not defined" crash in browser environments.
+const apiKey = typeof process !== 'undefined' ? process.env.API_KEY : '';
+const ai = new GoogleGenAI({ apiKey: apiKey });
 
 async function fileToGenerativePart(file: File) {
   const base64EncodedDataPromise = new Promise<string>((resolve) => {
