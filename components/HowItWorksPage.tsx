@@ -34,7 +34,7 @@ export const HowItWorksPage: React.FC<HowItWorksPageProps> = ({ onSignUp, onLogi
             <button onClick={() => window.dispatchEvent(new CustomEvent('nav', {detail: 'how-it-works'}))} className="font-bold text-indigo-600">How It Works</button>
             <button onClick={() => window.dispatchEvent(new CustomEvent('nav', {detail: 'pricing'}))} className="font-medium text-slate-600 hover:text-indigo-600">Pricing</button>
             <div className="flex items-center space-x-3 border-l pl-6 border-slate-200">
-               <button onClick={onEmployerSignup} className="text-slate-600 hover:text-indigo-600 font-bold px-3 py-2 text-sm transition-colors">For Employers</button>
+               <button onClick={onEmployerSignup} className="bg-black text-white font-bold px-4 py-2 text-sm rounded-md transition-colors hover:bg-slate-800">For Employers</button>
                <button onClick={onLogin} className="text-slate-600 hover:text-indigo-600 font-bold px-4 py-2 text-sm transition-colors">Login</button>
                <button onClick={onSignUp} className="bg-indigo-600 text-white px-5 py-2.5 rounded-full font-bold hover:bg-indigo-700 transition-all shadow-lg hover:shadow-indigo-500/20 text-sm">Sign Up</button>
             </div>
@@ -115,6 +115,7 @@ export const HowItWorksPage: React.FC<HowItWorksPageProps> = ({ onSignUp, onLogi
                         <div className="w-3 h-3 rounded-full bg-[#ffbd2e]"></div>
                         <div className="w-3 h-3 rounded-full bg-[#27c93f]"></div>
                     </div>
+                    {/* Fixed: Globe icon added to lucide-react import */}
                     <div className="flex-1 max-w-md mx-auto bg-[#1e1e2e] rounded-lg px-4 py-1.5 text-xs text-slate-400 font-mono flex items-center gap-2 border border-slate-700/50">
                         <Globe size={10} className="text-slate-500" />
                         linkedin.com/jobs/view/3821094...

@@ -32,7 +32,7 @@ export const FeaturesPage: React.FC<FeaturesPageProps> = ({ onSignUp, onLogin, o
             <button onClick={() => window.dispatchEvent(new CustomEvent('nav', {detail: 'how-it-works'}))} className="font-medium text-slate-600 hover:text-indigo-600">How It Works</button>
             <button onClick={() => window.dispatchEvent(new CustomEvent('nav', {detail: 'pricing'}))} className="font-medium text-slate-600 hover:text-indigo-600">Pricing</button>
             <div className="flex items-center space-x-3 border-l pl-6 border-slate-200">
-               <button onClick={onEmployerSignup} className="text-slate-600 hover:text-indigo-600 font-bold px-3 py-2 text-sm transition-colors">For Employers</button>
+               <button onClick={onEmployerSignup} className="bg-black text-white font-bold px-4 py-2 text-sm rounded-md transition-colors hover:bg-slate-800">For Employers</button>
                <button onClick={onLogin} className="text-slate-600 hover:text-indigo-600 font-bold px-4 py-2 text-sm transition-colors">Login</button>
                <button onClick={onSignUp} className="bg-indigo-600 text-white px-5 py-2.5 rounded-full font-bold hover:bg-indigo-700 transition-all shadow-lg hover:shadow-indigo-500/20 text-sm">Sign Up</button>
             </div>

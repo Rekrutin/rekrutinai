@@ -290,7 +290,7 @@ const App: React.FC = () => {
             <button onClick={() => setCurrentView('how-it-works')} className={`font-medium transition-colors ${currentView === 'how-it-works' ? 'text-indigo-600 font-bold' : 'text-slate-600 hover:text-indigo-600'}`}>{t.NAV_HOW_IT_WORKS}</button>
             <button onClick={() => setCurrentView('pricing')} className={`font-medium transition-colors ${currentView === 'pricing' ? 'text-indigo-600 font-bold' : 'text-slate-600 hover:text-indigo-600'}`}>{t.NAV_PRICING}</button>
             <div className="flex items-center space-x-3 border-l pl-6 border-slate-200">
-               <button onClick={() => setIsEmployerSignupModalOpen(true)} className="text-slate-600 hover:text-indigo-600 font-bold px-3 py-2 text-sm">For Employers</button>
+               <button onClick={() => setIsEmployerSignupModalOpen(true)} className="bg-black text-white font-bold px-4 py-2 text-sm rounded-md transition-colors hover:bg-slate-800">For Employers</button>
                <button onClick={() => setIsLoginModalOpen(true)} className="text-slate-600 hover:text-indigo-600 font-bold px-4 py-2 text-sm transition-colors">{t.NAV_LOGIN}</button>
                <button onClick={() => setIsSignupModalOpen(true)} className="bg-indigo-600 text-white px-5 py-2.5 rounded-full font-bold hover:bg-indigo-700 transition-all shadow-lg hover:shadow-indigo-500/20 text-sm">{t.NAV_SIGNUP}</button>
             </div>
