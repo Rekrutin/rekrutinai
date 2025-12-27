@@ -90,7 +90,7 @@ What's on your mind?`,
         </div>
         <div>
           <h3 className="font-bold text-slate-800 text-sm">AI Career Agent</h3>
-          <p className="text-xs text-slate-500">Context-Aware • Powered by Gemini 2.5</p>
+          <p className="text-xs text-slate-500">Context-Aware • Powered by RekrutIn HR AI</p>
         </div>
       </div>
 

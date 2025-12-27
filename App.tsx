@@ -3,8 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { 
   LayoutGrid, LogOut, FileText, Sparkles, CreditCard,
   MessageSquare, Settings, HelpCircle, Plus, Zap, CheckCircle, ArrowRight,
-  TrendingUp, Users, Target, Rocket, Briefcase, BarChart3, ChevronRight, Bell, Menu, X, Star, Globe, Play, Bot, ShieldCheck, ZapIcon,
-  Chrome, Quote, Search, Trophy
+  Rocket, Briefcase, ChevronRight, Bell, Menu, X, Star, Globe, Play, Bot,
+  Quote, Search, Trophy, Users, Target
 } from 'lucide-react';
 import { Job, JobStatus, UserRole, EmployerJob, DashboardTab, UserProfile, Resume, ExternalJobMatch, Language, PlanType, JobAnalysis, PricingPlan } from './types.ts';
 import { TRANSLATIONS, INITIAL_EXTERNAL_MATCHES, getPricingPlans, INITIAL_JOBS } from './constants.ts';
@@ -86,25 +86,29 @@ const App: React.FC = () => {
     return () => window.removeEventListener('nav', handleNav);
   }, []);
 
-  // AUTH SYNC
+  // AUTH SYNC & PERSISTENCE
   useEffect(() => {
     if (!supabase) return;
 
+    // Check current session on mount
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
       if (session) {
+        setSession(session);
         syncProfile(session.user);
         setCurrentView('dashboard');
       }
     });
 
-    const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    // Listen for auth changes (login, logout, token refresh)
+    const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       if (session) {
         syncProfile(session.user);
-        setCurrentView('dashboard');
-      } else {
-        handleLogout();
+        if (currentView === 'landing' || currentView === 'pricing' || currentView === 'features' || currentView === 'how-it-works') {
+           setCurrentView('dashboard');
+        }
+      } else if (event === 'SIGNED_OUT') {
+        handleLogoutLocal();
       }
     });
 
@@ -114,14 +118,11 @@ const App: React.FC = () => {
   const syncProfile = async (user: any) => {
     if (!supabase) return;
     
+    // Attempt to fetch profile from the profiles table
     const { data, error } = await supabase
       .from('profiles')
-      .upsert({
-        id: user.id,
-        email: user.email,
-        full_name: user.user_metadata?.full_name || profile.name
-      }, { onConflict: 'id' })
-      .select()
+      .select('*')
+      .eq('id', user.id)
       .single();
 
     if (!error && data) {
@@ -130,6 +131,16 @@ const App: React.FC = () => {
         id: data.id,
         email: data.email,
         name: data.full_name || prev.name,
+        title: data.title || prev.title,
+      }));
+    } else {
+      // If profile record doesn't exist yet, we can use metadata as fallback
+      setProfile(prev => ({
+        ...prev,
+        id: user.id,
+        email: user.email,
+        name: user.user_metadata?.full_name || prev.name,
+        title: user.user_metadata?.title || prev.title,
       }));
     }
   };
@@ -174,13 +185,17 @@ const App: React.FC = () => {
     setIsUpgradeModalOpen(false);
   };
 
-  const handleLogout = async () => {
-    if (supabase) await supabase.auth.signOut();
+  const handleLogoutLocal = () => {
     setCurrentView('landing');
     setProfile({ name: 'Guest', title: '', email: '', summary: '', skills: [], plan: 'Free', atsScansUsed: 0, extensionUses: 0 });
     setJobs(INITIAL_JOBS);
     setResumes([]);
     setSession(null);
+  };
+
+  const handleLogout = async () => {
+    if (supabase) await supabase.auth.signOut();
+    handleLogoutLocal();
   };
 
   const toggleLanguage = () => {
@@ -210,7 +225,6 @@ const App: React.FC = () => {
                
                <button onClick={() => setIsSignupModalOpen(true)} className="bg-indigo-600 text-white px-5 py-2.5 rounded-full font-bold hover:bg-indigo-700 transition-all shadow-lg hover:shadow-indigo-500/20 text-sm">{t.NAV_SIGNUP}</button>
 
-               {/* Language Toggle Button */}
                <button 
                   onClick={toggleLanguage}
                   className="flex items-center gap-1.5 px-3 py-2 bg-white text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg text-xs font-black transition-all border border-slate-200 hover:border-indigo-200 ml-1 shadow-sm group"
@@ -265,7 +279,6 @@ const App: React.FC = () => {
              </button>
           </div>
 
-          {/* HERO STATS - UPDATED NUMBERS */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-5xl mx-auto py-12 border-y border-slate-100/60 mb-24">
             {[
               { label: t.STATS_USERS, value: 12.4, icon: <Users size={20} className="text-indigo-600" />, suffix: "K+" },
@@ -285,21 +298,16 @@ const App: React.FC = () => {
             ))}
           </div>
 
-          {/* COMPAQ SEXY LIVE TRACKER DASHBOARD PREVIEW */}
           <div className="relative max-w-6xl mx-auto mb-32 group">
-             {/* Tag above the mock */}
              <div className="absolute -top-6 left-1/2 -translate-x-1/2 px-6 py-2 bg-white border border-slate-200 rounded-full shadow-2xl text-[10px] font-black text-slate-800 z-30 flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
                 {t.PRODUCT_PREVIEW_TITLE.toUpperCase()}
              </div>
              
-             {/* Compaq Device Mockup */}
              <div className="bg-[#0A0C16] rounded-[2.5rem] p-2 md:p-5 shadow-[0_50px_100px_-20px_rgba(10,12,22,0.6)] border border-slate-800 overflow-hidden relative">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_100%_0%,_rgba(79,70,229,0.1)_0%,_transparent_50%)] pointer-events-none"></div>
                 
                 <div className="bg-[#121422] rounded-[2rem] p-0 h-[480px] overflow-hidden relative border border-slate-800/40 flex">
-                   
-                   {/* Sidebar Mock (Left) */}
                    <div className="w-16 md:w-20 border-r border-slate-800/40 flex flex-col items-center py-8 gap-10">
                       <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
                          <Sparkles size={20} className="text-white" />
@@ -313,9 +321,7 @@ const App: React.FC = () => {
                       </div>
                    </div>
 
-                   {/* Main Content */}
                    <div className="flex-1 flex flex-col">
-                      {/* Top Action Bar */}
                       <div className="h-20 px-8 flex items-center justify-between border-b border-slate-800/30">
                          <div className="flex gap-8">
                             {[
@@ -334,7 +340,6 @@ const App: React.FC = () => {
                          </div>
                       </div>
 
-                      {/* Header Table */}
                       <div className="px-8 py-3 border-b border-slate-800/40 flex text-[8px] font-black text-slate-600 tracking-[0.2em] uppercase items-center bg-[#0D0F1A]/50">
                          <div className="w-2/5">Role & Company</div>
                          <div className="w-1/5 text-center">Status</div>
@@ -342,7 +347,6 @@ const App: React.FC = () => {
                          <div className="w-1/5 text-right">AI Score</div>
                       </div>
 
-                      {/* List Animation */}
                       <div className="flex-1 overflow-hidden relative bg-[#0D0F1A]/20">
                          <div className="px-5 py-4 space-y-2 animate-scroll-vertical hover-pause">
                             {[
@@ -384,13 +388,11 @@ const App: React.FC = () => {
                               </div>
                             ))}
                          </div>
-                         {/* Seamless bottom fade */}
                          <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#121422] to-transparent pointer-events-none z-10"></div>
                       </div>
                    </div>
                 </div>
 
-                {/* Overlaid BIG SEXY BUTTON */}
                 <div className="absolute inset-x-0 bottom-16 flex justify-center z-40 pointer-events-none">
                    <button 
                     onClick={() => setIsSignupModalOpen(true)}
@@ -403,7 +405,6 @@ const App: React.FC = () => {
              </div>
           </div>
 
-          {/* TESTIMONIALS SECTION */}
           <div className="max-w-7xl mx-auto py-24 px-4 sm:px-6">
              <div className="text-center mb-20">
                 <h2 className="text-3xl md:text-5xl font-black text-slate-900 mb-6">{t.TESTIMONIALS_TITLE}</h2>
@@ -647,15 +648,8 @@ const App: React.FC = () => {
           isOpen={isLoginModalOpen} 
           onClose={() => setIsLoginModalOpen(false)} 
           onLogin={(email) => {
-            const found = userDatabase.find(u => u.email === email);
-            if (found) {
-              setProfile({ ...profile, ...found });
-              setCurrentView('dashboard');
-            } else {
-              // Simulated successful login for demo
-              setProfile({ ...profile, email, name: email.split('@')[0] });
-              setCurrentView('dashboard');
-            }
+            // After Supabase logic in LoginModal, this callback triggers dashboard view
+            setCurrentView('dashboard');
             setIsLoginModalOpen(false);
           }} 
           onSwitchToSignup={() => {setIsLoginModalOpen(false); setIsSignupModalOpen(true);}} 

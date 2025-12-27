@@ -14,13 +14,6 @@
     <meta property="og:description" content="Your personal AI recruiter. Track applications, analyze your CV, and find matching roles in seconds." />
     <meta property="og:image" content="https://rekrutin.com/og-image.png" />
 
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:url" content="https://rekrutin.com/" />
-    <meta property="twitter:title" content="RekrutIn.ai - Land Your Next Job Smarter" />
-    <meta property="twitter:description" content="Your personal AI recruiter. Track applications, analyze your CV, and find matching roles in seconds." />
-    <meta property="twitter:image" content="https://rekrutin.com/og-image.png" />
-
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
@@ -83,10 +76,27 @@
     </script>
     <style>
       html, body, #root { height: 100%; }
-      body { font-family: 'Inter', sans-serif; }
+      body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
       .scrollbar-hide::-webkit-scrollbar { display: none; }
       .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
       .hover-pause:hover { animation-play-state: paused; }
+      
+      /* Initial Loading State */
+      #root:empty {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+      }
+      #root:empty::after {
+        content: "INITIALIZING REKRUTIN AI...";
+        font-family: 'Inter', sans-serif;
+        font-weight: 800;
+        font-size: 10px;
+        letter-spacing: 0.2em;
+        color: #6366f1;
+        animation: pulse 1.5s infinite;
+      }
     </style>
     <script type="importmap">
     {

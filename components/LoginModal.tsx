@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Mail, Lock, X, Eye, EyeOff, LogIn, AlertCircle } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 
@@ -13,9 +13,22 @@ interface LoginModalProps {
 export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin, onSwitchToSignup }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Load remembered email on mount
+  useEffect(() => {
+    if (isOpen) {
+      const savedEmail = localStorage.getItem('rekrutin_remember_email');
+      const isRemembered = localStorage.getItem('rekrutin_remember_me') === 'true';
+      if (savedEmail && isRemembered) {
+        setEmail(savedEmail);
+        setRememberMe(true);
+      }
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -35,6 +48,15 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
       setError(authError.message);
       setIsLoading(false);
     } else {
+      // Handle Remember Me logic
+      if (rememberMe) {
+        localStorage.setItem('rekrutin_remember_email', email);
+        localStorage.setItem('rekrutin_remember_me', 'true');
+      } else {
+        localStorage.removeItem('rekrutin_remember_email');
+        localStorage.removeItem('rekrutin_remember_me');
+      }
+
       onLogin(email, password);
       onClose();
     }
@@ -56,16 +78,49 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
             {error && <div className="p-3 bg-red-50 text-red-600 text-xs rounded-lg flex items-center gap-2 border border-red-100"><AlertCircle size={14} /> {error}</div>}
             
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Email Address</label>
-              <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="name@example.com" />
+              <label htmlFor="login-email" className="block text-sm font-semibold text-slate-700 mb-1">Email Address</label>
+              <input 
+                id="login-email"
+                name="email"
+                type="email" 
+                autoComplete="email"
+                required 
+                value={email} 
+                onChange={(e) => setEmail(e.target.value)} 
+                className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" 
+                placeholder="name@example.com" 
+              />
             </div>
             
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Password</label>
+              <label htmlFor="login-password" className="block text-sm font-semibold text-slate-700 mb-1">Password</label>
               <div className="relative">
-                <input type={showPassword ? "text" : "password"} required value={password} onChange={(e) => setPassword(e.target.value)} className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="••••••••" />
+                <input 
+                  id="login-password"
+                  name="password"
+                  type={showPassword ? "text" : "password"} 
+                  autoComplete="current-password"
+                  required 
+                  value={password} 
+                  onChange={(e) => setPassword(e.target.value)} 
+                  className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" 
+                  placeholder="••••••••" 
+                />
                 <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button>
               </div>
+            </div>
+
+            <div className="flex items-center justify-between py-1">
+              <label className="flex items-center gap-2 cursor-pointer group">
+                <input 
+                  type="checkbox" 
+                  checked={rememberMe} 
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <span className="text-sm text-slate-600 font-medium group-hover:text-indigo-600 transition-colors">Remember me</span>
+              </label>
+              <button type="button" className="text-sm font-bold text-indigo-600 hover:text-indigo-700 transition-colors">Forgot password?</button>
             </div>
 
             <div className="pt-2">

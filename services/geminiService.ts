@@ -2,10 +2,8 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { JobAnalysis, Job, UserProfile, ChatMessage } from "../types.ts";
 
-// Always initialize the Gemini client with process.env.API_KEY directly.
-// Added a fallback to empty string to prevent "process is not defined" crash in browser environments.
-const apiKey = typeof process !== 'undefined' ? process.env.API_KEY : '';
-const ai = new GoogleGenAI({ apiKey: apiKey });
+// Initialize the Gemini API client directly with the API key from the environment.
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 async function fileToGenerativePart(file: File) {
   const base64EncodedDataPromise = new Promise<string>((resolve) => {
@@ -55,7 +53,6 @@ export const analyzeJobFit = async (resumeText: string, jobDescription: string):
       }
     });
 
-    // Extracting text output directly from the .text property.
     const text = response.text;
     if (!text) throw new Error("No response from AI");
     
@@ -322,7 +319,7 @@ export const parseResumeFile = async (file: File): Promise<UserProfile> => {
       plan: 'Free',
       atsScansUsed: 0,
       extensionUses: 0,
-      resumeText: '' // Handled separately or later to avoid large token delay in signup
+      resumeText: '' 
     };
   } catch (error) {
     console.error("Resume File Parse Error", error);
